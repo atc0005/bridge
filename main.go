@@ -40,9 +40,13 @@ func main() {
 		if PathExists(path) {
 			log.Println("Path exists:", path)
 
-			fileSizeIndex, err := ProcessPath(config.RecursiveSearch, path)
+			fileSizeIndex, err := ProcessPath(config.RecursiveSearch, config.IgnoreErrors, path)
 			if err != nil {
-				log.Fatal(err)
+				log.Println("Error encountered:", err)
+				if config.IgnoreErrors {
+					log.Println("Ignoring error as requested")
+					continue
+				}
 			}
 
 			combinedFileSizeIndex = MergeFileSizeIndexes(combinedFileSizeIndex, fileSizeIndex)
@@ -69,7 +73,7 @@ func main() {
 		// every key is a file size
 		// every value is a slice of files of that file size
 
-		if err := fileMatches.UpdateChecksums(); err != nil {
+		if err := fileMatches.UpdateChecksums(config.IgnoreErrors); err != nil {
 			log.Println("Error encountered:", err)
 			if config.IgnoreErrors {
 				log.Println("Ignoring error as requested")
