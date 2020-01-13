@@ -2,7 +2,9 @@
 //
 // https://github.com/atc0005/bridge
 
-package main
+// Package units provides helper functions to perform conversions between
+// various units of measurement.
+package units
 
 import "fmt"
 

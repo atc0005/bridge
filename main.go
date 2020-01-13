@@ -11,6 +11,8 @@ import (
 	"flag"
 	"log"
 	"os"
+
+	"github.com/atc0005/bridge/units"
 )
 
 func main() {
@@ -123,7 +125,7 @@ func main() {
 	log.Printf("%d files with identical file size", duplicateFiles.FileSizeMatches)
 	log.Printf("%d files with identical file hash", duplicateFiles.FileHashMatches)
 	log.Printf("%d duplicate files", fileChecksumIndex.GetDuplicateFilesCount())
-	log.Printf("%s wasted space for duplicate file sets", ByteCountIEC(duplicateFiles.WastedSpace))
+	log.Printf("%s wasted space for duplicate file sets", units.ByteCountIEC(duplicateFiles.WastedSpace))
 
 	// Use CSV writer to generate an input file in order to take action
 	// TODO: Implement better error handling

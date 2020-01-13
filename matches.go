@@ -13,6 +13,8 @@ import (
 	"os"
 	"sort"
 	"text/tabwriter"
+
+	"github.com/atc0005/bridge/units"
 )
 
 // FileMatch represents a superset of statistics (including os.FileInfo) for a
@@ -92,23 +94,12 @@ func (fm FileMatches) TotalFileSize() int64 {
 // TotalFileSizeHR returns a human-readable string of the cumulative size of
 // all files in the slice of bytes
 func (fm FileMatches) TotalFileSizeHR() string {
-	return ByteCountIEC(fm.TotalFileSize())
+	return units.ByteCountIEC(fm.TotalFileSize())
 }
 
 // SizeHR returns a human-readable string of the size of a FileMatch object.
 func (fm FileMatch) SizeHR() string {
-	return ByteCountIEC(fm.Size())
-}
-
-// InList is a helper function to emulate Python's `if "x"
-// in list:` functionality
-func InList(needle string, haystack []string) bool {
-	for _, item := range haystack {
-		if item == needle {
-			return true
-		}
-	}
-	return false
+	return units.ByteCountIEC(fm.Size())
 }
 
 // SortByModTimeAsc sorts slice of FileMatch objects in ascending order with
@@ -147,9 +138,12 @@ func MergeFileSizeIndexes(fileSizeIndexes ...FileSizeIndex) FileSizeIndex {
 
 			//log.Printf("length of FileMatches for key %d: %d", fileSize, len(fileMatches))
 
-			for _, fileMatch := range fileMatches {
-				mergedFileSizeIndex[fileSize] = append(mergedFileSizeIndex[fileSize], fileMatch)
-			}
+			// From golangci-lint:
+			// matches.go:150:4: should replace loop with mergedFileSizeIndex[fileSize] = append(mergedFileSizeIndex[fileSize], fileMatches...) (S1011)
+			mergedFileSizeIndex[fileSize] = append(mergedFileSizeIndex[fileSize], fileMatches...)
+			// for _, fileMatch := range fileMatches {
+			// 	mergedFileSizeIndex[fileSize] = append(mergedFileSizeIndex[fileSize], fileMatch)
+			// }
 		}
 	}
 
@@ -272,7 +266,7 @@ func (fi FileChecksumIndex) GetWastedSpace() (int64, error) {
 		duplicateFileMatchEntries := (len(fileMatches) - 1)
 
 		// FIXME: This shouldn't be reachable
-		if len(fileMatches) <= 0 {
+		if len(fileMatches) == 0 {
 			return 0, fmt.Errorf("attempted to calculate wasted space of empty duplicate file set")
 		}
 
@@ -311,7 +305,12 @@ func (fi FileChecksumIndex) WriteFileMatches(filename string) error {
 
 	csvHeader := []string{"directory", "file", "size", "checksum"}
 
-	w.Write(csvHeader)
+	if err := w.Write(csvHeader); err != nil {
+		// at this point we're still trying to write to a non-flushed buffer,
+		// so any failures are highly unexpected
+		// TODO: Wrap error
+		return err
+	}
 
 	//for key, fileMatches := range fi {
 	for _, fileMatches := range fi {
