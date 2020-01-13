@@ -25,7 +25,7 @@ type SHA256Checksum string
 func (cs SHA256Checksum) String() string {
 	// convert the value via `string(cs)` before recurring to prevent infinite
 	// recursion (per https://golang.org/pkg/fmt/ )
-	return fmt.Sprintf("%s", string(cs))
+	return string(cs)
 }
 
 // GenerateCheckSum returns a SHA256 hash as the checksum generated from a
