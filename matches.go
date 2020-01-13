@@ -10,6 +10,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"text/tabwriter"
@@ -154,7 +155,7 @@ func MergeFileSizeIndexes(fileSizeIndexes ...FileSizeIndex) FileSizeIndex {
 
 // UpdateChecksums generates checksum values for each file tracked by a
 // FileMatch entry and updates the associated FileMatch.Checksum field value
-func (fm FileMatches) UpdateChecksums() error {
+func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
 
 	var err error
 
@@ -164,10 +165,22 @@ func (fm FileMatches) UpdateChecksums() error {
 
 		// DEBUG
 		//log.Println("Generating checksum for:", file.FullPath)
-		fm[index].Checksum, err = GenerateCheckSum(file.FullPath)
+		result, err := GenerateCheckSum(file.FullPath)
 		if err != nil {
-			return err
+
+			if !ignoreErrors {
+				return err
+			}
+
+			// WARN
+			log.Println("Error encountered:", err)
+			log.Println("Ignoring error as requested")
+
+			continue
+
 		}
+
+		fm[index].Checksum = result
 
 		// log.Printf("[%d] Checksum for %s: %s",
 		// 	index, fullFileName, fm[index].Checksum)

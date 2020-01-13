@@ -36,7 +36,7 @@ func PathExists(path string) bool {
 
 // ProcessPath optionally recursively processes a provided path and returns a
 // slice of FileMatch objects
-func ProcessPath(recursiveSearch bool, path string) (FileSizeIndex, error) {
+func ProcessPath(recursiveSearch bool, ignoreErrors bool, path string) (FileSizeIndex, error) {
 
 	fileSizeIndex := make(FileSizeIndex)
 	var err error
@@ -57,7 +57,14 @@ func ProcessPath(recursiveSearch bool, path string) (FileSizeIndex, error) {
 			// will stop the filepath.Walk() function from continuing to walk the
 			// path, and your main function will immediately move to the next line.
 			if err != nil {
-				return err
+				if !ignoreErrors {
+					return err
+				}
+
+				// WARN
+				log.Println("Error encountered:", err)
+				log.Println("Ignoring error as requested")
+
 			}
 
 			// make sure we're not working with the root directory itself
