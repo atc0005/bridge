@@ -13,6 +13,8 @@ import (
 	"os"
 	"sort"
 	"text/tabwriter"
+
+	"github.com/atc0005/bridge/units"
 )
 
 // FileMatch represents a superset of statistics (including os.FileInfo) for a
@@ -92,23 +94,12 @@ func (fm FileMatches) TotalFileSize() int64 {
 // TotalFileSizeHR returns a human-readable string of the cumulative size of
 // all files in the slice of bytes
 func (fm FileMatches) TotalFileSizeHR() string {
-	return ByteCountIEC(fm.TotalFileSize())
+	return units.ByteCountIEC(fm.TotalFileSize())
 }
 
 // SizeHR returns a human-readable string of the size of a FileMatch object.
 func (fm FileMatch) SizeHR() string {
-	return ByteCountIEC(fm.Size())
-}
-
-// InList is a helper function to emulate Python's `if "x"
-// in list:` functionality
-func InList(needle string, haystack []string) bool {
-	for _, item := range haystack {
-		if item == needle {
-			return true
-		}
-	}
-	return false
+	return units.ByteCountIEC(fm.Size())
 }
 
 // SortByModTimeAsc sorts slice of FileMatch objects in ascending order with
