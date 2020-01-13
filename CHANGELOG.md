@@ -26,6 +26,12 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.1.1] - 2020-01-13
+
+### Fixed
+
+- Missing support in multiple locations for `IgnoreErrors` option
+
 ## [v0.1.0] - 2020-01-13
 
 ### Added
@@ -48,5 +54,6 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.1.1...HEAD
+[v0.1.1]: https://github.com/atc0005/bridge/releases/tag/v0.1.1
 [v0.1.0]: https://github.com/atc0005/bridge/releases/tag/v0.1.0
