@@ -37,11 +37,12 @@ Find duplicate files and report them for (currently manual) resolution.
 
 ## Features
 
-- Fast and efficient evaluation of potential duplicates by limiting checksum
-  generation to two or more identically sized files
+- Efficient evaluation of potential duplicates by limiting checksum generation
+  to two or more identically sized files
 - Support for creating CSV report of all duplicate file matches
 - Support for generating (rough) console equivalent of CSV file for
   (potential) quick review
+- Support for creating Microsoft Excel workbook of all duplicate file matches
 - Support for evaluating one or many paths
 - Recursive or shallow directory evaluation
 - Go modules (vs classic `GOPATH` setup)
@@ -105,6 +106,7 @@ Tested using:
 | `h`, `help`     | No       | `false`        | No     | `0+`                                | Keep specified number of matching files.                                                                                                     |
 | `console`       | No       | `false`        | No     | `true`, `false`                     | Dump CSV file equivalent to console.                                                                                                         |
 | `csvfile`       | Yes      | *empty string* | No     | *valid file name characters*        | The fully-qualified path to a CSV file that this application should generate.                                                                |
+| `excelfile`     | No       | *empty string* | No     | *valid file name characters*        | The fully-qualified path to a Microsoft Excel file that this application should generate.                                                    |
 | `ignore-errors` | No       | `false`        | No     | `true`, `false`                     | Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files. |
 | `path`          | Yes      | *empty string* | Yes    | *one or more valid directory paths* | Path to process. This flag may be repeated for each additional path to evaluate.                                                             |
 | `recurse`       | No       | `false`        | No     | `true`, `false`                     | Perform recursive search into subdirectories per provided path.                                                                              |
@@ -189,3 +191,5 @@ of this document for links to additional information.
 - <https://golangcode.com/writing-to-file/>
 - <https://www.joeshaw.org/dont-defer-close-on-writable-files/>
 - <https://golang.org/pkg/os/#File.Sync>
+
+- <https://github.com/360EntSecGroup-Skylar/excelize>

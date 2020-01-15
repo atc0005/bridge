@@ -62,6 +62,10 @@ type Config struct {
 	// CSVFile is the fully-qualified path to a CSV file that this application
 	// should generate
 	CSVFile string
+
+	// ExcelFile is the fully-qualified path to an Excel file that this
+	// application should generate
+	ExcelFile string
 }
 
 // Validate verifies all struct fields have been provided acceptable values
@@ -76,6 +80,13 @@ func (c Config) Validate() error {
 		return fmt.Errorf("missing fully-qualified path to CSV file to create")
 	case !PathExists(filepath.Dir(c.CSVFile)):
 		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
+	}
+
+	// Optional flag, optional file generation
+	if c.ExcelFile != "" {
+		if !PathExists(filepath.Dir(c.ExcelFile)) {
+			return fmt.Errorf("parent directory for specified Excel file to create does not exist")
+		}
 	}
 
 	// RecursiveSearch is a boolean flag. The flag package takes care of

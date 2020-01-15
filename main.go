@@ -24,6 +24,7 @@ func main() {
 	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump CSV file equivalent to console.")
 	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
 	flag.StringVar(&config.CSVFile, "csvfile", "", "The fully-qualified path to a CSV file that this application should generate.")
+	flag.StringVar(&config.ExcelFile, "excelfile", "", "The fully-qualified path to an Excel file that this application should generate.")
 
 	// parse flag definitions from the argument list
 	flag.Parse()
@@ -133,9 +134,16 @@ func main() {
 
 	// Use CSV writer to generate an input file in order to take action
 	// TODO: Implement better error handling
-	if err := fileChecksumIndex.WriteFileMatches(config.CSVFile); err != nil {
+	if err := fileChecksumIndex.WriteFileMatchesCSV(config.CSVFile); err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Successfully created CSV file: %q", config.CSVFile)
+
+	// Generate Excel workbook for review
+	// TODO: Implement better error handling
+	if err := fileChecksumIndex.WriteFileMatchesWorkbook(config.ExcelFile, duplicateFiles); err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Successfully created workbook file: %q", config.ExcelFile)
 
 }

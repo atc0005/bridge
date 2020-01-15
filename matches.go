@@ -16,6 +16,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/atc0005/bridge/units"
+
+	"github.com/360EntSecGroup-Skylar/excelize"
 )
 
 // FileMatch represents a superset of statistics (including os.FileInfo) for a
@@ -57,8 +59,8 @@ type FileChecksumIndex map[SHA256Checksum]FileMatches
 
 // DuplicateFilesSummary is a collection of the metadata calculated from
 // evaluating duplicate files. This metadata is displayed via a variety of
-// methods, notably just prior to application exit via console and (in the
-// future) the first sheet in the generated workbook.
+// methods, notably just prior to application exit via console and the first
+// sheet in the generated workbook.
 type DuplicateFilesSummary struct {
 	TotalEvaluatedFiles int
 
@@ -303,9 +305,81 @@ func (fi FileChecksumIndex) GetDuplicateFilesCount() int {
 	return duplicateFiles
 }
 
-// WriteFileMatches writes duplicate files recorded in a FileChecksumIndex for
-// to the specified CSV file. See also PrintFileMatches.
-func (fi FileChecksumIndex) WriteFileMatches(filename string) error {
+// WriteFileMatchesWorkbook is a prototype method to generate an Excel
+// workbook from duplicate file details
+func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary DuplicateFilesSummary) error {
+
+	f := excelize.NewFile()
+
+	summarySheet := "Summary"
+	defaultSheet := "Sheet1"
+
+	// Create a new sheet for duplicate file metadata
+	summarySheetIndex := f.NewSheet(summarySheet)
+
+	f.DeleteSheet(defaultSheet)
+
+	// Write out the summary sheet labels
+	f.SetCellValue(summarySheet, "A1", "Evaluated Files")
+	f.SetCellValue(summarySheet, "A2", "Sets of files with identical size")
+	f.SetCellValue(summarySheet, "A3", "Sets of files with identical fingerprint")
+	f.SetCellValue(summarySheet, "A4", "Files with identical size")
+	f.SetCellValue(summarySheet, "A5", "Files with identical fingerprint")
+	// blank link
+	f.SetCellValue(summarySheet, "A7", "Duplicate Files")
+	f.SetCellValue(summarySheet, "A8", "Wasted Space")
+
+	// Write out the summary sheet values
+	f.SetCellValue(summarySheet, "B1", summary.TotalEvaluatedFiles)
+	f.SetCellValue(summarySheet, "B2", summary.FileSizeMatchSets)
+	f.SetCellValue(summarySheet, "B3", summary.FileHashMatchSets)
+	f.SetCellValue(summarySheet, "B4", summary.FileSizeMatches)
+	f.SetCellValue(summarySheet, "B5", summary.FileHashMatches)
+	// blank line
+
+	f.SetCellValue(summarySheet, "B7", fi.GetDuplicateFilesCount())
+	f.SetCellValue(summarySheet, "B8", units.ByteCountIEC(summary.WastedSpace))
+
+	for duplicateFileSetIndex, fileMatches := range fi {
+
+		//sheetHeader := []string{"directory", "file", "size", "checksum"}
+
+		// Create a new sheet for duplicate file metadata
+		f.NewSheet(duplicateFileSetIndex.String())
+
+		// Write out the sheet header
+		f.SetCellValue(duplicateFileSetIndex.String(), "A1", "directory")
+		f.SetCellValue(duplicateFileSetIndex.String(), "B1", "file")
+		f.SetCellValue(duplicateFileSetIndex.String(), "C1", "size")
+		f.SetCellValue(duplicateFileSetIndex.String(), "D1", "checksum")
+
+		for index, file := range fileMatches {
+
+			// Excel starts at 1, but our header occupies row 1, so increment
+			// by +2 to account for that
+			row := index + 2
+
+			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("A%d", row), file.ParentDirectory)
+			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("B%d", row), file.Name())
+			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("C%d", row), file.SizeHR())
+			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("D%d", row), file.Checksum.String())
+
+		}
+
+	}
+
+	f.SetActiveSheet(summarySheetIndex)
+
+	// Save xlsx file by the given path.
+	return f.SaveAs(filename)
+	// if err := f.SaveAs("Book1.xlsx"); err != nil {
+	// 	println(err.Error())
+	// }
+}
+
+// WriteFileMatchesCSV writes duplicate files recorded in a FileChecksumIndex
+// to the specified CSV file.
+func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 
 	file, err := os.Create(filename)
 	if err != nil {
