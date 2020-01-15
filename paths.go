@@ -53,9 +53,10 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, path string) (FileSize
 		// inefficient. Walk does not follow symbolic links.
 		err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 
-			// If an error is received, return it. If we return a non-nil error, this
-			// will stop the filepath.Walk() function from continuing to walk the
-			// path, and your main function will immediately move to the next line.
+			// If an error is received, check to see whether we should ignore
+			// it or return it. If we return a non-nil error, this will stop
+			// the filepath.Walk() function from continuing to walk the path,
+			// and your main function will immediately move to the next line.
 			if err != nil {
 				if !ignoreErrors {
 					return err
