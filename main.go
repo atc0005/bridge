@@ -21,7 +21,7 @@ func main() {
 
 	flag.Var(&config.Paths, "path", "Path to process. This flag may be repeated for each additional path to evaluate.")
 	flag.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit for evaluation. Files smaller than this will be skipped.")
-	flag.IntVar(&config.FileDuplicatesThreshold, "duplicates", 2, "number of files of the same file size needed before duplicate validation logic is applied.")
+	flag.IntVar(&config.FileDuplicatesThreshold, "duplicates", 2, "Number of files of the same file size needed before duplicate validation logic is applied.")
 	flag.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
 	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump CSV file equivalent to console.")
 	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")

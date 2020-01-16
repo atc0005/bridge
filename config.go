@@ -90,6 +90,10 @@ func (c Config) Validate() error {
 		return fmt.Errorf("0 bytes is the minimum size for evaluated files")
 	}
 
+	if c.FileDuplicatesThreshold < 2 {
+		return fmt.Errorf("2 is the minimum duplicates number for evaluated files")
+	}
+
 	switch {
 	case c.CSVFile == "":
 		return fmt.Errorf("missing fully-qualified path to CSV file to create")
