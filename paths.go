@@ -36,7 +36,7 @@ func PathExists(path string) bool {
 
 // ProcessPath optionally recursively processes a provided path and returns a
 // slice of FileMatch objects
-func ProcessPath(recursiveSearch bool, ignoreErrors bool, path string) (FileSizeIndex, error) {
+func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int64, path string) (FileSizeIndex, error) {
 
 	fileSizeIndex := make(FileSizeIndex)
 	var err error
@@ -77,7 +77,7 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, path string) (FileSize
 				}
 
 				// ignore files below the size threshold
-				if info.Size() < SizeThreshold {
+				if info.Size() < fileSizeThreshold {
 					return nil
 				}
 
@@ -123,7 +123,7 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, path string) (FileSize
 			}
 
 			// ignore files below the size threshold
-			if file.Size() < SizeThreshold {
+			if file.Size() < fileSizeThreshold {
 				continue
 			}
 

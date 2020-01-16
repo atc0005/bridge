@@ -59,6 +59,13 @@ type Config struct {
 	// report files.
 	IgnoreErrors bool
 
+	// FileSizeThreshold is the minimum size in bytes that a file must be
+	// before it is added to our FileSizeIndex. This is an attempt to limit
+	// index entries to just the files that are most relevant; the assumption
+	// is that zero-byte files are not relevant, but the user may wish to
+	// limit the threshold to a specific size (e.g., DVD ISO images)
+	FileSizeThreshold int64
+
 	// CSVFile is the fully-qualified path to a CSV file that this application
 	// should generate
 	CSVFile string
@@ -73,6 +80,10 @@ func (c Config) Validate() error {
 
 	if c.Paths == nil {
 		return fmt.Errorf("one or more paths not provided")
+	}
+
+	if c.FileSizeThreshold < 0 {
+		return fmt.Errorf("0 bytes is the minimum size for evaluated files")
 	}
 
 	switch {

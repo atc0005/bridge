@@ -20,6 +20,7 @@ func main() {
 	config := Config{}
 
 	flag.Var(&config.Paths, "path", "Path to process. This flag may be repeated for each additional path to evaluate.")
+	flag.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit for evaluation. Files smaller than this will be skipped.")
 	flag.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
 	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump CSV file equivalent to console.")
 	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
@@ -41,7 +42,7 @@ func main() {
 		if PathExists(path) {
 			log.Println("Path exists:", path)
 
-			fileSizeIndex, err := ProcessPath(config.RecursiveSearch, config.IgnoreErrors, path)
+			fileSizeIndex, err := ProcessPath(config.RecursiveSearch, config.IgnoreErrors, config.FileSizeThreshold, path)
 			if err != nil {
 				log.Println("Error encountered:", err)
 				if config.IgnoreErrors {
