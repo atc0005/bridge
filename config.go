@@ -66,6 +66,10 @@ type Config struct {
 	// limit the threshold to a specific size (e.g., DVD ISO images)
 	FileSizeThreshold int64
 
+	// FileDuplicatesThreshold is the number of files of the same file size
+	// needed before duplicate validation logic is applied.
+	FileDuplicatesThreshold int
+
 	// CSVFile is the fully-qualified path to a CSV file that this application
 	// should generate
 	CSVFile string

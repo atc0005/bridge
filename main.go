@@ -21,6 +21,7 @@ func main() {
 
 	flag.Var(&config.Paths, "path", "Path to process. This flag may be repeated for each additional path to evaluate.")
 	flag.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit for evaluation. Files smaller than this will be skipped.")
+	flag.IntVar(&config.FileDuplicatesThreshold, "duplicates", 2, "number of files of the same file size needed before duplicate validation logic is applied.")
 	flag.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
 	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump CSV file equivalent to console.")
 	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
@@ -60,8 +61,8 @@ func main() {
 	duplicateFiles.TotalEvaluatedFiles = len(combinedFileSizeIndex)
 	//log.Println("combinedFileSizeIndex before pruning:", duplicateFiles.TotalEvaluatedFiles)
 
-	// Prune FileMatches entries from map if below DuplicatesThreshold
-	combinedFileSizeIndex.PruneFileSizeIndex()
+	// Prune FileMatches entries from map if below our file duplicates threshold
+	combinedFileSizeIndex.PruneFileSizeIndex(config.FileDuplicatesThreshold)
 
 	// Potential duplicate files going off of file size only (inconclusive)
 	duplicateFiles.FileSizeMatchSets = len(combinedFileSizeIndex)
@@ -100,11 +101,11 @@ func main() {
 		}
 	}
 
-	// Remove FileMatches objects not meeting our DuplicatesThreshold value.
-	// Remaining FileMatches that meet `DuplicatesThreshold` are composed
-	// entirely of duplicate files (based on file hash).
+	// Remove FileMatches objects not meeting our file duplicates threshold
+	// value. Remaining FileMatches that meet our file duplicates value are
+	// composed entirely of duplicate files (based on file hash).
 	//log.Println("fileChecksumIndex before pruning:", len(fileChecksumIndex))
-	fileChecksumIndex.PruneFileChecksumIndex()
+	fileChecksumIndex.PruneFileChecksumIndex(config.FileDuplicatesThreshold)
 	duplicateFiles.FileHashMatchSets = len(fileChecksumIndex)
 	//log.Println("fileChecksumIndex after pruning:", len(fileChecksumIndex))
 
