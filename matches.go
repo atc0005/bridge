@@ -35,7 +35,7 @@ type FileMatch struct {
 	// Directory containing the file; analogue to Name() method
 	ParentDirectory string
 
-	// Checksum calculated for files meeting DuplicatesThreshold
+	// Checksum calculated for files meeting the duplicates threshold
 	Checksum SHA256Checksum
 }
 
@@ -201,15 +201,16 @@ func (fm FileMatch) GetCSVRow() []string {
 // PruneFileSizeIndex removes map entries with single-entry slices which do
 // not reflect potential duplicate files (i.e., duplicate file size !=
 // duplicate files)
-func (fi FileSizeIndex) PruneFileSizeIndex() {
+func (fi FileSizeIndex) PruneFileSizeIndex(duplicatesThreshold int) {
 
 	for key, fileMatches := range fi {
 
 		// every key is a file size
 		// every value is a slice of files of that file size
 
-		// Remove any FileMatches objects that would not contain duplicates
-		if len(fileMatches) < DuplicatesThreshold {
+		// Remove any FileMatches objects that do not contain a number of
+		// duplicate checksums meething our threshold
+		if len(fileMatches) < duplicatesThreshold {
 			delete(fi, key)
 		}
 	}
@@ -230,15 +231,16 @@ func (fi FileSizeIndex) GetTotalFilesCount() int {
 
 // PruneFileChecksumIndex removes map entries with single-entry slices which
 // do not reflect duplicate files.
-func (fi FileChecksumIndex) PruneFileChecksumIndex() {
+func (fi FileChecksumIndex) PruneFileChecksumIndex(duplicatesThreshold int) {
 
 	for key, fileMatches := range fi {
 
 		// every key is a file checksum
 		// every value is a slice of files of that file checksum
 
-		// Remove any FileMatches objects not composed of duplicate checksums
-		if len(fileMatches) < DuplicatesThreshold {
+		// Remove any FileMatches objects that do not contain a number of
+		// duplicate checksums meething our threshold
+		if len(fileMatches) < duplicatesThreshold {
 
 			// DEBUG level troubleshooting
 			//
