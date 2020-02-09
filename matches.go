@@ -491,11 +491,11 @@ func (fi FileChecksumIndex) PrintFileMatches() {
 
 			// TODO: Confirm that newline between file sets is useful
 			fmt.Fprintf(w,
-				"\n%s\t%s\t%s\t%s\t",
+				"\n%s\t%s\t%s\t%s\t%s",
 				file.ParentDirectory,
 				file.Name(),
 				file.SizeHR(),
-				file.Size(),
+				strconv.FormatInt(file.Size(), 10),
 				file.Checksum)
 			fmt.Fprintln(w)
 			w.Flush()
