@@ -121,7 +121,7 @@ This example illustrates using the application to process a single path,
 recursively.
 
 ```ShellSession
-./bridge.exe -recurse -path "/tmp/path1"
+./bridge.exe -recurse -path "/tmp/path1" -csvfile "path1-report.csv"
 ```
 
 ### Multiple paths, non-recursive
@@ -130,7 +130,7 @@ This example illustrates using the application to process multiple paths,
 without recursively evaluating any subdirectories.
 
 ```ShellSession
-./bridge.exe -path "/tmp/path1" -path "/tmp/path2"
+./bridge.exe -path "/tmp/path1" -path "/tmp/path2"  -csvfile "report.csv"
 ```
 
 ### Invalid flag
