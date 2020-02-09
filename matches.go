@@ -207,6 +207,20 @@ func (fi FileChecksumIndex) GenerateCSVHeaderRow() []string {
 	}
 }
 
+// GenerateEmptyCSVDataRow returns a string slice for use with a CSV Writer as a
+// empty data (non-header) row. This is used as a separator between sets of
+// duplicate files.
+func (fm FileMatch) GenerateEmptyCSVDataRow() []string {
+	return []string{
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+	}
+}
+
 // GenerateCSVDataRow returns a string slice for use with a CSV Writer as a
 // data (non-header) row
 func (fm FileMatch) GenerateCSVDataRow() []string {
@@ -426,6 +440,12 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 	//for key, fileMatches := range fi {
 	for _, fileMatches := range fi {
 
+		// TODO: Make this an external setting, either constant or via flag?
+		if err := w.Write(file.GenerateEmptyCSVDataRow()); err != nil {
+			// TODO: Use error wrapping instead?
+			return fmt.Errorf("error writing record to csv: %v", err)
+		}
+
 		for _, file := range fileMatches {
 			if err := w.Write(file.GenerateCSVDataRow()); err != nil {
 				// TODO: Use error wrapping instead?
@@ -469,8 +489,9 @@ func (fi FileChecksumIndex) PrintFileMatches() {
 
 		for _, file := range fileMatches {
 
+			// TODO: Confirm that newline between file sets is useful
 			fmt.Fprintf(w,
-				"%s\t%s\t%s\t%s\t",
+				"\n%s\t%s\t%s\t%s\t",
 				file.ParentDirectory,
 				file.Name(),
 				file.SizeHR(),
