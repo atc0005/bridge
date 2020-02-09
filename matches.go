@@ -200,7 +200,7 @@ func (fm FileMatch) GenerateCSVHeaderRow() []string {
 		"directory",
 		"file",
 		"size",
-		"size_in_bytes"
+		"size_in_bytes",
 		"checksum",
 		"remove_file",
 	}
@@ -213,7 +213,7 @@ func (fm FileMatch) GenerateCSVDataRow() []string {
 		fm.ParentDirectory,
 		fm.Name(),
 		fm.SizeHR(),
-		fm.Size() ,
+		fm.Size(),
 		fm.Checksum.String(),
 		"",
 	}
