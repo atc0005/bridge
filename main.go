@@ -141,11 +141,13 @@ func main() {
 	}
 	log.Printf("Successfully created CSV file: %q", config.CSVFile)
 
-	// Generate Excel workbook for review
-	// TODO: Implement better error handling
-	if err := fileChecksumIndex.WriteFileMatchesWorkbook(config.ExcelFile, duplicateFiles); err != nil {
-		log.Fatal(err)
+	// Generate Excel workbook for review IF user requested it
+	if config.ExcelFile != "" {
+		// TODO: Implement better error handling
+		if err := fileChecksumIndex.WriteFileMatchesWorkbook(config.ExcelFile, duplicateFiles); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("Successfully created workbook file: %q", config.ExcelFile)
 	}
-	log.Printf("Successfully created workbook file: %q", config.ExcelFile)
 
 }
