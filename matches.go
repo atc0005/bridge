@@ -194,8 +194,8 @@ func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
 }
 
 // GenerateCSVHeaderRow returns a string slice for use with a CSV Writer as a
-// header row
-func (fm FileMatch) GenerateCSVHeaderRow() []string {
+// header row.
+func (fi FileChecksumIndex) GenerateCSVHeaderRow() []string {
 	return []string{
 		"directory",
 		"file",
@@ -213,7 +213,7 @@ func (fm FileMatch) GenerateCSVDataRow() []string {
 		fm.ParentDirectory,
 		fm.Name(),
 		fm.SizeHR(),
-		fm.Size(),
+		string(fm.Size()),
 		fm.Checksum.String(),
 		"",
 	}
@@ -415,7 +415,7 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 	//w := csv.NewWriter(os.Stdout)
 	w := csv.NewWriter(file)
 
-	if err := w.Write(file.GenerateCSVHeaderRow()); err != nil {
+	if err := w.Write(fi.GenerateCSVHeaderRow()); err != nil {
 		// at this point we're still trying to write to a non-flushed buffer,
 		// so any failures are highly unexpected
 		// TODO: Wrap error
