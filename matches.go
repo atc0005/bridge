@@ -214,7 +214,7 @@ func (fm FileMatch) GenerateCSVDataRow() []string {
 		fm.ParentDirectory,
 		fm.Name(),
 		fm.SizeHR(),
-		strconv.Itoa(fm.Size()),
+		strconv.FormatInt(fm.Size(), 10),
 		fm.Checksum.String(),
 		"",
 	}
