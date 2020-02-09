@@ -20,13 +20,13 @@ func main() {
 	config := Config{}
 
 	flag.Var(&config.Paths, "path", "Path to process. This flag may be repeated for each additional path to evaluate.")
-	flag.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit for evaluation. Files smaller than this will be skipped.")
+	flag.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit (in bytes) for evaluation. Files smaller than this will be skipped.")
 	flag.IntVar(&config.FileDuplicatesThreshold, "duplicates", 2, "Number of files of the same file size needed before duplicate validation logic is applied.")
 	flag.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
-	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump CSV file equivalent to console.")
+	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
 	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
-	flag.StringVar(&config.CSVFile, "csvfile", "", "The fully-qualified path to a CSV file that this application should generate.")
-	flag.StringVar(&config.ExcelFile, "excelfile", "", "The fully-qualified path to an Excel file that this application should generate.")
+	flag.StringVar(&config.CSVFile, "csvfile", "", "The (required) fully-qualified path to a CSV file that this application should generate.")
+	flag.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
 
 	// parse flag definitions from the argument list
 	flag.Parse()
