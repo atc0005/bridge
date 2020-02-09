@@ -26,6 +26,22 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.3.0] - 2020-02-09
+
+### Added
+
+- Echo Go version used in CI workflows so that it is saved in CI output logs
+- Flag for duplicates threshold
+- Flag for size threshold
+
+### Fixed
+
+- Add missing (and required) `csvfile` flag in README examples
+- Add missing guard against creation of Microsoft Excel file when user did not
+  request it
+- Emphasize that the `csvfile` flag is required, `excelfile` flag is optional
+- Miscellaneous docs cleanup
+
 ## [v0.2.0] - 2020-01-15
 
 ### Added
@@ -68,7 +84,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.3.0...HEAD
+[v0.3.0]: https://github.com/atc0005/bridge/releases/tag/v0.3.0
 [v0.2.0]: https://github.com/atc0005/bridge/releases/tag/v0.2.0
 [v0.1.1]: https://github.com/atc0005/bridge/releases/tag/v0.1.1
 [v0.1.0]: https://github.com/atc0005/bridge/releases/tag/v0.1.0
