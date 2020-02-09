@@ -122,6 +122,20 @@ func (c Config) Validate() error {
 		}
 	}
 
+	switch {
+	case c.InputCSVFile == "":
+		return fmt.Errorf("missing fully-qualified path to CSV file to process")
+	case !PathExists(filepath.Dir(c.InputCSVFile)):
+		return fmt.Errorf("parent directory for specified CSV file to process does not exist")
+	}
+
+	// Optional flag, optional file backups
+	if c.BackupDirectory != "" {
+		if !PathExists(c.BackupDirectory) {
+			return fmt.Errorf("directory for backup files does not exist: %q", c.BackupDirectory)
+		}
+	}
+
 	// RecursiveSearch is a boolean flag. The flag package takes care of
 	// assigning a usable default value, so nothing to do here.
 	//
