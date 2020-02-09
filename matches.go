@@ -193,9 +193,30 @@ func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
 	return err
 }
 
-// GetCSVRow returns a string slice for use with a CSV Writer
-func (fm FileMatch) GetCSVRow() []string {
-	return []string{fm.ParentDirectory, fm.Name(), fm.SizeHR(), fm.Checksum.String()}
+// GenerateCSVHeaderRow returns a string slice for use with a CSV Writer as a
+// header row
+func (fm FileMatch) GenerateCSVHeaderRow() []string {
+	return []string{
+		"directory",
+		"file",
+		"size",
+		"size_in_bytes"
+		"checksum",
+		"remove_file",
+	}
+}
+
+// GenerateCSVDataRow returns a string slice for use with a CSV Writer as a
+// data (non-header) row
+func (fm FileMatch) GenerateCSVDataRow() []string {
+	return []string{
+		fm.ParentDirectory,
+		fm.Name(),
+		fm.SizeHR(),
+		fm.Size() ,
+		fm.Checksum.String(),
+		"",
+	}
 }
 
 // PruneFileSizeIndex removes map entries with single-entry slices which do
@@ -247,7 +268,7 @@ func (fi FileChecksumIndex) PruneFileChecksumIndex(duplicatesThreshold int) {
 			// fmt.Println("Removing key:", key)
 			//
 			// for _, fileMatch := range fileMatches {
-			// 	fmt.Println(fileMatch.GetCSVRow())
+			// 	fmt.Println(fileMatch.GenerateCSVDataRow())
 			// }
 
 			delete(fi, key)
@@ -353,7 +374,8 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 		f.SetCellValue(duplicateFileSetIndex.String(), "A1", "directory")
 		f.SetCellValue(duplicateFileSetIndex.String(), "B1", "file")
 		f.SetCellValue(duplicateFileSetIndex.String(), "C1", "size")
-		f.SetCellValue(duplicateFileSetIndex.String(), "D1", "checksum")
+		f.SetCellValue(duplicateFileSetIndex.String(), "D1", "size in bytes")
+		f.SetCellValue(duplicateFileSetIndex.String(), "E1", "checksum")
 
 		for index, file := range fileMatches {
 
@@ -364,7 +386,8 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("A%d", row), file.ParentDirectory)
 			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("B%d", row), file.Name())
 			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("C%d", row), file.SizeHR())
-			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("D%d", row), file.Checksum.String())
+			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("D%d", row), file.Size())
+			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("E%d", row), file.Checksum.String())
 
 		}
 
@@ -392,9 +415,7 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 	//w := csv.NewWriter(os.Stdout)
 	w := csv.NewWriter(file)
 
-	csvHeader := []string{"directory", "file", "size", "checksum"}
-
-	if err := w.Write(csvHeader); err != nil {
+	if err := w.Write(file.GenerateCSVHeaderRow()); err != nil {
 		// at this point we're still trying to write to a non-flushed buffer,
 		// so any failures are highly unexpected
 		// TODO: Wrap error
@@ -405,7 +426,7 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 	for _, fileMatches := range fi {
 
 		for _, file := range fileMatches {
-			if err := w.Write(file.GetCSVRow()); err != nil {
+			if err := w.Write(file.GenerateCSVDataRow()); err != nil {
 				// TODO: Use error wrapping instead?
 				return fmt.Errorf("error writing record to csv: %v", err)
 			}
@@ -442,11 +463,18 @@ func (fi FileChecksumIndex) PrintFileMatches() {
 	for _, fileMatches := range fi {
 
 		// Header row in output
-		fmt.Fprintln(w, "Directory\tFile\tSize\tChecksum\t")
+		fmt.Fprintln(w,
+			"Directory\tFile\tSize\tSize in bytes\tChecksum\t")
 
 		for _, file := range fileMatches {
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t", file.ParentDirectory, file.Name(), file.SizeHR(), file.Checksum)
+			fmt.Fprintf(w,
+				"%s\t%s\t%s\t%s\t",
+				file.ParentDirectory,
+				file.Name(),
+				file.SizeHR(),
+				file.Size(),
+				file.Checksum)
 			fmt.Fprintln(w)
 			w.Flush()
 		}
