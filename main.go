@@ -25,8 +25,13 @@ func main() {
 	flag.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
 	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
 	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
-	flag.StringVar(&config.CSVFile, "csvfile", "", "The (required) fully-qualified path to a CSV file that this application should generate.")
+	flag.StringVar(&config.OutputCSVFile, "csvfile", "", "The (required) fully-qualified path to a CSV file that this application should generate.")
 	flag.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
+
+	flag.BoolVar(&config.DryRun, "dry-run", false, "Pretend to remove files, echo what would have been done to stdout. Setting this false does not enable file removal.")
+	flag.BoolVar(&config.PruneFiles, "prune", false, "Enable file removal behavior. This option requires that the input CSV file be specified.")
+	flag.StringVar(&config.InputCSVFile, "input-csvfile", "", "The fully-qualified path to a CSV file that this application should use for file removal decisions.")
+	flag.StringVar(&config.BackupDirectory, "backup-dir", "", "The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.")
 
 	// parse flag definitions from the argument list
 	flag.Parse()
@@ -136,10 +141,10 @@ func main() {
 
 	// Use CSV writer to generate an input file in order to take action
 	// TODO: Implement better error handling
-	if err := fileChecksumIndex.WriteFileMatchesCSV(config.CSVFile); err != nil {
+	if err := fileChecksumIndex.WriteFileMatchesCSV(config.OutputCSVFile); err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Successfully created CSV file: %q", config.CSVFile)
+	log.Printf("Successfully created CSV file: %q", config.OutputCSVFile)
 
 	// Generate Excel workbook for review IF user requested it
 	if config.ExcelFile != "" {

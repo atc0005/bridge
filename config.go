@@ -70,13 +70,27 @@ type Config struct {
 	// needed before duplicate validation logic is applied.
 	FileDuplicatesThreshold int
 
-	// CSVFile is the fully-qualified path to a CSV file that this application
+	// OutputCSVFile is the fully-qualified path to a CSV file that this application
 	// should generate
-	CSVFile string
+	OutputCSVFile string
+
+	// OutputCSVFile is the fully-qualified path to a CSV file that this application
+	// should use for file removal decisions
+	InputCSVFile string
 
 	// ExcelFile is the fully-qualified path to an Excel file that this
 	// application should generate
 	ExcelFile string
+
+	// DryRun allows simulation of file removal behavior.
+	DryRun bool
+
+	// PruneFiles enables file removal based on provided input CSV file
+	PruneFiles bool
+
+	// BackupDirectory is writable directory path where files should be
+	// relocated instead of removed
+	BackupDirectory string
 }
 
 // Validate verifies all struct fields have been provided acceptable values
@@ -95,9 +109,9 @@ func (c Config) Validate() error {
 	}
 
 	switch {
-	case c.CSVFile == "":
+	case c.OutputCSVFile == "":
 		return fmt.Errorf("missing fully-qualified path to CSV file to create")
-	case !PathExists(filepath.Dir(c.CSVFile)):
+	case !PathExists(filepath.Dir(c.OutputCSVFile)):
 		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
 	}
 
