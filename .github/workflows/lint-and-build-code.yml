@@ -80,7 +80,7 @@ jobs:
           make linting
 
       - name: Build with default options
-        run: go build -v .
+        run: go build -v ./cmd/bridge/
 
       - name: Build using project Makefile
         run: make all

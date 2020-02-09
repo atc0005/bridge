@@ -17,21 +17,22 @@
 # https://www.gnu.org/software/make/manual/html_node/Recipe-Syntax.html#Recipe-Syntax
 # https://www.gnu.org/software/make/manual/html_node/Special-Variables.html#Special-Variables
 
+APPNAME					:= bridge
 
-OUTPUTBASEFILENAME		= bridge
+OUTPUTDIR 				:= release_assets
 
 # https://gist.github.com/TheHippo/7e4d9ec4b7ed4c0d7a39839e6800cc16
-VERSION 				= $(shell git describe --always --long --dirty)
+VERSION 				:= $(shell git describe --always --long --dirty)
 
 # The default `go build` process embeds debugging information. Building
 # without that debugging information reduces the binary size by around 28%.
-BUILDCMD				=	go build -a -ldflags="-s -w -X main.version=${VERSION}"
-GOCLEANCMD				=	go clean
-GITCLEANCMD				= 	git clean -xfd
-CHECKSUMCMD				=	sha256sum -b
+BUILDCMD				:=	go build -a -ldflags="-s -w -X main.version=${VERSION}"
+GOCLEANCMD				:=	go clean
+GITCLEANCMD				:= 	git clean -xfd
+CHECKSUMCMD				:=	sha256sum -b
 
-LINTINGCMD				=   bash testing/run_linting_checks.sh
-LINTINSTALLCMD			=   bash testing/install_linting_tools.sh
+LINTINGCMD				:=   bash testing/run_linting_checks.sh
+LINTINSTALLCMD			:=   bash testing/install_linting_tools.sh
 
 .DEFAULT_GOAL := help
 
@@ -45,9 +46,9 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean          go clean to remove local build artifacts, temporary files, etc"
 	@echo "  pristine       go clean and git clean local changes"
-	@echo "  all            cross-compile for multiple operating systems"
-	@echo "  windows        to generate a binary file for Windows"
-	@echo "  linux          to generate a binary file for Linux distros"
+	@echo "  all            to generate binary files for Windows and Linux"
+	@echo "  linux          to generate binary files for Linux only"
+	@echo "  windows        to generate binary files for Windows only"
 	@echo "  lintinstall    use wrapper script to install common linting tools"
 	@echo "  linting        use wrapper script to run common linting checks"
 	@echo "  gotests        go test recursively, verbosely"
@@ -71,14 +72,9 @@ goclean:
 	@echo "Removing object files and cached files ..."
 	@$(GOCLEANCMD)
 	@echo "Removing any existing release assets"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-linux-386)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-linux-386.sha256)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-linux-amd64)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-linux-amd64.sha256)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-windows-386.exe)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-windows-386.exe.sha256)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-windows-amd64.exe)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-windows-amd64.exe.sha256)"
+	@mkdir -p "$(OUTPUTDIR)"
+	@rm -vf $(wildcard ${OUTPUTDIR}/*/*-linux-*)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*/*-windows-*)
 
 # Setup alias for user reference
 clean: goclean
@@ -89,29 +85,40 @@ gitclean:
 
 pristine: goclean gitclean
 
-
 # https://stackoverflow.com/questions/3267145/makefile-execute-another-target
 all: clean windows linux
 	@echo "Completed all cross-platform builds ..."
 
 windows:
-	@echo "Building release assets for Windows ..."
-	@echo "Building 386 binary"
-	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTBASEFILENAME)-$(VERSION)-windows-386.exe
-	@echo "Building amd64 binary"
-	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTBASEFILENAME)-$(VERSION)-windows-amd64.exe
+	@echo "Building release assets for windows ..."
+
+	@mkdir -p $(OUTPUTDIR)/$(APPNAME)
+
+	@echo "Building 386 binaries"
+	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe ${PWD}/cmd/$(APPNAME)
+
+	@echo "Building amd64 binaries"
+	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe ${PWD}/cmd/$(APPNAME)
+
 	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) $(OUTPUTBASEFILENAME)-$(VERSION)-windows-386.exe > $(OUTPUTBASEFILENAME)-$(VERSION)-windows-386.exe.sha256
-	@$(CHECKSUMCMD) $(OUTPUTBASEFILENAME)-$(VERSION)-windows-amd64.exe > $(OUTPUTBASEFILENAME)-$(VERSION)-windows-amd64.exe.sha256
-	@echo "Completed build for Windows"
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe.sha256
+
+	@echo "Completed build tasks for windows"
 
 linux:
-	@echo "Building release assets for Linux ..."
-	@echo "Building 386 binary"
-	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTBASEFILENAME)-$(VERSION)-linux-386
-	@echo "Building amd64 binary"
-	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTBASEFILENAME)-$(VERSION)-linux-amd64
+	@echo "Building release assets for linux ..."
+
+	@mkdir -p $(OUTPUTDIR)/$(APPNAME)
+
+	@echo "Building 386 binaries"
+	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386 ${PWD}/cmd/$(APPNAME)
+
+	@echo "Building amd64 binaries"
+	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64 ${PWD}/cmd/$(APPNAME)
+
 	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) $(OUTPUTBASEFILENAME)-$(VERSION)-linux-386 > $(OUTPUTBASEFILENAME)-$(VERSION)-linux-386.sha256
-	@$(CHECKSUMCMD) $(OUTPUTBASEFILENAME)-$(VERSION)-linux-amd64 > $(OUTPUTBASEFILENAME)-$(VERSION)-linux-amd64.sha256
-	@echo "Completed build for Linux"
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386" > "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386.sha256"
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64" > "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64.sha256"
+
+	@echo "Completed build tasks for linux"

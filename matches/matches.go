@@ -5,19 +5,36 @@
 // Licensed under the MIT License. See LICENSE file in the project root for
 // full license information.
 
-package main
+// Package matches provides types and functions intended to help with
+// collecting and validating file search results against required criteria.
+package matches
 
 import (
 	"encoding/csv"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
+	"strconv"
 	"text/tabwriter"
 
+	"github.com/atc0005/bridge/checksums"
+	"github.com/atc0005/bridge/paths"
 	"github.com/atc0005/bridge/units"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
+)
+
+// CSV header names referenced from both inside and outside of the package
+const (
+	CSVDirectoryColumnHeaderName            string = "directory"
+	CSVFileColumnHeaderName                 string = "file"
+	CSVSizeColumnHeaderName                 string = "size"
+	CSVSizeInBytesDirectoryColumnHeaderName string = "size_in_bytes"
+	CSVChecksumColumnHeaderName             string = "checksum"
+	CSVRemoveFileColumnHeaderName           string = "remove_file"
 )
 
 // FileMatch represents a superset of statistics (including os.FileInfo) for a
@@ -36,7 +53,7 @@ type FileMatch struct {
 	ParentDirectory string
 
 	// Checksum calculated for files meeting the duplicates threshold
-	Checksum SHA256Checksum
+	Checksum checksums.SHA256Checksum
 }
 
 // FileMatches is a slice of FileMatch objects that represents the search
@@ -55,7 +72,7 @@ type FileSizeIndex map[int64]FileMatches
 // FileSizeIndex. After additional pruning to remove any single-entry
 // FileMatches "values", this data structure represents confirmed duplicate
 // files.
-type FileChecksumIndex map[SHA256Checksum]FileMatches
+type FileChecksumIndex map[checksums.SHA256Checksum]FileMatches
 
 // DuplicateFilesSummary is a collection of the metadata calculated from
 // evaluating duplicate files. This metadata is displayed via a variety of
@@ -78,6 +95,9 @@ type DuplicateFilesSummary struct {
 
 	// Wasted space for duplicate file sets in bytes
 	WastedSpace int64
+
+	// DuplicateCount represents the number of duplicated files
+	DuplicateCount int
 }
 
 // TotalFileSize returns the cumulative size of all files in the slice in bytes
@@ -155,6 +175,35 @@ func MergeFileSizeIndexes(fileSizeIndexes ...FileSizeIndex) FileSizeIndex {
 	return mergedFileSizeIndex
 }
 
+// UpdateChecksums acts as a wrapper around the UpdateChecksums method for
+// FileMatches objects
+func (fi FileSizeIndex) UpdateChecksums(ignoreErrors bool) error {
+
+	//for key, fileMatches := range combinedFileSizeIndex {
+	for _, fileMatches := range fi {
+
+		// every key is a file size
+		// every value is a slice of files of that file size
+
+		if err := fileMatches.UpdateChecksums(ignoreErrors); err != nil {
+
+			// DEBUG
+			log.Println("Error encountered:", err)
+			if !ignoreErrors {
+				return err
+			}
+			// DEBUG
+			log.Println("Ignoring error as requested")
+			continue
+		}
+	}
+
+	// TODO: Return bool and error instead of just error?
+	// This would allow returning true as in success, but also
+	// provide the original error that we chose to ignore.
+	return nil
+}
+
 // UpdateChecksums generates checksum values for each file tracked by a
 // FileMatch entry and updates the associated FileMatch.Checksum field value
 func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
@@ -167,7 +216,7 @@ func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
 
 		// DEBUG
 		//log.Println("Generating checksum for:", file.FullPath)
-		result, err := GenerateCheckSum(file.FullPath)
+		result, err := checksums.GenerateCheckSum(file.FullPath)
 		if err != nil {
 
 			if !ignoreErrors {
@@ -193,9 +242,208 @@ func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
 	return err
 }
 
-// GetCSVRow returns a string slice for use with a CSV Writer
-func (fm FileMatch) GetCSVRow() []string {
-	return []string{fm.ParentDirectory, fm.Name(), fm.SizeHR(), fm.Checksum.String()}
+// GenerateCSVHeaderRow returns a string slice for use with a CSV Writer as a
+// header row.
+func (fi FileChecksumIndex) GenerateCSVHeaderRow() []string {
+	return []string{
+		CSVDirectoryColumnHeaderName,
+		CSVFileColumnHeaderName,
+		CSVSizeColumnHeaderName,
+		CSVSizeInBytesDirectoryColumnHeaderName,
+		CSVChecksumColumnHeaderName,
+		CSVRemoveFileColumnHeaderName,
+	}
+}
+
+// GenerateEmptyCSVDataRow returns a string slice for use with a CSV Writer as a
+// empty data (non-header) row. This is used as a separator between sets of
+// duplicate files.
+func (fm FileMatches) GenerateEmptyCSVDataRow() []string {
+	return []string{
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+	}
+}
+
+// GenerateCSVDataRow returns a string slice for use with a CSV Writer as a
+// data (non-header) row
+func (fm FileMatch) GenerateCSVDataRow() []string {
+	return []string{
+		fm.ParentDirectory,
+		fm.Name(),
+		fm.SizeHR(),
+		strconv.FormatInt(fm.Size(), 10),
+		fm.Checksum.String(),
+		"",
+	}
+}
+
+// NewFileSizeIndex optionally recursively processes a provided path and returns a
+// slice of FileMatch objects
+func NewFileSizeIndex(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int64, dirs ...string) (FileSizeIndex, error) {
+
+	combinedFileSizeIndex := make(FileSizeIndex)
+
+	for _, path := range dirs {
+
+		if !paths.PathExists(path) {
+			return nil, fmt.Errorf("provided path %q does not exist", path)
+		}
+
+		// DEBUG
+		log.Println("Path exists:", path)
+
+		// TODO: Call ProcessPath here
+		fileSizeIndex, err := ProcessPath(recursiveSearch, ignoreErrors, fileSizeThreshold, path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to process path %q: %v", path, err)
+		}
+
+		// FIXME: This needs to occur at the end of each loop?
+		combinedFileSizeIndex = MergeFileSizeIndexes(combinedFileSizeIndex, fileSizeIndex)
+
+	}
+
+	// TODO: Safe to return err here, relying on it being nil if no errors
+	// were caught earlier?
+	// return combinedFileSizeIndex, err
+	return combinedFileSizeIndex, nil
+
+}
+
+// ProcessPath optionally recursively processes a provided path and returns a
+// slice of FileMatch objects
+func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int64, path string) (FileSizeIndex, error) {
+
+	fileSizeIndex := make(FileSizeIndex)
+	var err error
+
+	//log.Println("RecursiveSearch:", recursiveSearch)
+
+	if recursiveSearch {
+
+		// Walk walks the file tree rooted at path, calling the anonymous function
+		// for each file or directory in the tree, including path. All errors that
+		// arise visiting files and directories are filtered by the anonymous
+		// function. The files are walked in lexical order, which makes the output
+		// deterministic but means that for very large directories Walk can be
+		// inefficient. Walk does not follow symbolic links.
+		err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+
+			// If an error is received, check to see whether we should ignore
+			// it or return it. If we return a non-nil error, this will stop
+			// the filepath.Walk() function from continuing to walk the path,
+			// and your main function will immediately move to the next line.
+			if err != nil {
+				if !ignoreErrors {
+					return err
+				}
+
+				// WARN
+				log.Println("Error encountered:", err)
+				log.Println("Ignoring error as requested")
+
+			}
+
+			// make sure we're not working with the root directory itself
+			if path != "." {
+
+				// ignore directories
+				if info.IsDir() {
+					return nil
+				}
+
+				// ignore files below the size threshold
+				if info.Size() < fileSizeThreshold {
+					return nil
+				}
+
+				// Since by this point we have already filtered out
+				// directories, `path` represents both the containing
+				// directory and the filename of the file being examined. Here
+				// we attempt to resolve the fully-qualified directory path
+				// containing the file for later use.
+				fullyQualifiedDirPath, err := filepath.Abs(filepath.Dir(path))
+				if err != nil {
+					return err
+				}
+
+				// If we made it to this point, then we must assume that the file
+				// has met all criteria to be evaluated by this application.
+				// Let's add the file to our slice of files of the same size
+				// using our index based on file size.
+				fileSizeIndex[info.Size()] = append(
+					fileSizeIndex[info.Size()],
+					FileMatch{
+						FileInfo: info,
+						FullPath: path,
+						// Record fully-qualified path that can be referenced
+						// from any location in the filesystem.
+						ParentDirectory: fullyQualifiedDirPath,
+					})
+			}
+
+			return err
+		})
+
+	} else {
+
+		// If recursiveSearch is not enabled, process just the provided path
+
+		// err is already declared earlier at a higher scope, so do not
+		// redeclare here
+		var files []os.FileInfo
+		files, err = ioutil.ReadDir(path)
+
+		if err != nil {
+			// TODO: Wrap error?
+			log.Printf("Error from ioutil.ReadDir(): %s", err)
+
+			return fileSizeIndex, err
+		}
+
+		// Use []os.FileInfo returned from ioutil.ReadDir() to build slice of
+		// FileMatch objects
+		for _, file := range files {
+
+			// ignore directories
+			if file.IsDir() {
+				continue
+			}
+
+			// ignore files below the size threshold
+			if file.Size() < fileSizeThreshold {
+				continue
+			}
+
+			// `path` is a flat directory structure (we are not using
+			// recursion in this code path)
+			fullyQualifiedDirPath, err := filepath.Abs(path)
+			if err != nil {
+				return nil, err
+			}
+
+			// If we made it to this point, then we must assume that the file
+			// has met all criteria to be evaluated by this application. Let's
+			// add the file to our slice of files of the same size using our
+			// index based on file size.
+			fileSizeIndex[file.Size()] = append(
+				fileSizeIndex[file.Size()],
+				FileMatch{
+					FileInfo: file,
+					FullPath: filepath.Join(path, file.Name()),
+					// Record fully-qualified path that can be referenced
+					// from any location in the filesystem.
+					ParentDirectory: fullyQualifiedDirPath,
+				})
+		}
+	}
+
+	return fileSizeIndex, err
 }
 
 // PruneFileSizeIndex removes map entries with single-entry slices which do
@@ -229,6 +477,22 @@ func (fi FileSizeIndex) GetTotalFilesCount() int {
 	return files
 }
 
+// NewFileChecksumIndex takes in a FileSizeIndex, generates checksums for
+// FileMatch objects and then returns a FileChecksumIndex and an error, if
+// one was encountered.
+func NewFileChecksumIndex(fi FileSizeIndex) FileChecksumIndex {
+	fileChecksumIndex := make(FileChecksumIndex)
+	for _, fileMatches := range fi {
+		for _, fileMatch := range fileMatches {
+			fileChecksumIndex[fileMatch.Checksum] = append(
+				fileChecksumIndex[fileMatch.Checksum],
+				fileMatch)
+		}
+	}
+
+	return fileChecksumIndex
+}
+
 // PruneFileChecksumIndex removes map entries with single-entry slices which
 // do not reflect duplicate files.
 func (fi FileChecksumIndex) PruneFileChecksumIndex(duplicatesThreshold int) {
@@ -247,7 +511,7 @@ func (fi FileChecksumIndex) PruneFileChecksumIndex(duplicatesThreshold int) {
 			// fmt.Println("Removing key:", key)
 			//
 			// for _, fileMatch := range fileMatches {
-			// 	fmt.Println(fileMatch.GetCSVRow())
+			// 	fmt.Println(fileMatch.GenerateCSVDataRow())
 			// }
 
 			delete(fi, key)
@@ -270,7 +534,7 @@ func (fi FileChecksumIndex) GetTotalFilesCount() int {
 
 // GetWastedSpace calculates the wasted space from all confirmed duplicate
 // files
-func (fi FileChecksumIndex) GetWastedSpace() (int64, error) {
+func (fi FileChecksumIndex) GetWastedSpace() int64 {
 	var wastedSpace int64
 
 	// Loop over each duplicate file set in the file checksum index
@@ -283,15 +547,16 @@ func (fi FileChecksumIndex) GetWastedSpace() (int64, error) {
 		duplicateFileMatchEntries := (len(fileMatches) - 1)
 
 		// FIXME: This shouldn't be reachable
-		if len(fileMatches) == 0 {
-			return 0, fmt.Errorf("attempted to calculate wasted space of empty duplicate file set")
-		}
+		// if len(fileMatches) == 0 {
+		// 	return 0, fmt.Errorf("attempted to calculate wasted space of empty duplicate file set")
+		// }
 
 		fileSize := fileMatches[0].Size()
 		wastedSpace += int64(duplicateFileMatchEntries) * fileSize
 	}
 
-	return wastedSpace, nil
+	//return wastedSpace, nil
+	return wastedSpace
 }
 
 // GetDuplicateFilesCount returns the number of non-original files in a
@@ -301,6 +566,7 @@ func (fi FileChecksumIndex) GetDuplicateFilesCount() int {
 	var duplicateFiles int
 
 	for _, fileMatches := range fi {
+		// subtract one so that we don't count the original as a duplicate
 		duplicateFiles += (len(fileMatches) - 1)
 	}
 
@@ -310,6 +576,10 @@ func (fi FileChecksumIndex) GetDuplicateFilesCount() int {
 // WriteFileMatchesWorkbook is a prototype method to generate an Excel
 // workbook from duplicate file details
 func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary DuplicateFilesSummary) error {
+
+	if !paths.PathExists(filepath.Dir(filename)) {
+		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
+	}
 
 	f := excelize.NewFile()
 
@@ -353,7 +623,8 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 		f.SetCellValue(duplicateFileSetIndex.String(), "A1", "directory")
 		f.SetCellValue(duplicateFileSetIndex.String(), "B1", "file")
 		f.SetCellValue(duplicateFileSetIndex.String(), "C1", "size")
-		f.SetCellValue(duplicateFileSetIndex.String(), "D1", "checksum")
+		f.SetCellValue(duplicateFileSetIndex.String(), "D1", "size in bytes")
+		f.SetCellValue(duplicateFileSetIndex.String(), "E1", "checksum")
 
 		for index, file := range fileMatches {
 
@@ -364,7 +635,8 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("A%d", row), file.ParentDirectory)
 			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("B%d", row), file.Name())
 			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("C%d", row), file.SizeHR())
-			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("D%d", row), file.Checksum.String())
+			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("D%d", row), file.Size())
+			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("E%d", row), file.Checksum.String())
 
 		}
 
@@ -381,7 +653,11 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 
 // WriteFileMatchesCSV writes duplicate files recorded in a FileChecksumIndex
 // to the specified CSV file.
-func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
+func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetweenSets bool) error {
+
+	if !paths.PathExists(filepath.Dir(filename)) {
+		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
+	}
 
 	file, err := os.Create(filename)
 	if err != nil {
@@ -392,9 +668,7 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 	//w := csv.NewWriter(os.Stdout)
 	w := csv.NewWriter(file)
 
-	csvHeader := []string{"directory", "file", "size", "checksum"}
-
-	if err := w.Write(csvHeader); err != nil {
+	if err := w.Write(fi.GenerateCSVHeaderRow()); err != nil {
 		// at this point we're still trying to write to a non-flushed buffer,
 		// so any failures are highly unexpected
 		// TODO: Wrap error
@@ -404,8 +678,16 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 	//for key, fileMatches := range fi {
 	for _, fileMatches := range fi {
 
+		// This can be useful when focusing just on the sets themselves.
+		if blankLineBetweenSets {
+			if err := w.Write(fileMatches.GenerateEmptyCSVDataRow()); err != nil {
+				// TODO: Use error wrapping instead?
+				return fmt.Errorf("error writing record to csv: %v", err)
+			}
+		}
+
 		for _, file := range fileMatches {
-			if err := w.Write(file.GetCSVRow()); err != nil {
+			if err := w.Write(file.GenerateCSVDataRow()); err != nil {
 				// TODO: Use error wrapping instead?
 				return fmt.Errorf("error writing record to csv: %v", err)
 			}
@@ -431,7 +713,45 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 // PrintFileMatches prints duplicate files recorded in a FileChecksumIndex to
 // stdout for development or troubleshooting purposes. See also
 // WriteFileMatches for the expected production output method.
-func (fi FileChecksumIndex) PrintFileMatches() {
+func (fi FileChecksumIndex) PrintFileMatches(blankLineBetweenSets bool) {
+
+	w := new(tabwriter.Writer)
+	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
+
+	// Format in tab-separated columns
+	//w.Init(os.Stdout, 16, 8, 8, '\t', 0)
+	w.Init(os.Stdout, 8, 8, 4, '\t', 0)
+
+	// Header row in output
+	fmt.Fprintln(w,
+		"Directory\tFile\tSize\tChecksum\t")
+	for _, fileMatches := range fi {
+		for _, file := range fileMatches {
+
+			// TODO: Confirm that newline between file sets is useful
+			fmt.Fprintf(w,
+				"%s\t%s\t%s\t%s\n",
+				file.ParentDirectory,
+				file.Name(),
+				file.SizeHR(),
+				file.Checksum)
+		}
+
+		// This throws off cohesive formatting across all sets, but can be
+		// useful when focusing just on the sets themselves.
+		if blankLineBetweenSets {
+			fmt.Fprintln(w)
+		}
+
+	}
+
+	fmt.Fprintln(w)
+	w.Flush()
+}
+
+// PrintSummary is used to generate a basic summary report of file metadata
+// collected while evaluating files for potential duplicates.
+func (dfs DuplicateFilesSummary) PrintSummary() {
 
 	w := new(tabwriter.Writer)
 	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
@@ -439,18 +759,16 @@ func (fi FileChecksumIndex) PrintFileMatches() {
 	// Format in tab-separated columns
 	w.Init(os.Stdout, 8, 8, 5, '\t', 0)
 
-	for _, fileMatches := range fi {
+	// TODO: Use tabwriter to generate summary report?
+	fmt.Fprintf(w, "%d\tevaluated files in specified paths\n", dfs.TotalEvaluatedFiles)
+	fmt.Fprintf(w, "%d\tpotential duplicate file sets found using file size\n", dfs.FileSizeMatchSets)
+	fmt.Fprintf(w, "%d\tconfirmed duplicate file sets found using file hash\n", dfs.FileHashMatchSets)
+	fmt.Fprintf(w, "%d\tfiles with identical file size\n", dfs.FileSizeMatches)
+	fmt.Fprintf(w, "%d\tfiles with identical file hash\n", dfs.FileHashMatches)
+	fmt.Fprintf(w, "%d\tduplicate files\n", dfs.DuplicateCount)
+	fmt.Fprintf(w, "%s\twasted space for duplicate file sets\n", units.ByteCountIEC(dfs.WastedSpace))
+	fmt.Fprintln(w)
 
-		// Header row in output
-		fmt.Fprintln(w, "Directory\tFile\tSize\tChecksum\t")
-
-		for _, file := range fileMatches {
-
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t", file.ParentDirectory, file.Name(), file.SizeHR(), file.Checksum)
-			fmt.Fprintln(w)
-			w.Flush()
-		}
-
-	}
+	w.Flush()
 
 }
