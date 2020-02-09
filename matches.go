@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"text/tabwriter"
 
 	"github.com/atc0005/bridge/units"
@@ -213,7 +214,7 @@ func (fm FileMatch) GenerateCSVDataRow() []string {
 		fm.ParentDirectory,
 		fm.Name(),
 		fm.SizeHR(),
-		string(fm.Size()),
+		strconv.Itoa(fm.Size()),
 		fm.Checksum.String(),
 		"",
 	}
