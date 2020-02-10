@@ -5,12 +5,17 @@
 // Licensed under the MIT License. See LICENSE file in the project root for
 // full license information.
 
-package main
+// Package config provides types and functions to collect, validate and apply
+// user-provided settings.
+package config
 
 import (
+	"flag"
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/atc0005/bridge/paths"
 )
 
 // multiValueFlag is a custom type that satisfies the flag.Value interface in
@@ -93,6 +98,35 @@ type Config struct {
 	BackupDirectory string
 }
 
+// NewConfig is a factory function that produces a new Config object based
+// on user provided flag values.
+func NewConfig() (*Config, error) {
+
+	config := Config{}
+
+	flag.Var(&config.Paths, "path", "Path to process. This flag may be repeated for each additional path to evaluate.")
+	flag.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit (in bytes) for evaluation. Files smaller than this will be skipped.")
+	flag.IntVar(&config.FileDuplicatesThreshold, "duplicates", 2, "Number of files of the same file size needed before duplicate validation logic is applied.")
+	flag.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
+	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
+	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
+	flag.StringVar(&config.OutputCSVFile, "csvfile", "", "The (required) fully-qualified path to a CSV file that this application should generate.")
+	flag.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
+	flag.BoolVar(&config.DryRun, "dry-run", false, "Pretend to remove files, echo what would have been done to stdout. Setting this false does not enable file removal.")
+	flag.BoolVar(&config.PruneFiles, "prune", false, "Enable file removal behavior. This option requires that the input CSV file be specified.")
+	flag.StringVar(&config.InputCSVFile, "input-csvfile", "", "The fully-qualified path to a CSV file that this application should use for file removal decisions.")
+	flag.StringVar(&config.BackupDirectory, "backup-dir", "", "The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.")
+
+	// parse flag definitions from the argument list
+	flag.Parse()
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
 // Validate verifies all struct fields have been provided acceptable values
 func (c Config) Validate() error {
 
@@ -111,27 +145,27 @@ func (c Config) Validate() error {
 	switch {
 	case c.OutputCSVFile == "":
 		return fmt.Errorf("missing fully-qualified path to CSV file to create")
-	case !PathExists(filepath.Dir(c.OutputCSVFile)):
+	case !paths.PathExists(filepath.Dir(c.OutputCSVFile)):
 		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
 	}
 
 	// Optional flag, optional file generation
 	if c.ExcelFile != "" {
-		if !PathExists(filepath.Dir(c.ExcelFile)) {
+		if !paths.PathExists(filepath.Dir(c.ExcelFile)) {
 			return fmt.Errorf("parent directory for specified Excel file to create does not exist")
 		}
 	}
 
 	// Optional flag, but if set we require that the path actually exist
 	if c.InputCSVFile != "" {
-		if !PathExists(c.InputCSVFile) {
+		if !paths.PathExists(c.InputCSVFile) {
 			return fmt.Errorf("specified CSV file to process does not exist")
 		}
 	}
 
 	// Optional flag, optional file backups
 	if c.BackupDirectory != "" {
-		if !PathExists(c.BackupDirectory) {
+		if !paths.PathExists(c.BackupDirectory) {
 			return fmt.Errorf("directory for backup files does not exist: %q", c.BackupDirectory)
 		}
 	}

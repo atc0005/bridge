@@ -5,7 +5,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for
 // full license information.
 
-package main
+// Package paths provides various functions and types related to processing
+// paths in the filesystem.
+package paths
 
 import (
 	"io/ioutil"
@@ -13,6 +15,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/atc0005/bridge/matches"
 )
 
 // PathExists confirms that the specified path exists
@@ -36,9 +40,9 @@ func PathExists(path string) bool {
 
 // ProcessPath optionally recursively processes a provided path and returns a
 // slice of FileMatch objects
-func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int64, path string) (FileSizeIndex, error) {
+func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int64, path string) (matches.FileSizeIndex, error) {
 
-	fileSizeIndex := make(FileSizeIndex)
+	fileSizeIndex := make(matches.FileSizeIndex)
 	var err error
 
 	//log.Println("RecursiveSearch:", recursiveSearch)
@@ -87,7 +91,7 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 				// using our index based on file size.
 				fileSizeIndex[info.Size()] = append(
 					fileSizeIndex[info.Size()],
-					FileMatch{
+					matches.FileMatch{
 						FileInfo:        info,
 						FullPath:        path,
 						ParentDirectory: filepath.Dir(path),
@@ -133,7 +137,7 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 			// using our index based on file size.
 			fileSizeIndex[file.Size()] = append(
 				fileSizeIndex[file.Size()],
-				FileMatch{
+				matches.FileMatch{
 					FileInfo: file,
 					FullPath: filepath.Join(path, file.Name()),
 					// ParentDirectory: filepath.Dir(path),

@@ -5,7 +5,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for
 // full license information.
 
-package main
+// Package checksums provides various functions and types related to processing
+// file checksums.
+package checksums
 
 import (
 	"crypto/sha256"

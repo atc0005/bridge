@@ -5,7 +5,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for
 // full license information.
 
-package main
+// Package matches provides types and functions intended to help with
+// collecting and validating file search results against required criteria.
+package matches
 
 import (
 	"encoding/csv"
@@ -16,6 +18,7 @@ import (
 	"strconv"
 	"text/tabwriter"
 
+	"github.com/atc0005/bridge/checksums"
 	"github.com/atc0005/bridge/units"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
@@ -37,7 +40,7 @@ type FileMatch struct {
 	ParentDirectory string
 
 	// Checksum calculated for files meeting the duplicates threshold
-	Checksum SHA256Checksum
+	Checksum checksums.SHA256Checksum
 }
 
 // FileMatches is a slice of FileMatch objects that represents the search
@@ -56,7 +59,7 @@ type FileSizeIndex map[int64]FileMatches
 // FileSizeIndex. After additional pruning to remove any single-entry
 // FileMatches "values", this data structure represents confirmed duplicate
 // files.
-type FileChecksumIndex map[SHA256Checksum]FileMatches
+type FileChecksumIndex map[checksums.SHA256Checksum]FileMatches
 
 // DuplicateFilesSummary is a collection of the metadata calculated from
 // evaluating duplicate files. This metadata is displayed via a variety of
@@ -168,7 +171,7 @@ func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
 
 		// DEBUG
 		//log.Println("Generating checksum for:", file.FullPath)
-		result, err := GenerateCheckSum(file.FullPath)
+		result, err := checksums.GenerateCheckSum(file.FullPath)
 		if err != nil {
 
 			if !ignoreErrors {

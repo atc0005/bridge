@@ -8,65 +8,57 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 
+	"github.com/atc0005/bridge/config"
+	"github.com/atc0005/bridge/matches"
+	"github.com/atc0005/bridge/paths"
 	"github.com/atc0005/bridge/units"
 )
 
 func main() {
 
-	config := Config{}
+	var appConfig *config.Config
+	var err error
 
-	flag.Var(&config.Paths, "path", "Path to process. This flag may be repeated for each additional path to evaluate.")
-	flag.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit (in bytes) for evaluation. Files smaller than this will be skipped.")
-	flag.IntVar(&config.FileDuplicatesThreshold, "duplicates", 2, "Number of files of the same file size needed before duplicate validation logic is applied.")
-	flag.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
-	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
-	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
-	flag.StringVar(&config.OutputCSVFile, "csvfile", "", "The (required) fully-qualified path to a CSV file that this application should generate.")
-	flag.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
-	flag.BoolVar(&config.DryRun, "dry-run", false, "Pretend to remove files, echo what would have been done to stdout. Setting this false does not enable file removal.")
-	flag.BoolVar(&config.PruneFiles, "prune", false, "Enable file removal behavior. This option requires that the input CSV file be specified.")
-	flag.StringVar(&config.InputCSVFile, "input-csvfile", "", "The fully-qualified path to a CSV file that this application should use for file removal decisions.")
-	flag.StringVar(&config.BackupDirectory, "backup-dir", "", "The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.")
-
-	// parse flag definitions from the argument list
-	flag.Parse()
-
-	if err := config.Validate(); err != nil {
-		log.Fatal(err)
+	if appConfig, err = config.NewConfig(); err != nil {
+		panic(err)
 	}
 
-	log.Printf("Configuration: %+v\n", config)
+	log.Printf("Configuration: %+v\n", appConfig)
 
 	// evaluate all paths building a combined index of all files based on size
-	combinedFileSizeIndex := make(FileSizeIndex)
-	for _, path := range config.Paths {
-		if PathExists(path) {
+	combinedFileSizeIndex := make(matches.FileSizeIndex)
+	for _, path := range appConfig.Paths {
+		if paths.PathExists(path) {
 			log.Println("Path exists:", path)
 
-			fileSizeIndex, err := ProcessPath(config.RecursiveSearch, config.IgnoreErrors, config.FileSizeThreshold, path)
+			fileSizeIndex, err := paths.ProcessPath(
+				appConfig.RecursiveSearch,
+				appConfig.IgnoreErrors,
+				appConfig.FileSizeThreshold,
+				path,
+			)
 			if err != nil {
 				log.Println("Error encountered:", err)
-				if config.IgnoreErrors {
+				if appConfig.IgnoreErrors {
 					log.Println("Ignoring error as requested")
 					continue
 				}
 			}
 
-			combinedFileSizeIndex = MergeFileSizeIndexes(combinedFileSizeIndex, fileSizeIndex)
+			combinedFileSizeIndex = matches.MergeFileSizeIndexes(combinedFileSizeIndex, fileSizeIndex)
 		}
 	}
 
-	var duplicateFiles DuplicateFilesSummary
+	var duplicateFiles matches.DuplicateFilesSummary
 
 	duplicateFiles.TotalEvaluatedFiles = len(combinedFileSizeIndex)
 	//log.Println("combinedFileSizeIndex before pruning:", duplicateFiles.TotalEvaluatedFiles)
 
 	// Prune FileMatches entries from map if below our file duplicates threshold
-	combinedFileSizeIndex.PruneFileSizeIndex(config.FileDuplicatesThreshold)
+	combinedFileSizeIndex.PruneFileSizeIndex(appConfig.FileDuplicatesThreshold)
 
 	// Potential duplicate files going off of file size only (inconclusive)
 	duplicateFiles.FileSizeMatchSets = len(combinedFileSizeIndex)
@@ -80,9 +72,9 @@ func main() {
 		// every key is a file size
 		// every value is a slice of files of that file size
 
-		if err := fileMatches.UpdateChecksums(config.IgnoreErrors); err != nil {
+		if err := fileMatches.UpdateChecksums(appConfig.IgnoreErrors); err != nil {
 			log.Println("Error encountered:", err)
-			if config.IgnoreErrors {
+			if appConfig.IgnoreErrors {
 				log.Println("Ignoring error as requested")
 				continue
 			}
@@ -96,7 +88,7 @@ func main() {
 	// At this point checksums have been calculated. We can use those
 	// checksums to build a FileChecksumIndex in order to map checksums to
 	// specific FileMatches objects.
-	fileChecksumIndex := make(FileChecksumIndex)
+	fileChecksumIndex := make(matches.FileChecksumIndex)
 	for _, fileMatches := range combinedFileSizeIndex {
 		for _, fileMatch := range fileMatches {
 			fileChecksumIndex[fileMatch.Checksum] = append(
@@ -109,7 +101,7 @@ func main() {
 	// value. Remaining FileMatches that meet our file duplicates value are
 	// composed entirely of duplicate files (based on file hash).
 	//log.Println("fileChecksumIndex before pruning:", len(fileChecksumIndex))
-	fileChecksumIndex.PruneFileChecksumIndex(config.FileDuplicatesThreshold)
+	fileChecksumIndex.PruneFileChecksumIndex(appConfig.FileDuplicatesThreshold)
 	duplicateFiles.FileHashMatchSets = len(fileChecksumIndex)
 	//log.Println("fileChecksumIndex after pruning:", len(fileChecksumIndex))
 
@@ -125,7 +117,7 @@ func main() {
 
 	// Use text/tabwriter to dump results of the calculations directly to the
 	// console. This is primarily intended for troubleshooting purposes.
-	if config.ConsoleReport {
+	if appConfig.ConsoleReport {
 		fileChecksumIndex.PrintFileMatches()
 	}
 
@@ -140,18 +132,18 @@ func main() {
 
 	// Use CSV writer to generate an input file in order to take action
 	// TODO: Implement better error handling
-	if err := fileChecksumIndex.WriteFileMatchesCSV(config.OutputCSVFile); err != nil {
+	if err := fileChecksumIndex.WriteFileMatchesCSV(appConfig.OutputCSVFile); err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Successfully created CSV file: %q", config.OutputCSVFile)
+	log.Printf("Successfully created CSV file: %q", appConfig.OutputCSVFile)
 
 	// Generate Excel workbook for review IF user requested it
-	if config.ExcelFile != "" {
+	if appConfig.ExcelFile != "" {
 		// TODO: Implement better error handling
-		if err := fileChecksumIndex.WriteFileMatchesWorkbook(config.ExcelFile, duplicateFiles); err != nil {
+		if err := fileChecksumIndex.WriteFileMatchesWorkbook(appConfig.ExcelFile, duplicateFiles); err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("Successfully created workbook file: %q", config.ExcelFile)
+		log.Printf("Successfully created workbook file: %q", appConfig.ExcelFile)
 	}
 
 }
