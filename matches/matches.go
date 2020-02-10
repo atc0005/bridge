@@ -340,6 +340,7 @@ func (fi FileChecksumIndex) GetDuplicateFilesCount() int {
 	var duplicateFiles int
 
 	for _, fileMatches := range fi {
+		// subtract one so that we don't count the original as a duplicate
 		duplicateFiles += (len(fileMatches) - 1)
 	}
 
