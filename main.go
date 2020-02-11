@@ -37,12 +37,13 @@ func main() {
 
 	if err != nil {
 		if !appConfig.IgnoreErrors {
-			log.Fatalf("Failed to process paths %q: %v", appConfig.Paths.String(), err)
+			log.Fatalf("Failed to build file size index from paths (%q): %v", appConfig.Paths.String(), err)
 		}
 		log.Println("Error encountered:", err)
 		log.Println("Attempting to ignore errors as requested")
 	}
 
+	// TODO: Refactor this; merge into NewFileSizeIndex? NewFileChecksumIndex?
 	// Prune FileMatches entries from map if below our file duplicates threshold
 	combinedFileSizeIndex.PruneFileSizeIndex(appConfig.FileDuplicatesThreshold)
 
@@ -56,14 +57,7 @@ func main() {
 	// At this point checksums have been calculated. We can use those
 	// checksums to build a FileChecksumIndex in order to map checksums to
 	// specific FileMatches objects.
-	fileChecksumIndex := make(matches.FileChecksumIndex)
-	for _, fileMatches := range combinedFileSizeIndex {
-		for _, fileMatch := range fileMatches {
-			fileChecksumIndex[fileMatch.Checksum] = append(
-				fileChecksumIndex[fileMatch.Checksum],
-				fileMatch)
-		}
-	}
+	fileChecksumIndex := matches.NewFileChecksumIndex(combinedFileSizeIndex)
 
 	// Remove FileMatches objects not meeting our file duplicates threshold
 	// value. Remaining FileMatches that meet our file duplicates value are

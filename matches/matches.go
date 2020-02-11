@@ -447,6 +447,22 @@ func (fi FileSizeIndex) GetTotalFilesCount() int {
 	return files
 }
 
+// NewFileChecksumIndex takes in a FileSizeIndex, generates checksums for
+// FileMatch objects and then returns a FileChecksumIndex and an error, if
+// one was encountered.
+func NewFileChecksumIndex(fi FileSizeIndex) FileChecksumIndex {
+	fileChecksumIndex := make(FileChecksumIndex)
+	for _, fileMatches := range fi {
+		for _, fileMatch := range fileMatches {
+			fileChecksumIndex[fileMatch.Checksum] = append(
+				fileChecksumIndex[fileMatch.Checksum],
+				fileMatch)
+		}
+	}
+
+	return fileChecksumIndex
+}
+
 // PruneFileChecksumIndex removes map entries with single-entry slices which
 // do not reflect duplicate files.
 func (fi FileChecksumIndex) PruneFileChecksumIndex(duplicatesThreshold int) {
