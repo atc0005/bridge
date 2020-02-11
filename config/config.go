@@ -142,6 +142,10 @@ func (c Config) Validate() error {
 		return fmt.Errorf("2 is the minimum duplicates number for evaluated files")
 	}
 
+	// FIXME: The PathExists checks are currently duplicated here and within
+	// matches package
+	// NOTE: Checking at this point is cheaper than waiting until later and
+	// then attempting to write out the file.
 	switch {
 	case c.OutputCSVFile == "":
 		return fmt.Errorf("missing fully-qualified path to CSV file to create")
@@ -149,6 +153,10 @@ func (c Config) Validate() error {
 		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
 	}
 
+	// FIXME: The PathExists checks are currently duplicated here and within
+	// matches package
+	// NOTE: Checking at this point is cheaper than waiting until later and
+	// then attempting to write out the file.
 	// Optional flag, optional file generation
 	if c.ExcelFile != "" {
 		if !paths.PathExists(filepath.Dir(c.ExcelFile)) {
@@ -156,13 +164,21 @@ func (c Config) Validate() error {
 		}
 	}
 
-	// Optional flag, but if set we require that the path actually exist
+	// FIXME: The PathExists checks are currently duplicated here and within
+	// matches package
+	// NOTE: Checking at this point is (potentially) cheaper than waiting
+	// until later and then attempting to read in the file. Optional flag, but
+	// if set we require that the path actually exist
 	if c.InputCSVFile != "" {
 		if !paths.PathExists(c.InputCSVFile) {
 			return fmt.Errorf("specified CSV file to process does not exist")
 		}
 	}
 
+	// FIXME: The PathExists checks are currently duplicated here and within
+	// matches package
+	// NOTE: Checking at this point is cheaper than waiting until later and
+	// then attempting to write out the file.
 	// Optional flag, optional file backups
 	if c.BackupDirectory != "" {
 		if !paths.PathExists(c.BackupDirectory) {

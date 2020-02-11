@@ -530,6 +530,10 @@ func (fi FileChecksumIndex) GetDuplicateFilesCount() int {
 // workbook from duplicate file details
 func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary DuplicateFilesSummary) error {
 
+	if !paths.PathExists(filepath.Dir(filename)) {
+		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
+	}
+
 	f := excelize.NewFile()
 
 	summarySheet := "Summary"
