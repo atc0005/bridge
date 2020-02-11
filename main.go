@@ -34,7 +34,7 @@ func main() {
 		if paths.PathExists(path) {
 			log.Println("Path exists:", path)
 
-			fileSizeIndex, err := paths.ProcessPath(
+			fileSizeIndex, err := matches.NewFileSizeIndex(
 				appConfig.RecursiveSearch,
 				appConfig.IgnoreErrors,
 				appConfig.FileSizeThreshold,

@@ -12,10 +12,7 @@ package config
 import (
 	"flag"
 	"fmt"
-	"path/filepath"
 	"strings"
-
-	"github.com/atc0005/bridge/paths"
 )
 
 // multiValueFlag is a custom type that satisfies the flag.Value interface in
@@ -142,33 +139,37 @@ func (c Config) Validate() error {
 		return fmt.Errorf("2 is the minimum duplicates number for evaluated files")
 	}
 
-	switch {
-	case c.OutputCSVFile == "":
+	if c.OutputCSVFile == "" {
 		return fmt.Errorf("missing fully-qualified path to CSV file to create")
-	case !paths.PathExists(filepath.Dir(c.OutputCSVFile)):
-		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
 	}
 
+	// TODO: Move this to the point where we write Excel file
+	//
 	// Optional flag, optional file generation
-	if c.ExcelFile != "" {
-		if !paths.PathExists(filepath.Dir(c.ExcelFile)) {
-			return fmt.Errorf("parent directory for specified Excel file to create does not exist")
-		}
-	}
+	// if c.ExcelFile != "" {
+	// 	if !paths.PathExists(filepath.Dir(c.ExcelFile)) {
+	// 		return fmt.Errorf("parent directory for specified Excel file to create does not exist")
+	// 	}
+	// }
 
+	// TODO: Move validation of parent directory to point where we read
+	// the input CSV fie.
+	//
 	// Optional flag, but if set we require that the path actually exist
-	if c.InputCSVFile != "" {
-		if !paths.PathExists(c.InputCSVFile) {
-			return fmt.Errorf("specified CSV file to process does not exist")
-		}
-	}
+	// if c.InputCSVFile != "" {
+	// 	if !paths.PathExists(c.InputCSVFile) {
+	// 		return fmt.Errorf("specified CSV file to process does not exist")
+	// 	}
+	// }
 
+	// TODO: Move this to the point where we process backup content
+	//
 	// Optional flag, optional file backups
-	if c.BackupDirectory != "" {
-		if !paths.PathExists(c.BackupDirectory) {
-			return fmt.Errorf("directory for backup files does not exist: %q", c.BackupDirectory)
-		}
-	}
+	// if c.BackupDirectory != "" {
+	// 	if !paths.PathExists(c.BackupDirectory) {
+	// 		return fmt.Errorf("directory for backup files does not exist: %q", c.BackupDirectory)
+	// 	}
+	// }
 
 	// RecursiveSearch is a boolean flag. The flag package takes care of
 	// assigning a usable default value, so nothing to do here.
