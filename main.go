@@ -13,7 +13,6 @@ import (
 
 	"github.com/atc0005/bridge/config"
 	"github.com/atc0005/bridge/matches"
-	"github.com/atc0005/bridge/paths"
 	"github.com/atc0005/bridge/units"
 )
 
@@ -29,30 +28,19 @@ func main() {
 	log.Printf("Configuration: %+v\n", appConfig)
 
 	// evaluate all paths building a combined index of all files based on size
-	combinedFileSizeIndex := make(matches.FileSizeIndex)
-	for _, path := range appConfig.Paths {
-		if paths.PathExists(path) {
-			log.Println("Path exists:", path)
+	combinedFileSizeIndex, err := matches.NewFileSizeIndex(
+		appConfig.RecursiveSearch,
+		appConfig.IgnoreErrors,
+		appConfig.FileSizeThreshold,
+		appConfig.Paths...,
+	)
 
-			fileSizeIndex, err := matches.NewFileSizeIndex(
-				appConfig.RecursiveSearch,
-				appConfig.IgnoreErrors,
-				appConfig.FileSizeThreshold,
-				path,
-			)
-			if err != nil {
-				log.Println("Error encountered:", err)
-				if !appConfig.IgnoreErrors {
-					// TODO: Add better error handling, perhaps short-circuit
-					// to app post-run summary
-					log.Fatalf("Failed to process path %q: %v", path, err)
-				}
-				log.Println("Ignoring error as requested")
-				continue
-			}
-
-			combinedFileSizeIndex = matches.MergeFileSizeIndexes(combinedFileSizeIndex, fileSizeIndex)
+	if err != nil {
+		if !appConfig.IgnoreErrors {
+			log.Fatalf("Failed to process paths %q: %v", appConfig.Paths.String(), err)
 		}
+		log.Println("Error encountered:", err)
+		log.Println("Attempting to ignore errors as requested")
 	}
 
 	// Prune FileMatches entries from map if below our file duplicates threshold
