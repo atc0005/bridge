@@ -42,10 +42,13 @@ func main() {
 			)
 			if err != nil {
 				log.Println("Error encountered:", err)
-				if appConfig.IgnoreErrors {
-					log.Println("Ignoring error as requested")
-					continue
+				if !appConfig.IgnoreErrors {
+					// TODO: Add better error handling, perhaps short-circuit
+					// to app post-run summary
+					log.Fatalf("Failed to process path %q: %v", path, err)
 				}
+				log.Println("Ignoring error as requested")
+				continue
 			}
 
 			combinedFileSizeIndex = matches.MergeFileSizeIndexes(combinedFileSizeIndex, fileSizeIndex)
