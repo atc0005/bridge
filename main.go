@@ -55,19 +55,8 @@ func main() {
 		}
 	}
 
-	var duplicateFiles matches.DuplicateFilesSummary
-
-	duplicateFiles.TotalEvaluatedFiles = len(combinedFileSizeIndex)
-	//log.Println("combinedFileSizeIndex before pruning:", duplicateFiles.TotalEvaluatedFiles)
-
 	// Prune FileMatches entries from map if below our file duplicates threshold
 	combinedFileSizeIndex.PruneFileSizeIndex(appConfig.FileDuplicatesThreshold)
-
-	// Potential duplicate files going off of file size only (inconclusive)
-	duplicateFiles.FileSizeMatchSets = len(combinedFileSizeIndex)
-	//log.Println("combinedFileSizeIndex after pruning:", duplicateFiles.PotentialDuplicates)
-
-	duplicateFiles.FileSizeMatches = combinedFileSizeIndex.GetTotalFilesCount()
 
 	//for key, fileMatches := range combinedFileSizeIndex {
 	for _, fileMatches := range combinedFileSizeIndex {
@@ -105,6 +94,17 @@ func main() {
 	// composed entirely of duplicate files (based on file hash).
 	//log.Println("fileChecksumIndex before pruning:", len(fileChecksumIndex))
 	fileChecksumIndex.PruneFileChecksumIndex(appConfig.FileDuplicatesThreshold)
+
+	var duplicateFiles matches.DuplicateFilesSummary
+
+	duplicateFiles.TotalEvaluatedFiles = len(combinedFileSizeIndex)
+	//log.Println("combinedFileSizeIndex before pruning:", duplicateFiles.TotalEvaluatedFiles)
+
+	// Potential duplicate files going off of file size only (inconclusive)
+	duplicateFiles.FileSizeMatchSets = len(combinedFileSizeIndex)
+	//log.Println("combinedFileSizeIndex after pruning:", duplicateFiles.PotentialDuplicates)
+
+	duplicateFiles.FileSizeMatches = combinedFileSizeIndex.GetTotalFilesCount()
 	duplicateFiles.FileHashMatchSets = len(fileChecksumIndex)
 	//log.Println("fileChecksumIndex after pruning:", len(fileChecksumIndex))
 
