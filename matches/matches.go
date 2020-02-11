@@ -159,6 +159,35 @@ func MergeFileSizeIndexes(fileSizeIndexes ...FileSizeIndex) FileSizeIndex {
 	return mergedFileSizeIndex
 }
 
+// UpdateChecksums acts as a wrapper around the UpdateChecksums method for
+// FileMatches objects
+func (fi FileSizeIndex) UpdateChecksums(ignoreErrors bool) error {
+
+	//for key, fileMatches := range combinedFileSizeIndex {
+	for _, fileMatches := range fi {
+
+		// every key is a file size
+		// every value is a slice of files of that file size
+
+		if err := fileMatches.UpdateChecksums(ignoreErrors); err != nil {
+
+			// DEBUG
+			log.Println("Error encountered:", err)
+			if !ignoreErrors {
+				return err
+			}
+			// DEBUG
+			log.Println("Ignoring error as requested")
+			continue
+		}
+	}
+
+	// TODO: Return bool and error instead of just error?
+	// This would allow returning true as in success, but also
+	// provide the original error that we chose to ignore.
+	return nil
+}
+
 // UpdateChecksums generates checksum values for each file tracked by a
 // FileMatch entry and updates the associated FileMatch.Checksum field value
 func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {

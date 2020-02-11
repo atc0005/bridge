@@ -58,25 +58,13 @@ func main() {
 	// Prune FileMatches entries from map if below our file duplicates threshold
 	combinedFileSizeIndex.PruneFileSizeIndex(appConfig.FileDuplicatesThreshold)
 
-	//for key, fileMatches := range combinedFileSizeIndex {
-	for _, fileMatches := range combinedFileSizeIndex {
-
-		// every key is a file size
-		// every value is a slice of files of that file size
-
-		if err := fileMatches.UpdateChecksums(appConfig.IgnoreErrors); err != nil {
-			log.Println("Error encountered:", err)
-			if appConfig.IgnoreErrors {
-				log.Println("Ignoring error as requested")
-				continue
-			}
-			log.Println("Exiting; error encountered, option to ignore (minor) errors not provided.")
-			os.Exit(1)
-
-		}
-
+	if err := combinedFileSizeIndex.UpdateChecksums(appConfig.IgnoreErrors); err != nil {
+		log.Println("Exiting; error encountered, option to ignore (minor) errors not provided.")
+		os.Exit(1)
 	}
 
+	// TODO: Move this to matches package
+	//
 	// At this point checksums have been calculated. We can use those
 	// checksums to build a FileChecksumIndex in order to map checksums to
 	// specific FileMatches objects.
@@ -95,6 +83,7 @@ func main() {
 	//log.Println("fileChecksumIndex before pruning:", len(fileChecksumIndex))
 	fileChecksumIndex.PruneFileChecksumIndex(appConfig.FileDuplicatesThreshold)
 
+	// TODO: Move this into a separate package
 	var duplicateFiles matches.DuplicateFilesSummary
 
 	duplicateFiles.TotalEvaluatedFiles = len(combinedFileSizeIndex)
@@ -124,6 +113,7 @@ func main() {
 		fileChecksumIndex.PrintFileMatches()
 	}
 
+	// TODO: Move this into a separate package
 	// TODO: Use tabwriter to generate summary report?
 	log.Printf("%d evaluated files in specified paths", duplicateFiles.TotalEvaluatedFiles)
 	log.Printf("%d potential duplicate file sets found using file size", duplicateFiles.FileSizeMatchSets)
