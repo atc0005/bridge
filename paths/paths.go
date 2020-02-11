@@ -24,6 +24,9 @@ func PathExists(path string) bool {
 
 	// Make sure path isn't empty
 	if strings.TrimSpace(path) == "" {
+		// DEBUG?
+		// WARN?
+		// ERROR?
 		log.Println("path is empty string")
 		return false
 	}
