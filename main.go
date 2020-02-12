@@ -64,6 +64,12 @@ func main() {
 	//log.Println("fileChecksumIndex before pruning:", len(fileChecksumIndex))
 	fileChecksumIndex.PruneFileChecksumIndex(appConfig.FileDuplicatesThreshold)
 
+	// Use text/tabwriter to dump results of the calculations directly to the
+	// console. This is primarily intended for troubleshooting purposes.
+	if appConfig.ConsoleReport {
+		fileChecksumIndex.PrintFileMatches()
+	}
+
 	// TODO: Move this into a separate package?
 	// Note: FileSizeMatchSets represents *potential* duplicate files going
 	// off of file size only (inconclusive)
@@ -75,12 +81,6 @@ func main() {
 		FileHashMatchSets:   len(fileChecksumIndex),
 		WastedSpace:         fileChecksumIndex.GetWastedSpace(),
 		DuplicateCount:      fileChecksumIndex.GetDuplicateFilesCount(),
-	}
-
-	// Use text/tabwriter to dump results of the calculations directly to the
-	// console. This is primarily intended for troubleshooting purposes.
-	if appConfig.ConsoleReport {
-		fileChecksumIndex.PrintFileMatches()
 	}
 
 	duplicateFiles.PrintSummary()
