@@ -18,7 +18,7 @@
 # https://www.gnu.org/software/make/manual/html_node/Special-Variables.html#Special-Variables
 
 
-OUTPUTBASEFILENAME		= bridge
+OUTPUTDIR 				= release_assets
 
 # https://gist.github.com/TheHippo/7e4d9ec4b7ed4c0d7a39839e6800cc16
 VERSION 				= $(shell git describe --always --long --dirty)
@@ -71,14 +71,15 @@ goclean:
 	@echo "Removing object files and cached files ..."
 	@$(GOCLEANCMD)
 	@echo "Removing any existing release assets"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-linux-386)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-linux-386.sha256)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-linux-amd64)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-linux-amd64.sha256)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-windows-386.exe)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-windows-386.exe.sha256)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-windows-amd64.exe)"
-	@rm -vf "$(wildcard ${OUTPUTBASEFILENAME}-*-windows-amd64.exe.sha256)"
+	@mkdir -p "$(OUTPUTDIR)"
+	@rm -vf $(wildcard ${OUTPUTDIR}/*-linux-386)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*-linux-386.sha256)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*-linux-amd64)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*-linux-amd64.sha256)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*-windows-386.exe)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*-windows-386.exe.sha256)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*-windows-amd64.exe)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*-windows-amd64.exe.sha256)
 
 # Setup alias for user reference
 clean: goclean
@@ -96,22 +97,37 @@ all: clean windows linux
 
 windows:
 	@echo "Building release assets for Windows ..."
+
 	@echo "Building 386 binary"
-	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTBASEFILENAME)-$(VERSION)-windows-386.exe
+	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/prune-$(VERSION)-windows-386.exe ${PWD}/cmd/prune
+	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/report-$(VERSION)-windows-386.exe ${PWD}/cmd/report
+
 	@echo "Building amd64 binary"
-	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTBASEFILENAME)-$(VERSION)-windows-amd64.exe
+	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/prune-$(VERSION)-windows-amd64.exe ${PWD}/cmd/prune
+	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/report-$(VERSION)-windows-amd64.exe ${PWD}/cmd/report
+
 	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) $(OUTPUTBASEFILENAME)-$(VERSION)-windows-386.exe > $(OUTPUTBASEFILENAME)-$(VERSION)-windows-386.exe.sha256
-	@$(CHECKSUMCMD) $(OUTPUTBASEFILENAME)-$(VERSION)-windows-amd64.exe > $(OUTPUTBASEFILENAME)-$(VERSION)-windows-amd64.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/prune-$(VERSION)-windows-386.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/report-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/report-$(VERSION)-windows-386.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/prune-$(VERSION)-windows-amd64.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/report-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/report-$(VERSION)-windows-amd64.exe.sha256
+
 	@echo "Completed build for Windows"
 
 linux:
 	@echo "Building release assets for Linux ..."
 	@echo "Building 386 binary"
-	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTBASEFILENAME)-$(VERSION)-linux-386
+	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/prune-$(VERSION)-linux-386 ${PWD}/cmd/prune
+	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/report-$(VERSION)-linux-386 ${PWD}/cmd/report
+
 	@echo "Building amd64 binary"
-	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTBASEFILENAME)-$(VERSION)-linux-amd64
+	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/prune-$(VERSION)-linux-amd64 ${PWD}/cmd/prune
+	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/report-$(VERSION)-linux-amd64 ${PWD}/cmd/report
+
 	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) $(OUTPUTBASEFILENAME)-$(VERSION)-linux-386 > $(OUTPUTBASEFILENAME)-$(VERSION)-linux-386.sha256
-	@$(CHECKSUMCMD) $(OUTPUTBASEFILENAME)-$(VERSION)-linux-amd64 > $(OUTPUTBASEFILENAME)-$(VERSION)-linux-amd64.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune-$(VERSION)-linux-386 > $(OUTPUTDIR)/prune-$(VERSION)-linux-386.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/report-$(VERSION)-linux-386 > $(OUTPUTDIR)/report-$(VERSION)-linux-386.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune-$(VERSION)-linux-amd64 > $(OUTPUTDIR)/prune-$(VERSION)-linux-amd64.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/report-$(VERSION)-linux-amd64 > $(OUTPUTDIR)/report-$(VERSION)-linux-amd64.sha256
+
 	@echo "Completed build for Linux"
