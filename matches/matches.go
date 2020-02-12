@@ -715,3 +715,17 @@ func (fi FileChecksumIndex) PrintFileMatches() {
 	}
 
 }
+
+// Summary is used to generate a basic summary report of file metadata
+// collected while evaluating files for potential duplicates.
+func (dfs DuplicateFilesSummary) Summary() {
+
+	// TODO: Use tabwriter to generate summary report?
+	log.Printf("%d evaluated files in specified paths", dfs.TotalEvaluatedFiles)
+	log.Printf("%d potential duplicate file sets found using file size", dfs.FileSizeMatchSets)
+	log.Printf("%d confirmed duplicate file sets found using file hash", dfs.FileHashMatchSets)
+	log.Printf("%d files with identical file size", dfs.FileSizeMatches)
+	log.Printf("%d files with identical file hash", dfs.FileHashMatches)
+	log.Printf("%d duplicate files", dfs.DuplicateCount)
+	log.Printf("%s wasted space for duplicate file sets", units.ByteCountIEC(dfs.WastedSpace))
+}

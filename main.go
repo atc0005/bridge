@@ -13,7 +13,6 @@ import (
 
 	"github.com/atc0005/bridge/config"
 	"github.com/atc0005/bridge/matches"
-	"github.com/atc0005/bridge/units"
 )
 
 func main() {
@@ -75,6 +74,7 @@ func main() {
 		FileHashMatches:     fileChecksumIndex.GetTotalFilesCount(),
 		FileHashMatchSets:   len(fileChecksumIndex),
 		WastedSpace:         fileChecksumIndex.GetWastedSpace(),
+		DuplicateCount:      fileChecksumIndex.GetDuplicateFilesCount(),
 	}
 
 	// Use text/tabwriter to dump results of the calculations directly to the
@@ -83,15 +83,7 @@ func main() {
 		fileChecksumIndex.PrintFileMatches()
 	}
 
-	// TODO: Move this into a separate package
-	// TODO: Use tabwriter to generate summary report?
-	log.Printf("%d evaluated files in specified paths", duplicateFiles.TotalEvaluatedFiles)
-	log.Printf("%d potential duplicate file sets found using file size", duplicateFiles.FileSizeMatchSets)
-	log.Printf("%d confirmed duplicate file sets found using file hash", duplicateFiles.FileHashMatchSets)
-	log.Printf("%d files with identical file size", duplicateFiles.FileSizeMatches)
-	log.Printf("%d files with identical file hash", duplicateFiles.FileHashMatches)
-	log.Printf("%d duplicate files", fileChecksumIndex.GetDuplicateFilesCount())
-	log.Printf("%s wasted space for duplicate file sets", units.ByteCountIEC(duplicateFiles.WastedSpace))
+	duplicateFiles.Summary()
 
 	// Use CSV writer to generate an input file in order to take action
 	// TODO: Implement better error handling
