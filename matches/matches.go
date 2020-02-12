@@ -716,16 +716,26 @@ func (fi FileChecksumIndex) PrintFileMatches() {
 
 }
 
-// Summary is used to generate a basic summary report of file metadata
+// PrintSummary is used to generate a basic summary report of file metadata
 // collected while evaluating files for potential duplicates.
-func (dfs DuplicateFilesSummary) Summary() {
+func (dfs DuplicateFilesSummary) PrintSummary() {
+
+	w := new(tabwriter.Writer)
+	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
+
+	// Format in tab-separated columns
+	w.Init(os.Stdout, 8, 8, 5, '\t', 0)
 
 	// TODO: Use tabwriter to generate summary report?
-	log.Printf("%d evaluated files in specified paths", dfs.TotalEvaluatedFiles)
-	log.Printf("%d potential duplicate file sets found using file size", dfs.FileSizeMatchSets)
-	log.Printf("%d confirmed duplicate file sets found using file hash", dfs.FileHashMatchSets)
-	log.Printf("%d files with identical file size", dfs.FileSizeMatches)
-	log.Printf("%d files with identical file hash", dfs.FileHashMatches)
-	log.Printf("%d duplicate files", dfs.DuplicateCount)
-	log.Printf("%s wasted space for duplicate file sets", units.ByteCountIEC(dfs.WastedSpace))
+	fmt.Fprintf(w, "%d\tevaluated files in specified paths", dfs.TotalEvaluatedFiles)
+	fmt.Fprintf(w, "%d\tpotential duplicate file sets found using file size", dfs.FileSizeMatchSets)
+	fmt.Fprintf(w, "%d\tconfirmed duplicate file sets found using file hash", dfs.FileHashMatchSets)
+	fmt.Fprintf(w, "%d\tfiles with identical file size", dfs.FileSizeMatches)
+	fmt.Fprintf(w, "%d\tfiles with identical file hash", dfs.FileHashMatches)
+	fmt.Fprintf(w, "%d\tduplicate files", dfs.DuplicateCount)
+	fmt.Fprintf(w, "%s\twasted space for duplicate file sets", units.ByteCountIEC(dfs.WastedSpace))
+	fmt.Fprintln(w)
+
+	w.Flush()
+
 }

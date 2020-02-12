@@ -83,7 +83,7 @@ func main() {
 		fileChecksumIndex.PrintFileMatches()
 	}
 
-	duplicateFiles.Summary()
+	duplicateFiles.PrintSummary()
 
 	// Use CSV writer to generate an input file in order to take action
 	// TODO: Implement better error handling
