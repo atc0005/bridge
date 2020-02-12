@@ -727,13 +727,13 @@ func (dfs DuplicateFilesSummary) PrintSummary() {
 	w.Init(os.Stdout, 8, 8, 5, '\t', 0)
 
 	// TODO: Use tabwriter to generate summary report?
-	fmt.Fprintf(w, "%d\tevaluated files in specified paths", dfs.TotalEvaluatedFiles)
-	fmt.Fprintf(w, "%d\tpotential duplicate file sets found using file size", dfs.FileSizeMatchSets)
-	fmt.Fprintf(w, "%d\tconfirmed duplicate file sets found using file hash", dfs.FileHashMatchSets)
-	fmt.Fprintf(w, "%d\tfiles with identical file size", dfs.FileSizeMatches)
-	fmt.Fprintf(w, "%d\tfiles with identical file hash", dfs.FileHashMatches)
-	fmt.Fprintf(w, "%d\tduplicate files", dfs.DuplicateCount)
-	fmt.Fprintf(w, "%s\twasted space for duplicate file sets", units.ByteCountIEC(dfs.WastedSpace))
+	fmt.Fprintf(w, "%d\tevaluated files in specified paths\n", dfs.TotalEvaluatedFiles)
+	fmt.Fprintf(w, "%d\tpotential duplicate file sets found using file size\n", dfs.FileSizeMatchSets)
+	fmt.Fprintf(w, "%d\tconfirmed duplicate file sets found using file hash\n", dfs.FileHashMatchSets)
+	fmt.Fprintf(w, "%d\tfiles with identical file size\n", dfs.FileSizeMatches)
+	fmt.Fprintf(w, "%d\tfiles with identical file hash\n", dfs.FileHashMatches)
+	fmt.Fprintf(w, "%d\tduplicate files\n", dfs.DuplicateCount)
+	fmt.Fprintf(w, "%s\twasted space for duplicate file sets\n", units.ByteCountIEC(dfs.WastedSpace))
 	fmt.Fprintln(w)
 
 	w.Flush()
