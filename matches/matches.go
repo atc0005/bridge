@@ -626,7 +626,7 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 
 // WriteFileMatchesCSV writes duplicate files recorded in a FileChecksumIndex
 // to the specified CSV file.
-func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
+func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetweenSets bool) error {
 
 	if !paths.PathExists(filepath.Dir(filename)) {
 		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
@@ -651,10 +651,12 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 	//for key, fileMatches := range fi {
 	for _, fileMatches := range fi {
 
-		// TODO: Make this an external setting, either constant or via flag?
-		if err := w.Write(fileMatches.GenerateEmptyCSVDataRow()); err != nil {
-			// TODO: Use error wrapping instead?
-			return fmt.Errorf("error writing record to csv: %v", err)
+		// This can be useful when focusing just on the sets themselves.
+		if blankLineBetweenSets {
+			if err := w.Write(fileMatches.GenerateEmptyCSVDataRow()); err != nil {
+				// TODO: Use error wrapping instead?
+				return fmt.Errorf("error writing record to csv: %v", err)
+			}
 		}
 
 		for _, file := range fileMatches {
@@ -684,36 +686,41 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string) error {
 // PrintFileMatches prints duplicate files recorded in a FileChecksumIndex to
 // stdout for development or troubleshooting purposes. See also
 // WriteFileMatches for the expected production output method.
-func (fi FileChecksumIndex) PrintFileMatches() {
+func (fi FileChecksumIndex) PrintFileMatches(blankLineBetweenSets bool) {
 
 	w := new(tabwriter.Writer)
 	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
 
 	// Format in tab-separated columns
-	w.Init(os.Stdout, 8, 8, 5, '\t', 0)
+	//w.Init(os.Stdout, 16, 8, 8, '\t', 0)
+	w.Init(os.Stdout, 8, 8, 4, '\t', 0)
 
+	// Header row in output
+	fmt.Fprintln(w,
+		"Directory\tFile\tSize\tSize in bytes\tChecksum\t")
 	for _, fileMatches := range fi {
-
-		// Header row in output
-		fmt.Fprintln(w,
-			"Directory\tFile\tSize\tSize in bytes\tChecksum\t")
-
 		for _, file := range fileMatches {
 
 			// TODO: Confirm that newline between file sets is useful
 			fmt.Fprintf(w,
-				"\n%s\t%s\t%s\t%s\t%s",
+				"%s\t%s\t%s\t%s\t%s\n",
 				file.ParentDirectory,
 				file.Name(),
 				file.SizeHR(),
 				strconv.FormatInt(file.Size(), 10),
 				file.Checksum)
+		}
+
+		// This throws off cohesive formatting across all sets, but can be
+		// useful when focusing just on the sets themselves.
+		if blankLineBetweenSets {
 			fmt.Fprintln(w)
-			w.Flush()
 		}
 
 	}
 
+	fmt.Fprintln(w)
+	w.Flush()
 }
 
 // PrintSummary is used to generate a basic summary report of file metadata

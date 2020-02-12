@@ -87,6 +87,10 @@ type Config struct {
 	// application should generate
 	ExcelFile string
 
+	// BlankLineBetweenSets controls whether a blank line is added between
+	// each set of matching files in console and file output.
+	BlankLineBetweenSets bool
+
 	// DryRun allows simulation of file removal behavior.
 	DryRun bool
 
@@ -114,6 +118,7 @@ func NewConfig() (*Config, error) {
 	flag.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
 	flag.BoolVar(&config.DryRun, "dry-run", false, "Pretend to remove files, echo what would have been done to stdout. Setting this false does not enable file removal.")
 	flag.BoolVar(&config.PruneFiles, "prune", false, "Enable file removal behavior. This option requires that the input CSV file be specified.")
+	flag.BoolVar(&config.BlankLineBetweenSets, "blank-line", false, "Add a blank line between sets of matching files in console and file output.")
 	flag.StringVar(&config.InputCSVFile, "input-csvfile", "", "The fully-qualified path to a CSV file that this application should use for file removal decisions.")
 	flag.StringVar(&config.BackupDirectory, "backup-dir", "", "The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.")
 

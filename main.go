@@ -67,7 +67,7 @@ func main() {
 	// Use text/tabwriter to dump results of the calculations directly to the
 	// console. This is primarily intended for troubleshooting purposes.
 	if appConfig.ConsoleReport {
-		fileChecksumIndex.PrintFileMatches()
+		fileChecksumIndex.PrintFileMatches(appConfig.BlankLineBetweenSets)
 	}
 
 	// TODO: Move this into a separate package?
@@ -87,7 +87,8 @@ func main() {
 
 	// Use CSV writer to generate an input file in order to take action
 	// TODO: Implement better error handling
-	if err := fileChecksumIndex.WriteFileMatchesCSV(appConfig.OutputCSVFile); err != nil {
+	if err := fileChecksumIndex.WriteFileMatchesCSV(
+		appConfig.OutputCSVFile, appConfig.BlankLineBetweenSets); err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Successfully created CSV file: %q", appConfig.OutputCSVFile)
