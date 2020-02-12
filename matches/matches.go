@@ -85,6 +85,9 @@ type DuplicateFilesSummary struct {
 
 	// Wasted space for duplicate file sets in bytes
 	WastedSpace int64
+
+	// DuplicateCount represents the number of duplicated files
+	DuplicateCount int
 }
 
 // TotalFileSize returns the cumulative size of all files in the slice in bytes
@@ -504,7 +507,7 @@ func (fi FileChecksumIndex) GetTotalFilesCount() int {
 
 // GetWastedSpace calculates the wasted space from all confirmed duplicate
 // files
-func (fi FileChecksumIndex) GetWastedSpace() (int64, error) {
+func (fi FileChecksumIndex) GetWastedSpace() int64 {
 	var wastedSpace int64
 
 	// Loop over each duplicate file set in the file checksum index
@@ -517,15 +520,16 @@ func (fi FileChecksumIndex) GetWastedSpace() (int64, error) {
 		duplicateFileMatchEntries := (len(fileMatches) - 1)
 
 		// FIXME: This shouldn't be reachable
-		if len(fileMatches) == 0 {
-			return 0, fmt.Errorf("attempted to calculate wasted space of empty duplicate file set")
-		}
+		// if len(fileMatches) == 0 {
+		// 	return 0, fmt.Errorf("attempted to calculate wasted space of empty duplicate file set")
+		// }
 
 		fileSize := fileMatches[0].Size()
 		wastedSpace += int64(duplicateFileMatchEntries) * fileSize
 	}
 
-	return wastedSpace, nil
+	//return wastedSpace, nil
+	return wastedSpace
 }
 
 // GetDuplicateFilesCount returns the number of non-original files in a

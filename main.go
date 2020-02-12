@@ -65,28 +65,16 @@ func main() {
 	//log.Println("fileChecksumIndex before pruning:", len(fileChecksumIndex))
 	fileChecksumIndex.PruneFileChecksumIndex(appConfig.FileDuplicatesThreshold)
 
-	// TODO: Move this into a separate package
-	var duplicateFiles matches.DuplicateFilesSummary
-
-	duplicateFiles.TotalEvaluatedFiles = len(combinedFileSizeIndex)
-	//log.Println("combinedFileSizeIndex before pruning:", duplicateFiles.TotalEvaluatedFiles)
-
-	// Potential duplicate files going off of file size only (inconclusive)
-	duplicateFiles.FileSizeMatchSets = len(combinedFileSizeIndex)
-	//log.Println("combinedFileSizeIndex after pruning:", duplicateFiles.PotentialDuplicates)
-
-	duplicateFiles.FileSizeMatches = combinedFileSizeIndex.GetTotalFilesCount()
-	duplicateFiles.FileHashMatchSets = len(fileChecksumIndex)
-	//log.Println("fileChecksumIndex after pruning:", len(fileChecksumIndex))
-
-	duplicateFiles.FileHashMatches = fileChecksumIndex.GetTotalFilesCount()
-
-	// TODO: Clean up redundant variables
-	wastedSpace, err := fileChecksumIndex.GetWastedSpace()
-	duplicateFiles.WastedSpace = wastedSpace
-	if err != nil {
-		// TODO: This shouldn't occur; worth testing?
-		log.Fatal(err)
+	// TODO: Move this into a separate package?
+	// Note: FileSizeMatchSets represents *potential* duplicate files going
+	// off of file size only (inconclusive)
+	duplicateFiles := matches.DuplicateFilesSummary{
+		TotalEvaluatedFiles: len(combinedFileSizeIndex),
+		FileSizeMatches:     combinedFileSizeIndex.GetTotalFilesCount(),
+		FileSizeMatchSets:   len(combinedFileSizeIndex),
+		FileHashMatches:     fileChecksumIndex.GetTotalFilesCount(),
+		FileHashMatchSets:   len(fileChecksumIndex),
+		WastedSpace:         fileChecksumIndex.GetWastedSpace(),
 	}
 
 	// Use text/tabwriter to dump results of the calculations directly to the
