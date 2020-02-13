@@ -1,0 +1,55 @@
+# Copyright 2020 Adam Chalkley
+#
+# https:#github.com/atc0005/bridge
+#
+# Licensed under the MIT License. See LICENSE file in the project root for
+# full license information.
+
+version: "2"
+
+vars:
+  OUTPUT_DIR: "release_assets"
+  VERSION: { sh: git describe --always --long --dirty }
+
+tasks:
+  # all:
+  #   desc: Intended entry point
+  #   cmds:
+  #     - task: lint
+  #     - task: build
+
+  all:
+    desc: Entry point for Do Everything task
+    cmds:
+      - task
+      - task: build
+        vars: { OS: "linux", ARCH: "386", APP: "report" }
+        dir: "cmd/report"
+
+      # - task: build-linux
+      #   vars: { OS: "linux", ARCH: "amd64", LOCATION: "cmd/prune" }
+      # - task: build-windows
+      #   vars: { FILE: "hello.txt", CONTENT: "Hello!", LOCATION: "cmd/prune" }
+
+  build:
+    desc: Build Go binaries
+    cmds:
+      - echo "Building release assets for {{.OS }} ..."
+      - echo "Building {{.ARCH}} binary"
+      - 'go build -a -ldflags="-s -w -X main.version={{.VERSION}}" -o {{.OUTPUTDIR}}/{{.APP}}-{{.VERSION}}-{{.OS}}-{{.ARCH}}'
+    env:
+      - GOOS: "{{.OS}}"
+      - GOARCH: "{{.ARCH}}"
+  # env GOOS=linux GOARCH=386 $(BUILDCMD) -o {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-386 ${PWD}/cmd/report
+  # echo "Building amd64 binary"
+  # env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-amd64 ${PWD}/cmd/prune
+  # env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-amd64 ${PWD}/cmd/report
+  # echo "Generating checksum files"
+  # $(CHECKSUMCMD) {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-386 > {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-386.sha256
+  # $(CHECKSUMCMD) {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-386 > {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-386.sha256
+  # $(CHECKSUMCMD) {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-amd64 > {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-amd64.sha256
+  # $(CHECKSUMCMD) {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-amd64 > {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-amd64.sha256
+  # echo "Completed build for Linux"
+  # build-windows:
+  #   cmds:
+  #     - echo "{{.CONTENT}}" > {{.FILE}}
