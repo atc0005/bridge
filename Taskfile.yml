@@ -7,49 +7,153 @@
 
 version: "2"
 
+silent: true
+output: prefixed
+
 vars:
   OUTPUT_DIR: "release_assets"
   VERSION: { sh: git describe --always --long --dirty }
+  CHECKSUM_CMD: "sha256sum -b"
+  CHECKSUM_CMD_OPTIONS: "-b"
+  GOCLEAN_CMD: "go clean"
+  GITCLEAN_CMD: "git clean -xfd"
 
 tasks:
-  # all:
-  #   desc: Intended entry point
+  # default:
   #   cmds:
-  #     - task: lint
-  #     - task: build
+  #     - echo "Run task -l to see all available tasks"
 
-  all:
-    desc: Entry point for Do Everything task
+  release:
+    desc: Cross-compile for multiple operating systems
     cmds:
-      - task
       - task: build
-        vars: { OS: "linux", ARCH: "386", APP: "report" }
-        dir: "cmd/report"
+        vars:
+          {
+            GOOS: "linux",
+            ARCH: "386",
+            APP: "report",
+            DIR: "./cmd/report",
+            EXT: "",
+          }
+      - task: build
+        vars:
+          {
+            GOOS: "linux",
+            ARCH: "amd64",
+            APP: "report",
+            DIR: "./cmd/report",
+            EXT: "",
+          }
+      - task: build
+        vars:
+          {
+            GOOS: "linux",
+            ARCH: "386",
+            APP: "prune",
+            DIR: "./cmd/prune",
+            EXT: "",
+          }
+      - task: build
+        vars:
+          {
+            GOOS: "linux",
+            ARCH: "amd64",
+            APP: "prune",
+            DIR: "./cmd/prune",
+            EXT: "",
+          }
 
-      # - task: build-linux
-      #   vars: { OS: "linux", ARCH: "amd64", LOCATION: "cmd/prune" }
-      # - task: build-windows
-      #   vars: { FILE: "hello.txt", CONTENT: "Hello!", LOCATION: "cmd/prune" }
+      - task: build
+        vars:
+          {
+            GOOS: "windows",
+            ARCH: "386",
+            APP: "report",
+            DIR: "./cmd/report",
+            EXT: ".exe",
+          }
+      - task: build
+        vars:
+          {
+            GOOS: "windows",
+            ARCH: "amd64",
+            APP: "report",
+            DIR: "./cmd/report",
+            EXT: ".exe",
+          }
+      - task: build
+        vars:
+          {
+            GOOS: "windows",
+            ARCH: "386",
+            APP: "prune",
+            DIR: "./cmd/prune",
+            EXT: ".exe",
+          }
+      - task: build
+        vars:
+          {
+            GOOS: "windows",
+            ARCH: "amd64",
+            APP: "prune",
+            DIR: "./cmd/prune",
+            EXT: ".exe",
+          }
+
+      - task: checksums
+        vars: { GOOS: "linux", ARCH: "386", APP: "report", EXT: "" }
+      - task: checksums
+        vars: { GOOS: "linux", ARCH: "amd64", APP: "report", EXT: "" }
+      - task: checksums
+        vars: { GOOS: "linux", ARCH: "386", APP: "prune", EXT: "" }
+      - task: checksums
+        vars: { GOOS: "linux", ARCH: "amd64", APP: "prune", EXT: "" }
+      - task: checksums
+        vars: { GOOS: "windows", ARCH: "386", APP: "report", EXT: ".exe" }
+      - task: checksums
+        vars: { GOOS: "windows", ARCH: "amd64", APP: "report", EXT: ".exe" }
+      - task: checksums
+        vars: { GOOS: "windows", ARCH: "386", APP: "prune", EXT: ".exe" }
+      - task: checksums
+        vars: { GOOS: "windows", ARCH: "amd64", APP: "prune", EXT: ".exe" }
+
+  prep:
+    desc: Small task items run before starting larger tasks
+    cmds:
+      - mkdir -p "{{.DIR}}"
 
   build:
     desc: Build Go binaries
+    vars:
+      OUTPUT_FILE: "{{.OUTPUT_DIR}}/{{.APP}}/{{.APP}}-{{.VERSION}}-{{.GOOS}}-{{.ARCH}}{{.EXT}}"
+    deps:
+      - task: prep
+        vars: { DIR: "{{.OUTPUT_DIR}}/{{.APP}}" }
     cmds:
-      - echo "Building release assets for {{.OS }} ..."
-      - echo "Building {{.ARCH}} binary"
-      - 'go build -a -ldflags="-s -w -X main.version={{.VERSION}}" -o {{.OUTPUTDIR}}/{{.APP}}-{{.VERSION}}-{{.OS}}-{{.ARCH}}'
-    env:
-      - GOOS: "{{.OS}}"
-      - GOARCH: "{{.ARCH}}"
-  # env GOOS=linux GOARCH=386 $(BUILDCMD) -o {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-386 ${PWD}/cmd/report
-  # echo "Building amd64 binary"
-  # env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-amd64 ${PWD}/cmd/prune
-  # env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-amd64 ${PWD}/cmd/report
-  # echo "Generating checksum files"
-  # $(CHECKSUMCMD) {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-386 > {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-386.sha256
-  # $(CHECKSUMCMD) {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-386 > {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-386.sha256
-  # $(CHECKSUMCMD) {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-amd64 > {{.OUTPUTDIR}}/prune-{{.VERSION}}-linux-amd64.sha256
-  # $(CHECKSUMCMD) {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-amd64 > {{.OUTPUTDIR}}/report-{{.VERSION}}-linux-amd64.sha256
-  # echo "Completed build for Linux"
-  # build-windows:
-  #   cmds:
-  #     - echo "{{.CONTENT}}" > {{.FILE}}
+      - echo "Building {{.APP}} {{.ARCH}} binary for {{.GOOS}} ..."
+      # - |
+      #   {{range $i, $line := .APPS | splitLines -}}
+      #   {{$line}}
+      #   {{end}}
+      - mkdir -p "{{.OUTPUT_DIR}}/{{.APP}}"
+      - GOOS={{.GOOS}} GOARCH={{.ARCH}} go build -a -ldflags="-s -w -X main.version={{.VERSION}}" -o {{.OUTPUT_FILE}} {{.DIR}}
+
+  checksums:
+    desc: Create checksum files for generated release assets
+    vars:
+      SOURCE_FILE: "{{.OUTPUT_DIR}}/{{.APP}}/{{.APP}}-{{.VERSION}}-{{.GOOS}}-{{.ARCH}}"
+      OUTPUT_FILE: "{{.SOURCE_FILE}}.{{.CHECKSUM_CMD}}"
+    deps:
+      - task: prep
+        vars: { DIR: "{{.OUTPUT_DIR}}/{{.APP}}" }
+    cmds:
+      - echo "Generating checksum file for {{.SOURCE_FILE}}"
+      - "{{.CHECKSUM_CMD}} {{.CHECKSUM_CMD_OPTIONS}} {{.SOURCE_FILE}} > {{.OUTPUT_FILE}}"
+
+  clean:
+    desc: go clean and release assets purge
+    cmds:
+      - echo "Removing object files and cached files ..."
+      - "{{.GOCLEAN_CMD}}"
+      - echo "Removing any existing release assets"
+      - rm -vf "{{.OUTPUT_DIR}}/*/*"
