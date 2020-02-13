@@ -1,0 +1,50 @@
+# Copyright 2020 Adam Chalkley
+#
+# https:#github.com/atc0005/bridge
+#
+# Licensed under the MIT License. See LICENSE file in the project root for
+# full license information.
+
+# https://rliebz.github.io/tusk/
+# https://github.com/rliebz/tusk
+# https://github.com/rliebz/tusk/blob/master/example/github-scripts.yml
+# https://github.com/rliebz/tusk/blob/master/example/example.yml
+
+# https://rliebz.github.io/tusk/spec/
+#
+# Commands are executed using the $SHELL environment variable, defaulting to
+# sh. Each command in a run clause gets its own sub-shell, so things like
+# declaring functions and environment variables will not be available across
+# separate run commmands, although it is possible to run the set-environment
+# clause or use a multi-line shell command.
+
+tasks:
+  configure-environment:
+    options:
+      goos:
+        default: windows
+      goarch:
+        default: amd64
+    private: true
+    run:
+      set-environment:
+        #go build -a -ldflags="-s -w -X main.version={{.VERSION}}" -o {{.OUTPUT_FILE}} {{.DIR}}
+        GOOS: ${goos}
+        GOARCH: ${goarch}
+
+  build:
+    usage: Build Go binaries
+    options:
+      # Variable names at this indentation level?
+      os:
+        usage: Target OS for generated binary
+        default: windows
+      arch:
+        usage: Target architecture for generated binary
+        default: amd64
+      run:
+
+    run:
+      - set-environment:
+        GOOS:
+# GOOS={{.GOOS}} GOARCH={{.ARCH}} go build -a -ldflags="-s -w -X main.version={{.VERSION}}" -o {{.OUTPUT_FILE}} {{.DIR}}
