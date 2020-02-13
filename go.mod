@@ -4,5 +4,4 @@ go 1.13
 
 require (
 	github.com/360EntSecGroup-Skylar/excelize v1.4.1
-	github.com/atc0005/elbow v0.7.1
 )
