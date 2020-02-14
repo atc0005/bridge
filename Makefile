@@ -17,21 +17,22 @@
 # https://www.gnu.org/software/make/manual/html_node/Recipe-Syntax.html#Recipe-Syntax
 # https://www.gnu.org/software/make/manual/html_node/Special-Variables.html#Special-Variables
 
+PKGS := $(shell go list ./... | grep -v /vendor)
 
-OUTPUTDIR 				= release_assets
+OUTPUTDIR 				:= release_assets
 
 # https://gist.github.com/TheHippo/7e4d9ec4b7ed4c0d7a39839e6800cc16
-VERSION 				= $(shell git describe --always --long --dirty)
+VERSION 				:= $(shell git describe --always --long --dirty)
 
 # The default `go build` process embeds debugging information. Building
 # without that debugging information reduces the binary size by around 28%.
-BUILDCMD				=	go build -a -ldflags="-s -w -X main.version=${VERSION}"
-GOCLEANCMD				=	go clean
-GITCLEANCMD				= 	git clean -xfd
-CHECKSUMCMD				=	sha256sum -b
+BUILDCMD				:=	go build -a -ldflags="-s -w -X main.version=${VERSION}"
+GOCLEANCMD				:=	go clean
+GITCLEANCMD				:= 	git clean -xfd
+CHECKSUMCMD				:=	sha256sum -b
 
-LINTINGCMD				=   bash testing/run_linting_checks.sh
-LINTINSTALLCMD			=   bash testing/install_linting_tools.sh
+LINTINGCMD				:=   bash testing/run_linting_checks.sh
+LINTINSTALLCMD			:=   bash testing/install_linting_tools.sh
 
 .DEFAULT_GOAL := help
 
