@@ -17,8 +17,6 @@
 # https://www.gnu.org/software/make/manual/html_node/Recipe-Syntax.html#Recipe-Syntax
 # https://www.gnu.org/software/make/manual/html_node/Special-Variables.html#Special-Variables
 
-PKGS := $(shell go list ./... | grep -v /vendor)
-
 OUTPUTDIR 				:= release_assets
 
 # https://gist.github.com/TheHippo/7e4d9ec4b7ed4c0d7a39839e6800cc16
@@ -39,16 +37,16 @@ LINTINSTALLCMD			:=   bash testing/install_linting_tools.sh
 # Targets will not work properly if a file with the same name is ever created
 # in this directory. We explicitly declare our targets to be phony by
 # making them a prerequisite of the special target .PHONY
-.PHONY: help clean goclean gitclean pristine all windows linux linting lintinstall gotests
+.PHONY: help clean goclean gitclean pristine all windows linux linting lintinstall gotests build-prune build-report
 
 # WARNING: Make expects you to use tabs to introduce recipe lines
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean          go clean to remove local build artifacts, temporary files, etc"
 	@echo "  pristine       go clean and git clean local changes"
-	@echo "  all            cross-compile for multiple operating systems"
-	@echo "  windows        to generate a binary file for Windows"
-	@echo "  linux          to generate a binary file for Linux distros"
+	@echo "  all            to generate binary files for Windows and Linux"
+	@echo "  build-prune    to generate binary files for Windows"
+	@echo "  build-report   to generate binary files for Linux distros"
 	@echo "  lintinstall    use wrapper script to install common linting tools"
 	@echo "  linting        use wrapper script to run common linting checks"
 	@echo "  gotests        go test recursively, verbosely"
@@ -85,46 +83,48 @@ gitclean:
 
 pristine: goclean gitclean
 
-prune: APPNAME=prune
-prune: windows linux
-
-report: APPNAME=report
-report: windows linux
-
 # https://stackoverflow.com/questions/3267145/makefile-execute-another-target
-all: clean prune report
+all: clean build-prune build-report
 	@echo "Completed all cross-platform builds ..."
 
-windows:
-	@echo "Building Windows release assets for $(APPNAME) ..."
+build-prune:
+	@echo "Building release assets for prune ..."
 
-	@mkdir -p $(OUTPUTDIR)/$(APPNAME)
+	@mkdir -p $(OUTPUTDIR)/prune
 
-	@echo "Building 386 binary"
-	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe ${PWD}/cmd/$(APPNAME)
+	@echo "Building 386 binaries"
+	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/prune/prune-$(VERSION)-windows-386.exe ${PWD}/cmd/prune
+	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/prune/prune-$(VERSION)-linux-386 ${PWD}/cmd/prune
 
-	@echo "Building amd64 binary"
-	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe ${PWD}/cmd/$(APPNAME)
-
-	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe.sha256
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe.sha256
-
-	@echo "Completed build for Windows"
-
-linux:
-	@echo "Building Linux release assets for $(APPNAME) ..."
-
-	@mkdir -p $(OUTPUTDIR)/$(APPNAME)
-
-	@echo "Building 386 binary"
-	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386 ${PWD}/cmd/$(APPNAME)
-
-	@echo "Building amd64 binary"
-	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64 ${PWD}/cmd/$(APPNAME)
+	@echo "Building amd64 binaries"
+	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/prune/prune-$(VERSION)-windows-amd64.exe ${PWD}/cmd/prune
+	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/prune/prune-$(VERSION)-linux-amd64 ${PWD}/cmd/prune
 
 	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386" > "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386.sha256"
-	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64" > "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64.sha256"
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune/prune-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/prune/prune-$(VERSION)-windows-386.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune/prune-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/prune/prune-$(VERSION)-windows-amd64.exe.sha256
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/prune/prune-$(VERSION)-linux-386" > "$(OUTPUTDIR)/prune/prune-$(VERSION)-linux-386.sha256"
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/prune/prune-$(VERSION)-linux-amd64" > "$(OUTPUTDIR)/prune/prune-$(VERSION)-linux-amd64.sha256"
 
-	@echo "Completed build for Linux"
+	@echo "Completed build for prune"
+
+build-report:
+	@echo "Building release assets for report ..."
+
+	@mkdir -p $(OUTPUTDIR)/report
+
+	@echo "Building 386 binaries"
+	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/report/report-$(VERSION)-windows-386.exe ${PWD}/cmd/report
+	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/report/report-$(VERSION)-linux-386 ${PWD}/cmd/report
+
+	@echo "Building amd64 binaries"
+	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/report/report-$(VERSION)-windows-amd64.exe ${PWD}/cmd/report
+	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/report/report-$(VERSION)-linux-amd64 ${PWD}/cmd/report
+
+	@echo "Generating checksum files"
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/report/report-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/report/report-$(VERSION)-windows-386.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/report/report-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/report/report-$(VERSION)-windows-amd64.exe.sha256
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/report/report-$(VERSION)-linux-386" > "$(OUTPUTDIR)/report/report-$(VERSION)-linux-386.sha256"
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/report/report-$(VERSION)-linux-amd64" > "$(OUTPUTDIR)/report/report-$(VERSION)-linux-amd64.sha256"
+
+	@echo "Completed build for report"
