@@ -73,14 +73,8 @@ goclean:
 	@$(GOCLEANCMD)
 	@echo "Removing any existing release assets"
 	@mkdir -p "$(OUTPUTDIR)"
-	@rm -vf $(wildcard ${OUTPUTDIR}/*-linux-386)
-	@rm -vf $(wildcard ${OUTPUTDIR}/*-linux-386.sha256)
-	@rm -vf $(wildcard ${OUTPUTDIR}/*-linux-amd64)
-	@rm -vf $(wildcard ${OUTPUTDIR}/*-linux-amd64.sha256)
-	@rm -vf $(wildcard ${OUTPUTDIR}/*-windows-386.exe)
-	@rm -vf $(wildcard ${OUTPUTDIR}/*-windows-386.exe.sha256)
-	@rm -vf $(wildcard ${OUTPUTDIR}/*-windows-amd64.exe)
-	@rm -vf $(wildcard ${OUTPUTDIR}/*-windows-amd64.exe.sha256)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*/*-linux-*)
+	@rm -vf $(wildcard ${OUTPUTDIR}/*/*-windows-*)
 
 # Setup alias for user reference
 clean: goclean
@@ -91,44 +85,46 @@ gitclean:
 
 pristine: goclean gitclean
 
+prune: APPNAME=prune
+prune: windows linux
+
+report: APPNAME=report
+report: windows linux
 
 # https://stackoverflow.com/questions/3267145/makefile-execute-another-target
-all: clean windows linux
+all: clean prune report
 	@echo "Completed all cross-platform builds ..."
 
 windows:
-	@echo "Building release assets for Windows ..."
+	@echo "Building Windows release assets for $(APPNAME) ..."
+
+	@mkdir -p $(OUTPUTDIR)/$(APPNAME)
 
 	@echo "Building 386 binary"
-	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/prune-$(VERSION)-windows-386.exe ${PWD}/cmd/prune
-	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/report-$(VERSION)-windows-386.exe ${PWD}/cmd/report
+	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe ${PWD}/cmd/$(APPNAME)
 
 	@echo "Building amd64 binary"
-	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/prune-$(VERSION)-windows-amd64.exe ${PWD}/cmd/prune
-	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/report-$(VERSION)-windows-amd64.exe ${PWD}/cmd/report
+	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe ${PWD}/cmd/$(APPNAME)
 
 	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/prune-$(VERSION)-windows-386.exe.sha256
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/report-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/report-$(VERSION)-windows-386.exe.sha256
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/prune-$(VERSION)-windows-amd64.exe.sha256
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/report-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/report-$(VERSION)-windows-amd64.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe.sha256
 
 	@echo "Completed build for Windows"
 
 linux:
-	@echo "Building release assets for Linux ..."
+	@echo "Building Linux release assets for $(APPNAME) ..."
+
+	@mkdir -p $(OUTPUTDIR)/$(APPNAME)
+
 	@echo "Building 386 binary"
-	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/prune-$(VERSION)-linux-386 ${PWD}/cmd/prune
-	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/report-$(VERSION)-linux-386 ${PWD}/cmd/report
+	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386 ${PWD}/cmd/$(APPNAME)
 
 	@echo "Building amd64 binary"
-	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/prune-$(VERSION)-linux-amd64 ${PWD}/cmd/prune
-	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/report-$(VERSION)-linux-amd64 ${PWD}/cmd/report
+	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64 ${PWD}/cmd/$(APPNAME)
 
 	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune-$(VERSION)-linux-386 > $(OUTPUTDIR)/prune-$(VERSION)-linux-386.sha256
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/report-$(VERSION)-linux-386 > $(OUTPUTDIR)/report-$(VERSION)-linux-386.sha256
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/prune-$(VERSION)-linux-amd64 > $(OUTPUTDIR)/prune-$(VERSION)-linux-amd64.sha256
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/report-$(VERSION)-linux-amd64 > $(OUTPUTDIR)/report-$(VERSION)-linux-amd64.sha256
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386" > "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386.sha256"
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64" > "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64.sha256"
 
 	@echo "Completed build for Linux"
