@@ -10,13 +10,19 @@
 package config
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/atc0005/bridge/paths"
 )
+
+// ErrInvalidSubcommand represents cases where the user did not pass a valid
+// subcommand
+var ErrInvalidSubcommand = errors.New("expected 'prune' or 'report' subcommands")
 
 // multiValueFlag is a custom type that satisfies the flag.Value interface in
 // order to accept multiple values for some of our flags
@@ -106,23 +112,55 @@ type Config struct {
 // on user provided flag values.
 func NewConfig() (*Config, error) {
 
+	// https://gobyexample.com/command-line-subcommands
+
+	// The subcommand is expected as the first argument to the program.
+	if len(os.Args) < 2 {
+		return nil, ErrInvalidSubcommand
+	}
+
 	config := Config{}
 
-	flag.Var(&config.Paths, "path", "Path to process. This flag may be repeated for each additional path to evaluate.")
-	flag.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit (in bytes) for evaluation. Files smaller than this will be skipped.")
-	flag.IntVar(&config.FileDuplicatesThreshold, "duplicates", 2, "Number of files of the same file size needed before duplicate validation logic is applied.")
-	flag.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
-	flag.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
-	flag.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
-	flag.StringVar(&config.OutputCSVFile, "csvfile", "", "The (required) fully-qualified path to a CSV file that this application should generate.")
-	flag.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
-	flag.BoolVar(&config.DryRun, "dry-run", false, "Pretend to remove files, echo what would have been done to stdout. Setting this false does not enable file removal.")
-	flag.BoolVar(&config.PruneFiles, "prune", false, "Enable file removal behavior. This option requires that the input CSV file be specified.")
-	flag.BoolVar(&config.BlankLineBetweenSets, "blank-line", false, "Add a blank line between sets of matching files in console and file output.")
-	flag.StringVar(&config.InputCSVFile, "input-csvfile", "", "The fully-qualified path to a CSV file that this application should use for file removal decisions.")
-	flag.StringVar(&config.BackupDirectory, "backup-dir", "", "The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.")
+	reportCmd := flag.NewFlagSet("report", flag.ExitOnError)
+	reportCmd.Var(&config.Paths, "path", "Path to process. This flag may be repeated for each additional path to evaluate.")
+	reportCmd.Int64Var(&config.FileSizeThreshold, "size", 1, "File size limit (in bytes) for evaluation. Files smaller than this will be skipped.")
+	reportCmd.IntVar(&config.FileDuplicatesThreshold, "duplicates", 2, "Number of files of the same file size needed before duplicate validation logic is applied.")
+	reportCmd.BoolVar(&config.RecursiveSearch, "recurse", false, "Perform recursive search into subdirectories per provided path.")
+	reportCmd.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
+	reportCmd.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
+	reportCmd.StringVar(&config.OutputCSVFile, "csvfile", "", "The (required) fully-qualified path to a CSV file that this application should generate.")
+	reportCmd.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
 
-	// parse flag definitions from the argument list
+	pruneCmd := flag.NewFlagSet("prune", flag.ExitOnError)
+	pruneCmd.BoolVar(&config.DryRun, "dry-run", false, "Pretend to remove files, echo what would have been done to stdout. Setting this false does not enable file removal.")
+	pruneCmd.BoolVar(&config.PruneFiles, "prune", false, "Enable file removal behavior. This option requires that the input CSV file be specified.")
+	pruneCmd.BoolVar(&config.BlankLineBetweenSets, "blank-line", false, "Add a blank line between sets of matching files in console and file output.")
+	pruneCmd.StringVar(&config.InputCSVFile, "input-csvfile", "", "The fully-qualified path to a CSV file that this application should use for file removal decisions.")
+	pruneCmd.StringVar(&config.BackupDirectory, "backup-dir", "", "The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.")
+	pruneCmd.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
+	pruneCmd.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
+
+	//	For every subcommand, we parse its own flags and have access to trailing positional arguments.
+	switch os.Args[1] {
+
+	case "prune":
+
+		// DEBUG
+		fmt.Println("subcommand 'foo'")
+
+		pruneCmd.Parse(os.Args[2:])
+
+	case "report":
+
+		// DEBUG
+		fmt.Println("subcommand 'report'")
+
+		reportCmd.Parse(os.Args[2:])
+
+	default:
+		return nil, ErrInvalidSubcommand
+	}
+
 	flag.Parse()
 
 	if err := config.Validate(); err != nil {

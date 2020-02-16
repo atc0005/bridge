@@ -185,6 +185,7 @@ of this document for links to additional information.
 
 - <https://stackoverflow.com/questions/28322997/how-to-get-a-list-of-values-into-a-flag-in-golang>
 - <https://golang.org/pkg/flag/#Value>
+- <https://gobyexample.com/command-line-subcommands>
 
 - <https://stackoverflow.com/questions/50324612/merge-maps-in-golang/50325337#50325337>
 - <https://yourbasic.org/golang/gotcha-change-value-range/>
