@@ -146,7 +146,7 @@ func NewConfig() (*Config, error) {
 	case "prune":
 
 		// DEBUG
-		fmt.Println("subcommand 'foo'")
+		fmt.Println("subcommand 'prune'")
 
 		pruneCmd.Parse(os.Args[2:])
 
