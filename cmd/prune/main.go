@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/atc0005/bridge/checksums"
@@ -162,23 +163,49 @@ func main() {
 		// and the user did not override the default option of skipping the
 		// first row (due to it usually being the header row)
 		if rowCounter == 1 {
-			if appConfig.SkipFirstRow {
+			if !appConfig.UseFirstRow {
 				// DEBUG
 				log.Println("Skipping first row in input file to avoid processing column headers")
 				continue
+			}
+			log.Println("Attempting to parse row 1 from input CSV file as requested")
+		}
+
+		// TODO: Implement better handling here
+		for index, field := range record {
+			if strings.TrimSpace(field) == "" {
+				// WARNING?
+				// NOTE: Increment index to provide human-readable field
+				// number and not zero-based field numbers
+				log.Printf("Row %d, field %d is empty.", rowCounter, index+1)
+				if appConfig.IgnoreErrors {
+					log.Println("IgnoringErrors set, ignoring empty field and continuing with the next one.")
+					continue
+				}
+				log.Fatal("IgnoringErrors NOT set. Exiting.")
 			}
 		}
 
 		sizeInBytes, err := strconv.ParseInt(record[3], 10, 64)
 		if err != nil {
-			log.Println("DEBUG | record[3]:", record[3])
-			log.Fatal("failed to convert CSV sizeInBytes field")
+			log.Printf("DEBUG | CSV row %d, field 4: %q\n", rowCounter, record[3])
+			log.Println("failed to convert CSV sizeInBytes field", err)
+			if appConfig.IgnoreErrors {
+				log.Println("IgnoringErrors set, ignoring input row and continuing with the next one.")
+				continue
+			}
+			log.Fatal("IgnoringErrors NOT set. Exiting.")
 		}
 
 		removeFile, err := strconv.ParseBool(record[5])
 		if err != nil {
-			log.Println("DEBUG | record[5]:", record[3])
-			log.Fatal("failed to convert CSV remove_file field")
+			log.Printf("DEBUG | CSV row %d, field 6: %q\n", rowCounter, record[5])
+			log.Println("failed to convert CSV remove_file field:", err)
+			if appConfig.IgnoreErrors {
+				log.Println("IgnoringErrors set, ignoring input row and continuing with the next one.")
+				continue
+			}
+			log.Fatal("IgnoringErrors NOT set. Exiting.")
 		}
 
 		// convert a CSV row into an object representing the various named
@@ -201,12 +228,12 @@ func main() {
 		// fmt.Println(record[5])
 
 		fmt.Println(row)
-		fmt.Println(row.ParentDirectory)
-		fmt.Println(row.Filename)
-		fmt.Println(row.SizeHR)
-		fmt.Println(row.SizeInBytes)
-		fmt.Println(row.Checksum)
-		fmt.Println(row.RemoveFile)
+		// fmt.Println(row.ParentDirectory)
+		// fmt.Println(row.Filename)
+		// fmt.Println(row.SizeHR)
+		// fmt.Println(row.SizeInBytes)
+		// fmt.Println(row.Checksum)
+		// fmt.Println(row.RemoveFile)
 
 	}
 
