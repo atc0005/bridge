@@ -116,6 +116,12 @@ type Config struct {
 	// BackupDirectory is writable directory path where files should be
 	// relocated instead of removed
 	BackupDirectory string
+
+	// SkipFirstRow enables skipping the first row in the input CSV file. This
+	// should probably always be done with input CSV files previously generated
+	// by this application, but support for overriding this behavior is
+	// provided in an effort to support edge cases
+	SkipFirstRow bool
 }
 
 // NewConfig is a factory function that produces a new Config object based
@@ -149,6 +155,7 @@ func NewConfig() (*Config, error) {
 	pruneCmd.StringVar(&config.BackupDirectory, "backup-dir", "", "The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.")
 	pruneCmd.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
 	pruneCmd.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
+	pruneCmd.BoolVar(&config.SkipFirstRow, "skip-first-row", true, "Skip over the first row of the input file. This is intended to help avoid futile attempts to parse the header row as duplicate file data.")
 
 	// For every subcommand, we parse its own flags and have access to trailing positional arguments.
 	switch os.Args[1] {
