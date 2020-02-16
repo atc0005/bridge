@@ -8,9 +8,14 @@
 package main
 
 import (
+	"encoding/csv"
+	"fmt"
+	"io"
 	"log"
+	"os"
 
 	"github.com/atc0005/bridge/config"
+	"github.com/atc0005/bridge/paths"
 )
 
 func main() {
@@ -57,5 +62,45 @@ func main() {
 		Backup file removal candidate (if option is set)
 
 	*/
+
+	if !paths.PathExists(appConfig.InputCSVFile) {
+		log.Fatal("specified CSV input file does not exist")
+	}
+
+	file, err := os.Open(appConfig.InputCSVFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// NOTE: We're not manipulating contents for this file, so relying solely
+	// on a defer statement to close the file should be sufficient?
+	defer file.Close()
+
+	csvReader := csv.NewReader(file)
+
+	// Require that the number of fields found matches what we expect to find
+	csvReader.FieldsPerRecord = config.InputCSVFieldCount
+
+	// TODO: Even with this set, we should probably still trim whitespace
+	// ourselves so that we can be assured that leading AND trailing
+	// whitespace has been removed
+	csvReader.TrimLeadingSpace = true
+
+	for {
+		record, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(record)
+		fmt.Println(record[0])
+		fmt.Println(record[1])
+		fmt.Println(record[2])
+		fmt.Println(record[3])
+		fmt.Println(record[4])
+		fmt.Println(record[5])
+	}
 
 }
