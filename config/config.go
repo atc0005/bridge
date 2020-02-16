@@ -24,6 +24,9 @@ import (
 // subcommand
 var ErrInvalidSubcommand = errors.New("expected 'prune' or 'report' subcommands")
 
+const pruneSubcommand string = "prune"
+const reportSubcommand string = "report"
+
 // multiValueFlag is a custom type that satisfies the flag.Value interface in
 // order to accept multiple values for some of our flags
 type multiValueFlag []string
@@ -140,28 +143,19 @@ func NewConfig() (*Config, error) {
 	pruneCmd.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
 	pruneCmd.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
 
-	//	For every subcommand, we parse its own flags and have access to trailing positional arguments.
+	// For every subcommand, we parse its own flags and have access to trailing positional arguments.
 	switch os.Args[1] {
-
-	case "prune":
-
+	case pruneSubcommand:
 		// DEBUG
-		fmt.Println("subcommand 'prune'")
-
+		fmt.Printf("subcommand '%s'\n", pruneSubcommand)
 		pruneCmd.Parse(os.Args[2:])
-
-	case "report":
-
+	case reportSubcommand:
 		// DEBUG
-		fmt.Println("subcommand 'report'")
-
+		fmt.Printf("subcommand '%s'\n", reportSubcommand)
 		reportCmd.Parse(os.Args[2:])
-
 	default:
 		return nil, ErrInvalidSubcommand
 	}
-
-	flag.Parse()
 
 	if err := config.Validate(); err != nil {
 		return nil, err
@@ -173,66 +167,88 @@ func NewConfig() (*Config, error) {
 // Validate verifies all struct fields have been provided acceptable values
 func (c Config) Validate() error {
 
-	if c.Paths == nil {
-		return fmt.Errorf("one or more paths not provided")
-	}
+	// We enforce some common validation requirements for all subcommands
+	// and then specific requirements as applicable to each subcommand.
+	switch os.Args[1] {
 
-	if c.FileSizeThreshold < 0 {
-		return fmt.Errorf("0 bytes is the minimum size for evaluated files")
-	}
+	case pruneSubcommand:
 
-	if c.FileDuplicatesThreshold < 2 {
-		return fmt.Errorf("2 is the minimum duplicates number for evaluated files")
-	}
+		// DEBUG
+		fmt.Printf("validating subcommand '%s'\n", pruneSubcommand)
 
-	// FIXME: The PathExists checks are currently duplicated here and within
-	// matches package
-	// NOTE: Checking at this point is cheaper than waiting until later and
-	// then attempting to write out the file.
-	switch {
-	case c.OutputCSVFile == "":
-		return fmt.Errorf("missing fully-qualified path to CSV file to create")
-	case !paths.PathExists(filepath.Dir(c.OutputCSVFile)):
-		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
-	}
-
-	// FIXME: The PathExists checks are currently duplicated here and within
-	// matches package
-	// NOTE: Checking at this point is cheaper than waiting until later and
-	// then attempting to write out the file.
-	// Optional flag, optional file generation
-	if c.ExcelFile != "" {
-		if !paths.PathExists(filepath.Dir(c.ExcelFile)) {
-			return fmt.Errorf("parent directory for specified Excel file to create does not exist")
+		// FIXME: The PathExists checks are currently duplicated here and within
+		// matches package
+		// NOTE: Checking at this point is (potentially) cheaper than waiting
+		// until later and then attempting to read in the file. Optional flag, but
+		// if set we require that the path actually exist
+		if c.InputCSVFile != "" {
+			if !paths.PathExists(c.InputCSVFile) {
+				return fmt.Errorf("specified CSV file to process does not exist")
+			}
 		}
-	}
 
-	// FIXME: The PathExists checks are currently duplicated here and within
-	// matches package
-	// NOTE: Checking at this point is (potentially) cheaper than waiting
-	// until later and then attempting to read in the file. Optional flag, but
-	// if set we require that the path actually exist
-	if c.InputCSVFile != "" {
-		if !paths.PathExists(c.InputCSVFile) {
-			return fmt.Errorf("specified CSV file to process does not exist")
+		// FIXME: The PathExists checks are currently duplicated here and within
+		// matches package
+		// NOTE: Checking at this point is cheaper than waiting until later and
+		// then attempting to write out the file.
+		// Optional flag, optional file backups
+		if c.BackupDirectory != "" {
+			if !paths.PathExists(c.BackupDirectory) {
+				return fmt.Errorf("directory for backup files does not exist: %q", c.BackupDirectory)
+			}
 		}
-	}
 
-	// FIXME: The PathExists checks are currently duplicated here and within
-	// matches package
-	// NOTE: Checking at this point is cheaper than waiting until later and
-	// then attempting to write out the file.
-	// Optional flag, optional file backups
-	if c.BackupDirectory != "" {
-		if !paths.PathExists(c.BackupDirectory) {
-			return fmt.Errorf("directory for backup files does not exist: %q", c.BackupDirectory)
+	case reportSubcommand:
+
+		// DEBUG
+		fmt.Printf("validating subcommand '%s'\n", reportSubcommand)
+
+		if c.Paths == nil {
+			return fmt.Errorf("one or more paths not provided")
 		}
+
+		if c.FileSizeThreshold < 0 {
+			return fmt.Errorf("0 bytes is the minimum size for evaluated files")
+		}
+
+		if c.FileDuplicatesThreshold < 2 {
+			return fmt.Errorf("2 is the minimum duplicates number for evaluated files")
+		}
+
+		// FIXME: The PathExists checks are currently duplicated here and within
+		// matches package
+		// NOTE: Checking at this point is cheaper than waiting until later and
+		// then attempting to write out the file.
+		switch {
+		case c.OutputCSVFile == "":
+			return fmt.Errorf("missing fully-qualified path to CSV file to create")
+		case !paths.PathExists(filepath.Dir(c.OutputCSVFile)):
+			return fmt.Errorf("parent directory for specified CSV file to create does not exist")
+		}
+
+		// FIXME: The PathExists checks are currently duplicated here and within
+		// matches package
+		// NOTE: Checking at this point is cheaper than waiting until later and
+		// then attempting to write out the file.
+		// Optional flag, optional file generation
+		if c.ExcelFile != "" {
+			if !paths.PathExists(filepath.Dir(c.ExcelFile)) {
+				return fmt.Errorf("parent directory for specified Excel file to create does not exist")
+			}
+		}
+
+	default:
+		// NOTE: This default case statement should not be reached due to
+		// NewConfig() applying the same set of subcommand checks, but
+		// providing this step for completeness.
+		return ErrInvalidSubcommand
 	}
 
-	// RecursiveSearch is a boolean flag. The flag package takes care of
-	// assigning a usable default value, so nothing to do here.
+	// TODO: Examine boolean flags for illogical groupings
+	// Contrived example:
 	//
-	// ConsoleReport is another boolean flag.
+	// * Enable logging
+	// * Disable all logging
 
 	// Optimist
 	return nil

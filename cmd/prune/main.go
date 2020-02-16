@@ -7,8 +7,21 @@
 
 package main
 
-import "fmt"
+import (
+	"log"
+
+	"github.com/atc0005/bridge/config"
+)
 
 func main() {
-	fmt.Println("Hello World!")
+
+	var appConfig *config.Config
+	var err error
+
+	if appConfig, err = config.NewConfig(); err != nil {
+		panic(err)
+	}
+
+	log.Printf("Configuration: %+v\n", appConfig)
+
 }
