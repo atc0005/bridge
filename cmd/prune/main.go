@@ -50,7 +50,7 @@ type InputCSVRow struct {
 	RemoveFile bool
 }
 
-func printCSVRow(row InputCSVRow) {
+func printCSVRows(rows []InputCSVRow) {
 
 	w := &tabwriter.Writer{}
 	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
@@ -59,19 +59,26 @@ func printCSVRow(row InputCSVRow) {
 	//w.Init(os.Stdout, 16, 8, 8, '\t', 0)
 	w.Init(os.Stdout, 8, 8, 4, '\t', 0)
 
+	// NOTE: Skip outputing size in bytes since this is meant to be reviewed
+	// by a human and not programatically acted upon
+
 	// Header row in output
 	fmt.Fprintln(w,
-		"Directory\tFile\tSize\tSize in bytes\tChecksum\tRemove File")
+		"Directory\tFile\tSize\tChecksum\tRemove File")
 
-	fmt.Fprintf(w,
-		"%v\t%v\t%v\t%v\t%v\t%v\n",
-		row.ParentDirectory,
-		row.Filename,
-		row.SizeHR,
-		row.SizeInBytes,
-		row.Checksum,
-		row.RemoveFile,
-	)
+	for _, row := range rows {
+
+		fmt.Fprintf(w,
+			"%v\t%v\t%v\t%v\t%v\n",
+			row.ParentDirectory,
+			row.Filename,
+			row.SizeHR,
+			row.Checksum,
+			row.RemoveFile,
+		)
+
+	}
+
 	fmt.Fprintln(w)
 	w.Flush()
 }
@@ -144,6 +151,7 @@ func main() {
 	// whitespace has been removed
 	csvReader.TrimLeadingSpace = true
 
+	var csvRows []InputCSVRow
 	var rowCounter int = 0
 	for {
 
@@ -227,7 +235,7 @@ func main() {
 		// fmt.Println(record[4])
 		// fmt.Println(record[5])
 
-		fmt.Println(row)
+		//fmt.Println(row)
 		// fmt.Println(row.ParentDirectory)
 		// fmt.Println(row.Filename)
 		// fmt.Println(row.SizeHR)
@@ -235,6 +243,12 @@ func main() {
 		// fmt.Println(row.Checksum)
 		// fmt.Println(row.RemoveFile)
 
+		csvRows = append(csvRows, row)
+
+		//printCSVRow(row)
+
 	}
+
+	printCSVRows(csvRows)
 
 }
