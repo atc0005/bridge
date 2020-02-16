@@ -352,6 +352,16 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 					return nil
 				}
 
+				// Since by this point we have already filtered out
+				// directories, `path` represents both the containing
+				// directory and the filename of the file being examined. Here
+				// we attempt to resolve the fully-qualified directory path
+				// containing the file for later use.
+				fullyQualifiedDirPath, err := filepath.Abs(filepath.Dir(path))
+				if err != nil {
+					return err
+				}
+
 				// If we made it to this point, then we must assume that the file
 				// has met all criteria to be evaluated by this application.
 				// Let's add the file to our slice of files of the same size
@@ -359,9 +369,11 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 				fileSizeIndex[info.Size()] = append(
 					fileSizeIndex[info.Size()],
 					FileMatch{
-						FileInfo:        info,
-						FullPath:        path,
-						ParentDirectory: filepath.Dir(path),
+						FileInfo: info,
+						FullPath: path,
+						// Record fully-qualified path that can be referenced
+						// from any location in the filesystem.
+						ParentDirectory: fullyQualifiedDirPath,
 					})
 			}
 
@@ -398,20 +410,25 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 				continue
 			}
 
+			// `path` is a flat directory structure (we are not using
+			// recursion in this code path)
+			fullyQualifiedDirPath, err := filepath.Abs(path)
+			if err != nil {
+				return nil, err
+			}
+
 			// If we made it to this point, then we must assume that the file
-			// has met all criteria to be evaluated by this application.
-			// Let's add the file to our slice of files of the same size
-			// using our index based on file size.
+			// has met all criteria to be evaluated by this application. Let's
+			// add the file to our slice of files of the same size using our
+			// index based on file size.
 			fileSizeIndex[file.Size()] = append(
 				fileSizeIndex[file.Size()],
 				FileMatch{
 					FileInfo: file,
 					FullPath: filepath.Join(path, file.Name()),
-					// ParentDirectory: filepath.Dir(path),
-					// `path` is a flat directory structure (we are not using
-					// recursion), so record it directly as the parent
-					// directory for files within
-					ParentDirectory: path,
+					// Record fully-qualified path that can be referenced
+					// from any location in the filesystem.
+					ParentDirectory: fullyQualifiedDirPath,
 				})
 		}
 	}
