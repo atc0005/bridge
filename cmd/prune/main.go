@@ -50,7 +50,13 @@ type InputCSVRow struct {
 	RemoveFile bool
 }
 
-func printCSVRows(rows []InputCSVRow) {
+// InputCSVRows is a collection of InputCSVRow objects representing rows that
+// should be acted upon in some way, usually file pruning actions.
+type InputCSVRows []InputCSVRow
+
+// Print writes InputCSVRow objects to a provided Writer, falling back to
+// stdout if not specified.
+func (rows InputCSVRows) Print() {
 
 	w := &tabwriter.Writer{}
 	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
@@ -81,6 +87,65 @@ func printCSVRows(rows []InputCSVRow) {
 
 	fmt.Fprintln(w)
 	w.Flush()
+}
+
+// parseInputRow evaluates each row returned from the CSV Reader returning a
+// InputCSVRow object if parsing succeeds, otherwise returning nil.
+func parseInputRow(row []string, fieldCount int, rowNum int) (InputCSVRow, error) {
+
+	csvRow := InputCSVRow{}
+
+	// The CSV Reader already performs field count validation, but let's be
+	// paranoid and recheck to help ensure that we didn't make a mistake and
+	// pass a different slice than expected.
+	if len(row) != fieldCount {
+		return csvRow, fmt.Errorf(
+			"unexpected number of fields received. got %d, expected %d",
+			len(row),
+			fieldCount,
+		)
+	}
+
+	// TODO: This should be extracted?
+	// In short, this shouldn't be actionable on its own
+	for index, field := range row {
+		if strings.TrimSpace(field) == "" {
+			// NOTE: Increment index to provide human-readable field
+			// number and not zero-based field numbers
+			// TODO: Use error wrapping here
+			return csvRow, fmt.Errorf("row %d, field %d is empty", rowNum, index+1)
+		}
+	}
+
+	sizeInBytes, err := strconv.ParseInt(row[3], 10, 64)
+	if err != nil {
+		log.Printf("DEBUG | CSV row %d, field 4: %q\n", rowNum, row[3])
+		// TODO: Use error wrapping here
+		return csvRow, fmt.Errorf("failed to convert CSV sizeInBytes field %v", err)
+	}
+
+	removeFile, err := strconv.ParseBool(row[5])
+	if err != nil {
+		log.Printf("DEBUG | CSV row %d, field 6: %q\n", rowNum, row[5])
+		// TODO: Use error wrapping here
+		return csvRow, fmt.Errorf("failed to convert CSV remove_file field %v", err)
+
+	}
+
+	// convert a CSV row into an object representing the various named
+	// fields found in that row
+	csvRow = InputCSVRow{
+		ParentDirectory: row[0],
+		Filename:        row[1],
+		SizeHR:          row[2],
+		SizeInBytes:     sizeInBytes,
+		Checksum:        checksums.SHA256Checksum(row[4]),
+		RemoveFile:      removeFile,
+	}
+
+	// everything went well
+	return csvRow, nil
+
 }
 
 func main() {
@@ -151,7 +216,7 @@ func main() {
 	// whitespace has been removed
 	csvReader.TrimLeadingSpace = true
 
-	var csvRows []InputCSVRow
+	var csvRows InputCSVRows
 	var rowCounter int = 0
 	for {
 
@@ -179,76 +244,25 @@ func main() {
 			log.Println("Attempting to parse row 1 from input CSV file as requested")
 		}
 
-		// TODO: Implement better handling here
-		for index, field := range record {
-			if strings.TrimSpace(field) == "" {
-				// WARNING?
-				// NOTE: Increment index to provide human-readable field
-				// number and not zero-based field numbers
-				log.Printf("Row %d, field %d is empty.", rowCounter, index+1)
-				if appConfig.IgnoreErrors {
-					log.Println("IgnoringErrors set, ignoring empty field and continuing with the next one.")
-					continue
-				}
-				log.Fatal("IgnoringErrors NOT set. Exiting.")
-			}
-		}
-
-		sizeInBytes, err := strconv.ParseInt(record[3], 10, 64)
+		// ###########################################################################################################
+		// TODO: "row" is not a good representation of the duplicate file set
+		// entries recorded in the CSV file. This also applies to csvRows,
+		// InputCSVRow, and InputCSVRows.
+		// ###########################################################################################################
+		row, err := parseInputRow(record, config.InputCSVFieldCount, rowCounter)
 		if err != nil {
-			log.Printf("DEBUG | CSV row %d, field 4: %q\n", rowCounter, record[3])
-			log.Println("failed to convert CSV sizeInBytes field", err)
 			if appConfig.IgnoreErrors {
 				log.Println("IgnoringErrors set, ignoring input row and continuing with the next one.")
 				continue
 			}
 			log.Fatal("IgnoringErrors NOT set. Exiting.")
 		}
-
-		removeFile, err := strconv.ParseBool(record[5])
-		if err != nil {
-			log.Printf("DEBUG | CSV row %d, field 6: %q\n", rowCounter, record[5])
-			log.Println("failed to convert CSV remove_file field:", err)
-			if appConfig.IgnoreErrors {
-				log.Println("IgnoringErrors set, ignoring input row and continuing with the next one.")
-				continue
-			}
-			log.Fatal("IgnoringErrors NOT set. Exiting.")
-		}
-
-		// convert a CSV row into an object representing the various named
-		// fields found in that row
-		row := InputCSVRow{
-			ParentDirectory: record[0],
-			Filename:        record[1],
-			SizeHR:          record[2],
-			SizeInBytes:     sizeInBytes,
-			Checksum:        checksums.SHA256Checksum(record[4]),
-			RemoveFile:      removeFile,
-		}
-
-		//fmt.Println(record)
-		// fmt.Println(record[0])
-		// fmt.Println(record[1])
-		// fmt.Println(record[2])
-		// fmt.Println(record[3])
-		// fmt.Println(record[4])
-		// fmt.Println(record[5])
-
-		//fmt.Println(row)
-		// fmt.Println(row.ParentDirectory)
-		// fmt.Println(row.Filename)
-		// fmt.Println(row.SizeHR)
-		// fmt.Println(row.SizeInBytes)
-		// fmt.Println(row.Checksum)
-		// fmt.Println(row.RemoveFile)
-
 		csvRows = append(csvRows, row)
 
 		//printCSVRow(row)
 
 	}
 
-	printCSVRows(csvRows)
+	csvRows.Print()
 
 }
