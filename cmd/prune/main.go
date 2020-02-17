@@ -94,9 +94,31 @@ func (dfsEntries DuplicateFileSetEntries) Print() {
 	w.Flush()
 }
 
+// Validate performs validation of all fields for each entry in the duplicate
+// file set. Any entries which fail validation are considered invalid and
+// removed from the set.
+func (dfsEntries *DuplicateFileSetEntries) Validate() {
+
+	// TODO:
+	//
+	// Review method name: Does `Validate()` convey that we are going to
+	// prune invalid entries from the set?
+	//
+	// See removal-validation-logic-scratch-notes.md for direction here
+	//
+	//
+
+	// case !paths.PathExists(parentDirectory):
+	// 	return dfsEntry,
+	// 		fmt.Errorf("row %d, field %d has invalid parent directory path", rowNum, 0)
+
+}
+
 // parseInputRow evaluates each row returned from the CSV Reader returning a
 // DuplicateFileSetEntry object if parsing succeeds, otherwise returning nil.
 func parseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEntry, error) {
+
+	// TODO: Use error wrapping extensively in this function
 
 	dfsEntry := DuplicateFileSetEntry{}
 
@@ -111,28 +133,47 @@ func parseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEn
 		)
 	}
 
-	// validate parent directory
-	parentDirectory := strings.TrimSpace(row[0])
-	switch {
-	case parentDirectory == "":
-		return dfsEntry,
-			fmt.Errorf("row %d, field %d has empty parent directory path", rowNum, 0)
-	case !paths.PathExists(parentDirectory):
-		return dfsEntry,
-			fmt.Errorf("row %d, field %d has invalid parent directory path", rowNum, 0)
+	// Go ahead and trim space from all fields
+	for index, field := range row {
+		row[index] = strings.TrimSpace(field)
 	}
 
+	// ParentDirectory
+	if row[0] == "" {
+		return dfsEntry,
+			fmt.Errorf("row %d, field %d has empty parent directory path", rowNum, 1)
+	}
+
+	// Filename
+	if row[1] == "" {
+		return dfsEntry,
+			fmt.Errorf("row %d, field %d has empty filename", rowNum, 2)
+	}
+
+	// Do not require that this field be populated. We do not have an
+	// immediate use for the value in this field and it was mostly used to
+	// display the size value as a human-readable value for the report.
+	if row[2] == "" {
+		log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 3, row[2])
+	}
+
+	// FIXME: This field should probably be optional; we can regenerate the
+	// value later when needed
 	sizeInBytes, err := strconv.ParseInt(row[3], 10, 64)
 	if err != nil {
-		log.Printf("DEBUG | CSV row %d, field 4: %q\n", rowNum, row[3])
-		// TODO: Use error wrapping here
+		log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 4, row[3])
 		return dfsEntry, fmt.Errorf("failed to convert CSV sizeInBytes field %v", err)
+	}
+
+	// Checksum
+	if row[4] == "" {
+		return dfsEntry,
+			fmt.Errorf("row %d, field %d has empty checksum", rowNum, 5)
 	}
 
 	removeFile, err := strconv.ParseBool(row[5])
 	if err != nil {
-		log.Printf("DEBUG | CSV row %d, field 6: %q\n", rowNum, row[5])
-		// TODO: Use error wrapping here
+		log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 6, row[5])
 		return dfsEntry, fmt.Errorf("failed to convert CSV remove_file field %v", err)
 
 	}
@@ -250,11 +291,6 @@ func main() {
 			log.Println("Attempting to parse row 1 from input CSV file as requested")
 		}
 
-		// ###########################################################################################################
-		// TODO: "row" is not a good representation of the duplicate file set
-		// entries recorded in the CSV file. This also applies to csvRows,
-		// DuplicateFileSetEntry, and DuplicateFileSetEntries.
-		// ###########################################################################################################
 		dfsEntry, err := parseInputRow(record, config.InputCSVFieldCount, rowCounter)
 		if err != nil {
 			if appConfig.IgnoreErrors {
@@ -264,8 +300,6 @@ func main() {
 			log.Fatal("IgnoringErrors NOT set. Exiting.")
 		}
 		dfsEntries = append(dfsEntries, dfsEntry)
-
-		//printCSVRow(row)
 
 	}
 
