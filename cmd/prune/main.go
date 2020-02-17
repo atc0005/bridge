@@ -111,15 +111,15 @@ func parseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEn
 		)
 	}
 
-	// TODO: This should be extracted?
-	// In short, this shouldn't be actionable on its own
-	for index, field := range row {
-		if strings.TrimSpace(field) == "" {
-			// NOTE: Increment index to provide human-readable field
-			// number and not zero-based field numbers
-			// TODO: Use error wrapping here
-			return dfsEntry, fmt.Errorf("row %d, field %d is empty", rowNum, index+1)
-		}
+	// validate parent directory
+	parentDirectory := strings.TrimSpace(row[0])
+	switch {
+	case parentDirectory == "":
+		return dfsEntry,
+			fmt.Errorf("row %d, field %d has empty parent directory path", rowNum, 0)
+	case !paths.PathExists(parentDirectory):
+		return dfsEntry,
+			fmt.Errorf("row %d, field %d has invalid parent directory path", rowNum, 0)
 	}
 
 	sizeInBytes, err := strconv.ParseInt(row[3], 10, 64)
@@ -162,6 +162,7 @@ func main() {
 		panic(err)
 	}
 
+	// DEBUG
 	log.Printf("Configuration: %+v\n", appConfig)
 
 	// Values we can work with:
