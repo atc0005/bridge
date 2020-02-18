@@ -383,6 +383,9 @@ func main() {
 
 	}
 
-	dfsEntries.Print()
+	// Print parsed CSV file to the console if user requested it
+	if appConfig.ConsoleReport {
+		dfsEntries.Print()
+	}
 
 }
