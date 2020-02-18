@@ -108,6 +108,8 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 			}
 		}
 
+		// record current checksum for comparison at the top of the next loop
+		// iteration.
 		lastChecksum = row.Checksum
 
 	}
