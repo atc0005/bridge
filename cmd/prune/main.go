@@ -160,7 +160,6 @@ func main() {
 	// now ready to begin work to remove flagged files.
 
 	// if there are no files flagged for removal, say so and exit.
-
 	filesToRemove := dfsEntries.FilesToRemove()
 	if filesToRemove == 0 {
 		fmt.Printf("0 entries out of %d marked for removal in the %q input CSV file.\n",
@@ -171,5 +170,14 @@ func main() {
 
 	// INFO? DEBUG?
 	log.Printf("Found %d files to remove in %q", filesToRemove, appConfig.InputCSVFile)
+
+	// attempt to backup files if user requested that we do so. if backup
+	// failure occurs, abort. If file already exists in specified backup
+	// directory check to see if they're identical. Report identical status
+	// (yeah, nay) and abort unless an override or force option is given
+	// (potential future work).
+
+	// Once backups complete remove original files. Allow IgnoreErrors setting
+	// to apply, but be very noisy about removal failures
 
 }
