@@ -21,6 +21,7 @@ import (
 	"github.com/atc0005/bridge/checksums"
 	"github.com/atc0005/bridge/config"
 	"github.com/atc0005/bridge/paths"
+	"github.com/atc0005/bridge/units"
 )
 
 // DuplicateFileSetEntry represents a duplicate file set entry recorded as a
@@ -95,27 +96,35 @@ func (dfsEntries DuplicateFileSetEntries) Print() {
 	w.Flush()
 }
 
-// Validate performs validation of all fields for each entry in the duplicate
-// file set. Any entries which fail validation are considered invalid and
-// removed from the set.
-func (dfsEntries *DuplicateFileSetEntries) Validate() error {
-	// TODO:
-	//
-	// Review method name: Does `Validate()` convey that we are going to
-	// prune invalid entries from the set?
-	//
-	// See removal-validation-logic-scratch-notes.md for direction here
-	//
-	//
+// UpdateSizeInfo fills in potentially missing size information for each entry
+// in the duplicate file set.
+func (dfsEntry *DuplicateFileSetEntry) UpdateSizeInfo() error {
 
 	// How to best handle nil receiver?
-	if dfsEntries == nil {
-		return fmt.Errorf("nil receiver; no entries to validate")
+	if dfsEntry == nil {
+		return fmt.Errorf("nil receiver; nothing to update")
+	}
+
+	// the parseInputRow function places a zero value here if it was found to
+	// be empty in the CSV input file row. If it wasn't empty, an attempt
+	// was made to convert whatever was present into an int64.
+	fileFullPath := filepath.Join(dfsEntry.ParentDirectory, dfsEntry.Filename)
+	if dfsEntry.SizeInBytes == 0 {
+		// Recalculate the size in bytes from a file that has passed
+		// checksum validation
+		fileInfo, err := os.Stat(fileFullPath)
+		if err != nil {
+			return fmt.Errorf("unable to stat %q to determine size in bytes", fileFullPath)
+		}
+		dfsEntry.SizeInBytes = fileInfo.Size()
+	}
+
+	// Update human-readable size field if not already set
+	if dfsEntry.SizeHR == "" {
+		dfsEntry.SizeHR = units.ByteCountIEC(dfsEntry.SizeInBytes)
 	}
 
 	return nil
-
-	// TODO: Consider pruning this method entirely.
 
 }
 
@@ -146,23 +155,6 @@ func validateInputRow(dfsEntry DuplicateFileSetEntry, rowNum int) error {
 	if err := dfsEntry.Checksum.Verify(fileFullPath); err != nil {
 		return fmt.Errorf(
 			"checksum validation failed for %q: %s", fileFullPath, err)
-	}
-
-	// SKIP:
-	//
-	// SizeHR
-
-	// the parseInputRow function places a zero value here if it was found to
-	// be empty in the CSV input file row. If it wasn't empty, an attempt
-	// was made to convert whatever was present into an int64.
-	if dfsEntry.SizeInBytes == 0 {
-		// Recalculate the size in bytes from a file that has passed
-		// checksum validation
-		fileInfo, err := os.Stat(fileFullPath)
-		if err != nil {
-			return fmt.Errorf("unable to stat %q to determine size in bytes", fileFullPath)
-		}
-		dfsEntry.SizeInBytes = fileInfo.Size()
 	}
 
 	// TODO: Any validation needed against the RemoveFile field? At this point
@@ -366,7 +358,7 @@ func main() {
 		if err != nil {
 			log.Println("Error encountered parsing CSV file:", err)
 			if appConfig.IgnoreErrors {
-				log.Println("IgnoringErrors set, ignoring input row and continuing with the next one.")
+				log.Printf("IgnoringErrors set, ignoring input row %d.\n", rowCounter)
 				continue
 			}
 			log.Fatal("IgnoringErrors NOT set. Exiting.")
@@ -376,7 +368,17 @@ func main() {
 		if err = validateInputRow(dfsEntry, rowCounter); err != nil {
 			log.Println("Error encountered validating CSV row values:", err)
 			if appConfig.IgnoreErrors {
-				log.Println("IgnoringErrors set, ignoring input row and continuing with the next one.")
+				log.Printf("IgnoringErrors set, ignoring input row %d.\n", rowCounter)
+				continue
+			}
+			log.Fatal("IgnoringErrors NOT set. Exiting.")
+		}
+
+		// update size details if found missing in CSV row
+		if err = dfsEntry.UpdateSizeInfo(); err != nil {
+			log.Println("Error encountered while attempting to update file size info:", err)
+			if appConfig.IgnoreErrors {
+				log.Printf("IgnoringErrors set, ignoring input row %d.\n", rowCounter)
 				continue
 			}
 			log.Fatal("IgnoringErrors NOT set. Exiting.")
