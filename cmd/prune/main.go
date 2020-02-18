@@ -171,6 +171,31 @@ func main() {
 	// INFO? DEBUG?
 	log.Printf("Found %d files to remove in %q", filesToRemove, appConfig.InputCSVFile)
 
+	//
+	// FIXME: Start back here, finish fleshing this out
+	//
+
+	if appConfig.BackupDirectory != "" {
+		// DEBUG
+		log.Println("Backup directory specified")
+
+		if !paths.PathExists(appConfig.BackupDirectory) {
+			// directory doesn't exist, what about the parent directory? do we
+			// have permission to create content within the parent directory
+			// to create the requested directory?
+
+			// perhaps we should abort if the target directory doesn't exist?
+			//
+			// For example, we could end up trying to create a directory like
+			// /tmp if the app is run as root. Since /tmp requires special
+			// permissions, creating it as this application could lead to a
+			// lot of problems that we cannot reliably anticipate and prevent
+		}
+	}
+	if appConfig.DryRun {
+		fmt.Println("Dry-run enabled, no files will be backed up")
+	}
+
 	// attempt to backup files if user requested that we do so. if backup
 	// failure occurs, abort. If file already exists in specified backup
 	// directory check to see if they're identical. Report identical status
@@ -179,5 +204,40 @@ func main() {
 
 	// Once backups complete remove original files. Allow IgnoreErrors setting
 	// to apply, but be very noisy about removal failures
+
+	if appConfig.DryRun {
+		fmt.Println("Dry-run enabled, no files will be removed")
+	}
+
+	var filesRemovedSuccess int
+	var filesRemovedFail int
+	for _, dfsEntry := range dfsEntries {
+
+		err = paths.RemoveFile(dfsEntry.Filename, appConfig.DryRun)
+		if err != nil {
+			log.Printf("Error encountered while attempting to remove %q: %s\n",
+				dfsEntry.Filename, err)
+			if appConfig.IgnoreErrors {
+				log.Println("IgnoringErrors set, ignoring failed file removal")
+				filesRemovedFail++
+				continue
+			}
+			log.Fatal("IgnoringErrors NOT set. Exiting.")
+		}
+
+		// note that we have successfully removed a file IF we are not
+		// performing a dry-run
+		if !appConfig.DryRun {
+			filesRemovedSuccess++
+		}
+
+	}
+
+	// print removal results summary
+	// TODO: Tweak format
+	if !appConfig.DryRun {
+		fmt.Printf("File removal: %d success, %d fail\n",
+			filesRemovedSuccess, filesRemovedFail)
+	}
 
 }
