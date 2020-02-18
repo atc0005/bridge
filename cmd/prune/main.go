@@ -293,6 +293,7 @@ func main() {
 
 		dfsEntry, err := parseInputRow(record, config.InputCSVFieldCount, rowCounter)
 		if err != nil {
+			log.Println("Error encountered parsing CSV file:", err)
 			if appConfig.IgnoreErrors {
 				log.Println("IgnoringErrors set, ignoring input row and continuing with the next one.")
 				continue
