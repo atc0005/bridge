@@ -9,6 +9,7 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
 
 	"io"
 	"log"
@@ -153,5 +154,22 @@ func main() {
 	if appConfig.ConsoleReport {
 		dfsEntries.Print(appConfig.BlankLineBetweenSets)
 	}
+
+	// at this point we have parsed the CSV file into dfsEntries, validated
+	// their content, regenerated file size details (if applicable) and are
+	// now ready to begin work to remove flagged files.
+
+	// if there are no files flagged for removal, say so and exit.
+
+	filesToRemove := dfsEntries.FilesToRemove()
+	if filesToRemove == 0 {
+		fmt.Printf("0 entries out of %d marked for removal in the %q input CSV file.\n",
+			len(dfsEntries), appConfig.InputCSVFile)
+		fmt.Println("Nothing to do, exiting.")
+		return
+	}
+
+	// INFO? DEBUG?
+	log.Printf("Found %d files to remove in %q", filesToRemove, appConfig.InputCSVFile)
 
 }

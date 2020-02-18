@@ -115,6 +115,20 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 	w.Flush()
 }
 
+// FilesToRemove returns true if there are any files flagged for removal, false
+// otherwise.
+func (dfsEntries DuplicateFileSetEntries) FilesToRemove() int {
+
+	var filesToRemove int
+	for _, entry := range dfsEntries {
+		if entry.RemoveFile {
+			filesToRemove++
+		}
+	}
+
+	return filesToRemove
+}
+
 // UpdateSizeInfo fills in potentially missing size information for each entry
 // in the duplicate file set.
 func (dfsEntry *DuplicateFileSetEntry) UpdateSizeInfo() error {
