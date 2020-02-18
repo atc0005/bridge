@@ -63,7 +63,7 @@ type DuplicateFileSetEntries []DuplicateFileSetEntry
 
 // Print writes DuplicateFileSetEntry objects to a provided Writer, falling
 // back to stdout if not specified.
-func (dfsEntries DuplicateFileSetEntries) Print() {
+func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 
 	w := &tabwriter.Writer{}
 	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
@@ -79,7 +79,14 @@ func (dfsEntries DuplicateFileSetEntries) Print() {
 	fmt.Fprintln(w,
 		"Directory\tFile\tSize\tChecksum\tRemove File")
 
+	var lastChecksum checksums.SHA256Checksum
+	var entriesCtr int
 	for _, row := range dfsEntries {
+
+		// FIXME: Call row.Checksum.String() for comparison instead of using
+		// this counter? We can always pull the length of the entries by
+		// using len() builtin.
+		entriesCtr++
 
 		fmt.Fprintf(w,
 			"%v\t%v\t%v\t%v\t%v\n",
@@ -89,6 +96,19 @@ func (dfsEntries DuplicateFileSetEntries) Print() {
 			row.Checksum,
 			row.RemoveFile,
 		)
+
+		// if user requested a blank line between file sets, look at the
+		// checksum for the last entry and compare against the current
+		// checksum. A match indicates we are still processing files of the
+		// same set, so do not add a blank line. Also, skip adding a blank
+		// line for the first item.
+		if addSeparatorLine && entriesCtr != 1 {
+			if lastChecksum != row.Checksum {
+				fmt.Fprintf(w, "\n")
+			}
+		}
+
+		lastChecksum = row.Checksum
 
 	}
 
@@ -390,7 +410,7 @@ func main() {
 
 	// Print parsed CSV file to the console if user requested it
 	if appConfig.ConsoleReport {
-		dfsEntries.Print()
+		dfsEntries.Print(appConfig.BlankLineBetweenSets)
 	}
 
 }
