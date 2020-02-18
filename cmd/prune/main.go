@@ -239,11 +239,14 @@ func parseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEn
 			fmt.Errorf("row %d, field %d has empty checksum", rowNum, 5)
 	}
 
-	removeFile, err := strconv.ParseBool(row[5])
-	if err != nil {
-		log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 6, row[5])
-		return dfsEntry, fmt.Errorf("failed to convert CSV remove_file field %v", err)
-
+	// Optional field, use default zero value of false if not set
+	var removeFile bool
+	if row[5] != "" {
+		removeFile, err = strconv.ParseBool(row[5])
+		if err != nil {
+			log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 6, row[5])
+			return dfsEntry, fmt.Errorf("failed to convert CSV remove_file field %v", err)
+		}
 	}
 
 	// convert a CSV row into an object representing the various named
