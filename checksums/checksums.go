@@ -30,6 +30,28 @@ func (cs SHA256Checksum) String() string {
 	return string(cs)
 }
 
+// Verify takes a path to a file, generates a SHA256 checksum from the file
+// and compares against the checksum value already present
+func (cs SHA256Checksum) Verify(file string) error {
+
+	checksum, err := GenerateCheckSum(file)
+	if err != nil {
+		return err
+	}
+
+	if checksum.String() != cs.String() {
+		return fmt.Errorf(
+			"checksum mismatch, file likely modified; got %s, expected %s",
+			checksum.String(),
+			cs.String(),
+		)
+	}
+
+	// if we got this far then the checksum is believed to be a match
+	return nil
+
+}
+
 // GenerateCheckSum returns a SHA256 hash as the checksum generated from a
 // provided fully-qualified path to a file.
 func GenerateCheckSum(file string) (SHA256Checksum, error) {

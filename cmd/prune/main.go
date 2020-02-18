@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -97,8 +98,7 @@ func (dfsEntries DuplicateFileSetEntries) Print() {
 // Validate performs validation of all fields for each entry in the duplicate
 // file set. Any entries which fail validation are considered invalid and
 // removed from the set.
-func (dfsEntries *DuplicateFileSetEntries) Validate() {
-
+func (dfsEntries *DuplicateFileSetEntries) Validate() error {
 	// TODO:
 	//
 	// Review method name: Does `Validate()` convey that we are going to
@@ -108,10 +108,69 @@ func (dfsEntries *DuplicateFileSetEntries) Validate() {
 	//
 	//
 
-	// case !paths.PathExists(parentDirectory):
-	// 	return dfsEntry,
-	// 		fmt.Errorf("row %d, field %d has invalid parent directory path", rowNum, 0)
+	// How to best handle nil receiver?
+	if dfsEntries == nil {
+		return fmt.Errorf("nil receiver; no entries to validate")
+	}
 
+	return nil
+
+	// TODO: Consider pruning this method entirely.
+
+}
+
+// validateInputRow performs basic validation steps against fields in a
+// DuplicateFileSetEntry to determine whether an input CSV row will be
+// processed further
+func validateInputRow(dfsEntry DuplicateFileSetEntry, rowNum int) error {
+
+	if !paths.PathExists(dfsEntry.ParentDirectory) {
+		return fmt.Errorf(
+			"row %d, field %d has invalid parent directory path", rowNum, 0)
+	}
+
+	// Filename field
+	// TODO: What to check here? We have already enforced non-empty field value
+	// during parsing.
+
+	// join ParentDirectory and Filename and check whether the fully-qualified
+	// path to the file exists
+	fileFullPath := filepath.Join(dfsEntry.ParentDirectory, dfsEntry.Filename)
+	if !paths.PathExists(fileFullPath) {
+		return fmt.Errorf(
+			"row %d, has invalid path to file (parent directory + filename", rowNum)
+	}
+
+	// Now that we know the parent directory exists and the full path to the
+	// file exists, verify checksum before proceeding further
+	if err := dfsEntry.Checksum.Verify(fileFullPath); err != nil {
+		return fmt.Errorf(
+			"checksum validation failed for %q: %s", fileFullPath, err)
+	}
+
+	// SKIP:
+	//
+	// SizeHR
+
+	// the parseInputRow function places a zero value here if it was found to
+	// be empty in the CSV input file row. If it wasn't empty, an attempt
+	// was made to convert whatever was present into an int64.
+	if dfsEntry.SizeInBytes == 0 {
+		// Recalculate the size in bytes from a file that has passed
+		// checksum validation
+		fileInfo, err := os.Stat(fileFullPath)
+		if err != nil {
+			return fmt.Errorf("unable to stat %q to determine size in bytes", fileFullPath)
+		}
+		dfsEntry.SizeInBytes = fileInfo.Size()
+	}
+
+	// TODO: Any validation needed against the RemoveFile field? At this point
+	// we are not trying to decide whether the file should be removed, just
+	// whether the DuplicateFileSetEntry object is properly constructed.
+
+	// Optimism!
+	return nil
 }
 
 // parseInputRow evaluates each row returned from the CSV Reader returning a
@@ -121,6 +180,7 @@ func parseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEn
 	// TODO: Use error wrapping extensively in this function
 
 	dfsEntry := DuplicateFileSetEntry{}
+	var err error
 
 	// The CSV Reader already performs field count validation, but let's be
 	// paranoid and recheck to help ensure that we didn't make a mistake and
@@ -157,15 +217,23 @@ func parseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEn
 		log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 3, row[2])
 	}
 
-	// FIXME: This field should probably be optional; we can regenerate the
-	// value later when needed
-	sizeInBytes, err := strconv.ParseInt(row[3], 10, 64)
-	if err != nil {
-		log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 4, row[3])
-		return dfsEntry, fmt.Errorf("failed to convert CSV sizeInBytes field %v", err)
+	// This field is optional; we can regenerate the value later when needed
+	// if the row field is empty, we end up with the zero value that we can
+	// later check against.
+	var sizeInBytes int64
+	if row[3] != "" {
+		sizeInBytes, err = strconv.ParseInt(row[3], 10, 64)
+		if err != nil {
+			log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 4, row[3])
+			return dfsEntry, fmt.Errorf("failed to convert CSV sizeInBytes field %v", err)
+		}
 	}
 
 	// Checksum
+	// Required. We require the checksum to be present so that we can confirm
+	// that the file to be removed matches the original checksum recorded for
+	// it. If we allowed an empty checksum here, we remove any protection
+	// against removing non-duplicate files.
 	if row[4] == "" {
 		return dfsEntry,
 			fmt.Errorf("row %d, field %d has empty checksum", rowNum, 5)
@@ -300,6 +368,17 @@ func main() {
 			}
 			log.Fatal("IgnoringErrors NOT set. Exiting.")
 		}
+
+		// validate input row before we consider it OK
+		if err = validateInputRow(dfsEntry, rowCounter); err != nil {
+			log.Println("Error encountered validating CSV row values:", err)
+			if appConfig.IgnoreErrors {
+				log.Println("IgnoringErrors set, ignoring input row and continuing with the next one.")
+				continue
+			}
+			log.Fatal("IgnoringErrors NOT set. Exiting.")
+		}
+
 		dfsEntries = append(dfsEntries, dfsEntry)
 
 	}
