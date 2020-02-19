@@ -10,6 +10,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"path/filepath"
 
 	"io"
 	"log"
@@ -204,13 +205,31 @@ func main() {
 		if appConfig.DryRun {
 			fmt.Println("Dry-run enabled, no files will be backed up")
 		}
-	}
 
-	// attempt to backup files if user requested that we do so. if backup
-	// failure occurs, abort. If file already exists in specified backup
-	// directory check to see if they're identical. Report identical status
-	// (yeah, nay) and abort unless an override or force option is given
-	// (potential future work).
+		// attempt to backup file
+		// NOTE: at this point the only files that would be removed (or backed
+		// up) are those that were flagged for removal in the CSV file
+		for _, file := range dfsEntries {
+
+			fullPathToFile := filepath.Join(file.ParentDirectory, file.Filename)
+			// paths.CreateBackupDirectoryTree(fullPathToFile, appConfig.BackupDirectory)
+
+			// attempt to backup files if user requested that we do so. if backup
+			// failure occurs, abort. If file already exists in specified backup
+			// directory check to see if they're identical. Report identical status
+			// (yeah, nay) and abort unless an override or force option is given
+			// (potential future work).
+			err := paths.BackupFile(fullPathToFile, appConfig.BackupDirectory)
+			if err != nil {
+				// FIXME: Implement check for appconfig.IgnoreErrors
+				// extend error message (potentially) to note that the error
+				// was encountered when creating a backup
+				log.Fatal(err)
+			}
+
+		}
+
+	}
 
 	// Once backups complete remove original files. Allow IgnoreErrors setting
 	// to apply, but be very noisy about removal failures
