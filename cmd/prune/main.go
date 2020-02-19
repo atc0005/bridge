@@ -179,6 +179,10 @@ func main() {
 		// DEBUG
 		log.Println("Backup directory specified")
 
+		// FIXME: The Config.Validate() method is also performing path checks
+		// which is probably outside the normal scope for a config validation
+		// function to perform. Because of that, we don't actually make it
+		// to this point when a user provides an invalid backup directory path.
 		if !paths.PathExists(appConfig.BackupDirectory) {
 			// directory doesn't exist, what about the parent directory? do we
 			// have permission to create content within the parent directory
@@ -190,10 +194,16 @@ func main() {
 			// /tmp if the app is run as root. Since /tmp requires special
 			// permissions, creating it as this application could lead to a
 			// lot of problems that we cannot reliably anticipate and prevent
+
+			log.Fatalf(
+				"backup directory %q specified, but does not exist",
+				appConfig.BackupDirectory,
+			)
 		}
-	}
-	if appConfig.DryRun {
-		fmt.Println("Dry-run enabled, no files will be backed up")
+
+		if appConfig.DryRun {
+			fmt.Println("Dry-run enabled, no files will be backed up")
+		}
 	}
 
 	// attempt to backup files if user requested that we do so. if backup
