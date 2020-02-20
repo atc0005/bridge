@@ -8,6 +8,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -101,5 +102,11 @@ func main() {
 		}
 		log.Printf("Successfully created workbook file: %q", appConfig.ExcelFile)
 	}
+
+	fmt.Printf("\n\nNext steps:\n")
+	fmt.Printf("Open %q\n", appConfig.OutputCSVFile)
+	fmt.Printf("Fill in the %q field with \"true\" for any file that you wish to remove\n", csvRemoveFileColumnHeaderName)
+	fmt.Printf("Run \"%s %s\" with applicable options\n", os.Args[0], config.pruneSubcommand)
+	fmt.Println("Read the README for specific options, including optional \"backup first\" behavior.")
 
 }
