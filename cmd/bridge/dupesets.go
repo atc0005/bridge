@@ -73,10 +73,15 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 
 	// NOTE: Skip outputing size in bytes since this is meant to be reviewed
 	// by a human and not programatically acted upon
-
-	// Header row in output
-	fmt.Fprintln(w,
-		"Directory\tFile\tSize\tChecksum\tRemove File")
+	headerRow := fmt.Sprintf(
+		"%s\t%s\t%s\t%s\t%s",
+		TabWriterDirectoryColumnHeaderName,
+		TabWriterFileColumnHeaderName,
+		TabWriterSizeColumnHeaderName,
+		TabWriterChecksumColumnHeaderName,
+		TabWriterRemoveFileColumnHeaderName,
+	)
+	fmt.Fprintln(w, headerRow)
 
 	var lastChecksum checksums.SHA256Checksum
 	var entriesCtr int
