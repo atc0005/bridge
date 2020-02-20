@@ -116,7 +116,8 @@ func main() {
 
 	}
 
-	fmt.Println("Length of dfsEntries:", len(dfsEntries))
+	// DEBUG
+	// fmt.Println("Length of dfsEntries:", len(dfsEntries))
 
 	// Print parsed CSV file to the console if user requested it
 	if appConfig.ConsoleReport {
