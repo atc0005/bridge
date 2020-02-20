@@ -194,15 +194,15 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 	sizeCopied, err := io.Copy(sourceFileHandle, destinationFileHandle)
 	if err != nil {
 		// copy failed, we should cleanup here
-		log.Printf("failed to copy %q to %q: %s\n", err)
-		return fmt.Errorf("failed to copy %q to %q: %s\n", err)
+		log.Printf("failed to copy %q to %q: %s\n", sourceFilename, destinationFile, err)
+		return fmt.Errorf("failed to copy %q to %q: %s", sourceFilename, destinationFile, err)
 	}
 
 	// DEBUG
 	log.Printf("File %q successfully copied to %q (%s)",
 		sourceFilename,
 		destinationFile,
-		units.ByteCountIEC(sizeCopied)
+		units.ByteCountIEC(sizeCopied),
 	)
 
 	// copy was successful, we should still cleanup here, but should also log
