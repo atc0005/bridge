@@ -208,7 +208,8 @@ func main() {
 		var filesRemovedFail int
 		for _, dfsEntry := range dfsEntries {
 
-			err = paths.RemoveFile(dfsEntry.Filename, appConfig.DryRun)
+			fullPathToFile := filepath.Join(dfsEntry.ParentDirectory, dfsEntry.Filename)
+			err = paths.RemoveFile(fullPathToFile, appConfig.DryRun)
 			if err != nil {
 				log.Printf("Error encountered while attempting to remove %q: %s\n",
 					dfsEntry.Filename, err)
