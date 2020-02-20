@@ -198,6 +198,9 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		return fmt.Errorf("failed to copy %q to %q: %s", sourceFilename, destinationFile, err)
 	}
 
+	// copy was successful, we should cleanup and log (DEBUG) how much data
+	// was written (in case we need that for troubleshooting later)
+
 	// DEBUG
 	log.Printf("File %q successfully copied to %q (%s)",
 		sourceFilename,
@@ -205,15 +208,22 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		units.ByteCountIEC(sizeCopied),
 	)
 
-	// copy was successful, we should still cleanup here, but should also log
-	// (DEBUG) how much data was written in case we need that for
-	// troubleshooting later
+	if err := sourceFileHandle.Close(); err != nil {
+		return fmt.Errorf(
+			"failed to close original file %q after backup attempt: %s",
+			sourceFilename,
+			err,
+		)
+	}
 
-	// TODO:
-	//
-	// Sync file contents
-	// Safely close destination file, catching as many errors as possible
-	// Safely close source file
-	return destinationFileHandle.Sync()
+	if err := destinationFileHandle.Sync(); err != nil {
+		return fmt.Errorf(
+			"failed to explicitly sync file %q after backup attempt: %s",
+			destinationFile,
+			err,
+		)
+	}
+
+	return destinationFileHandle.Close()
 
 }
