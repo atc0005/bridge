@@ -212,6 +212,12 @@ func main() {
 		for _, dfsEntry := range dfsEntries {
 
 			fullPathToFile := filepath.Join(dfsEntry.ParentDirectory, dfsEntry.Filename)
+
+			// FIXME: Need to limit file removal to just those dfsEntries that
+			// we flagged for removal
+			//
+			// call Prune method to pare them down?
+
 			err = paths.RemoveFile(fullPathToFile, appConfig.DryRun)
 			if err != nil {
 				log.Printf("Error encountered while attempting to remove %q: %s\n",
