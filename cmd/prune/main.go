@@ -137,101 +137,98 @@ func main() {
 	// INFO? DEBUG?
 	log.Printf("Found %d files to remove in %q", filesToRemove, appConfig.InputCSVFile)
 
-	//
-	// FIXME: Start back here, finish fleshing this out
-	//
-
-	if appConfig.BackupDirectory != "" {
-		// DEBUG
-		log.Println("Backup directory specified")
-
-		// FIXME: The Config.Validate() method is also performing path checks
-		// which is probably outside the normal scope for a config validation
-		// function to perform. Because of that, we don't actually make it
-		// to this point when a user provides an invalid backup directory path.
-		if !paths.PathExists(appConfig.BackupDirectory) {
-			// directory doesn't exist, what about the parent directory? do we
-			// have permission to create content within the parent directory
-			// to create the requested directory?
-
-			// perhaps we should abort if the target directory doesn't exist?
-			//
-			// For example, we could end up trying to create a directory like
-			// /tmp if the app is run as root. Since /tmp requires special
-			// permissions, creating it as this application could lead to a
-			// lot of problems that we cannot reliably anticipate and prevent
-
-			log.Fatalf(
-				"backup directory %q specified, but does not exist",
-				appConfig.BackupDirectory,
-			)
-		}
-
-		if appConfig.DryRun {
-			fmt.Println("Dry-run enabled, no files will be backed up")
-		}
-
-		// attempt to backup file
-		// NOTE: at this point the only files that would be removed (or backed
-		// up) are those that were flagged for removal in the CSV file
-		for _, file := range dfsEntries {
-
-			fullPathToFile := filepath.Join(file.ParentDirectory, file.Filename)
-			// paths.CreateBackupDirectoryTree(fullPathToFile, appConfig.BackupDirectory)
-
-			// attempt to backup files if user requested that we do so. if backup
-			// failure occurs, abort. If file already exists in specified backup
-			// directory check to see if they're identical. Report identical status
-			// (yeah, nay) and abort unless an override or force option is given
-			// (potential future work).
-			err := paths.BackupFile(fullPathToFile, appConfig.BackupDirectory)
-			if err != nil {
-				// FIXME: Implement check for appconfig.IgnoreErrors
-				// extend error message (potentially) to note that the error
-				// was encountered when creating a backup
-				log.Fatal(err)
-			}
-
-		}
-
-	}
-
-	// Once backups complete remove original files. Allow IgnoreErrors setting
-	// to apply, but be very noisy about removal failures
-
-	if appConfig.DryRun {
-		fmt.Println("Dry-run enabled, no files will be removed")
-	}
-
-	var filesRemovedSuccess int
-	var filesRemovedFail int
-	for _, dfsEntry := range dfsEntries {
-
-		err = paths.RemoveFile(dfsEntry.Filename, appConfig.DryRun)
-		if err != nil {
-			log.Printf("Error encountered while attempting to remove %q: %s\n",
-				dfsEntry.Filename, err)
-			if appConfig.IgnoreErrors {
-				log.Println("IgnoringErrors set, ignoring failed file removal")
-				filesRemovedFail++
-				continue
-			}
-			log.Fatal("IgnoringErrors NOT set. Exiting.")
-		}
-
-		// note that we have successfully removed a file IF we are not
-		// performing a dry-run
-		if !appConfig.DryRun {
-			filesRemovedSuccess++
-		}
-
-	}
-
-	// print removal results summary
-	// TODO: Tweak format
+	// Skip backup logic and file removal if running in "dry-run" mode
 	if !appConfig.DryRun {
+
+		// DEBUG? INFO?
+		fmt.Println("Dry-run not enabled, file removal mode enabled")
+
+		if appConfig.BackupDirectory != "" {
+			// DEBUG
+			log.Println("Backup directory specified")
+
+			// FIXME: The Config.Validate() method is also performing path checks
+			// which is probably outside the normal scope for a config validation
+			// function to perform. Because of that, we don't actually make it
+			// to this point when a user provides an invalid backup directory path.
+			if !paths.PathExists(appConfig.BackupDirectory) {
+				// directory doesn't exist, what about the parent directory? do we
+				// have permission to create content within the parent directory
+				// to create the requested directory?
+
+				// perhaps we should abort if the target directory doesn't exist?
+				//
+				// For example, we could end up trying to create a directory like
+				// /tmp if the app is run as root. Since /tmp requires special
+				// permissions, creating it as this application could lead to a
+				// lot of problems that we cannot reliably anticipate and prevent
+
+				log.Fatalf(
+					"backup directory %q specified, but does not exist",
+					appConfig.BackupDirectory,
+				)
+			}
+
+			// attempt to backup file
+			// NOTE: at this point the only files that would be removed (or backed
+			// up) are those that were flagged for removal in the CSV file
+			for _, file := range dfsEntries {
+
+				fullPathToFile := filepath.Join(file.ParentDirectory, file.Filename)
+				// paths.CreateBackupDirectoryTree(fullPathToFile, appConfig.BackupDirectory)
+
+				// attempt to backup files if user requested that we do so. if backup
+				// failure occurs, abort. If file already exists in specified backup
+				// directory check to see if they're identical. Report identical status
+				// (yeah, nay) and abort unless an override or force option is given
+				// (potential future work).
+				err := paths.BackupFile(fullPathToFile, appConfig.BackupDirectory)
+				if err != nil {
+					// FIXME: Implement check for appconfig.IgnoreErrors
+					// extend error message (potentially) to note that the error
+					// was encountered when creating a backup
+					log.Fatal(err)
+				}
+
+			}
+
+		} else {
+			// DEBUG
+			log.Println("backup directory not set, not backing up files")
+		}
+
+		// Once backups complete remove original files. Allow IgnoreErrors setting
+		// to apply, but be very noisy about removal failures
+
+		var filesRemovedSuccess int
+		var filesRemovedFail int
+		for _, dfsEntry := range dfsEntries {
+
+			err = paths.RemoveFile(dfsEntry.Filename, appConfig.DryRun)
+			if err != nil {
+				log.Printf("Error encountered while attempting to remove %q: %s\n",
+					dfsEntry.Filename, err)
+				if appConfig.IgnoreErrors {
+					log.Println("IgnoringErrors set, ignoring failed file removal")
+					filesRemovedFail++
+					continue
+				}
+				log.Fatal("IgnoringErrors NOT set. Exiting.")
+			}
+
+			// note that we have successfully removed a file
+			filesRemovedSuccess++
+
+		}
+
+		// print removal results summary
 		fmt.Printf("File removal: %d success, %d fail\n",
 			filesRemovedSuccess, filesRemovedFail)
+
+	}
+
+	if appConfig.DryRun {
+		fmt.Println("Dry-run enabled, no files removed")
 	}
 
 }
