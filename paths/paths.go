@@ -246,7 +246,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 			sizeCopied,
 			sourceFileStat.Size(),
 		)
-		log.Printf(sizeCopiedMismatchMsg)
+		log.Println(sizeCopiedMismatchMsg)
 		return fmt.Errorf(sizeCopiedMismatchMsg)
 	}
 
