@@ -33,7 +33,12 @@ inclusion into the project.
 
 ## Overview
 
-Find duplicate files and report them for (currently manual) resolution.
+1. Generate report
+   - Find duplicate files and report them via console-only output or an ouput
+    CSV file
+1. Remove flagged files
+   - Process CSV file report generated earlier and if flag is set, (optionally)
+    backup and then remove marked files
 
 ## Features
 
@@ -45,6 +50,8 @@ Find duplicate files and report them for (currently manual) resolution.
 - Support for creating Microsoft Excel workbook of all duplicate file matches
 - Support for evaluating one or many paths
 - Recursive or shallow directory evaluation
+- Optional removal of (user-flagged) duplicate files from a previously
+  generated CSV report
 - Go modules (vs classic `GOPATH` setup)
 
 ## Changelog
