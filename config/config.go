@@ -13,6 +13,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -162,11 +163,15 @@ func NewConfig() (*Config, error) {
 	case pruneSubcommand:
 		// DEBUG
 		fmt.Printf("subcommand '%s'\n", pruneSubcommand)
-		pruneCmd.Parse(os.Args[2:])
+		if err := pruneCmd.Parse(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
 	case reportSubcommand:
 		// DEBUG
 		fmt.Printf("subcommand '%s'\n", reportSubcommand)
-		reportCmd.Parse(os.Args[2:])
+		if err := reportCmd.Parse(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
 	default:
 		return nil, ErrInvalidSubcommand
 	}
