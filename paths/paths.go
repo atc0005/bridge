@@ -208,18 +208,18 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		units.ByteCountIEC(sizeCopied),
 	)
 
-	if err := sourceFileHandle.Close(); err != nil {
-		return fmt.Errorf(
-			"failed to close original file %q after backup attempt: %s",
-			sourceFilename,
-			err,
-		)
-	}
-
 	if err := destinationFileHandle.Sync(); err != nil {
 		return fmt.Errorf(
 			"failed to explicitly sync file %q after backup attempt: %s",
 			destinationFile,
+			err,
+		)
+	}
+
+	if err := sourceFileHandle.Close(); err != nil {
+		return fmt.Errorf(
+			"failed to close original file %q after backup attempt: %s",
+			sourceFilename,
 			err,
 		)
 	}
