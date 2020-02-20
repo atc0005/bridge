@@ -190,8 +190,6 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		return fmt.Errorf("unable to create new backup file %q: %s",
 			destinationFile, err)
 	}
-
-	// TODO: Add wrapper for catching potential errors
 	defer destinationFileHandle.Close()
 
 	sourceFileHandle, err := os.Open(sourceFilename)
