@@ -194,5 +194,6 @@ of this document for links to additional information.
 - <https://golangcode.com/writing-to-file/>
 - <https://www.joeshaw.org/dont-defer-close-on-writable-files/>
 - <https://golang.org/pkg/os/#File.Sync>
+- <https://www.linode.com/docs/development/go/creating-reading-and-writing-files-in-go-a-tutorial/>
 
 - <https://github.com/360EntSecGroup-Skylar/excelize>

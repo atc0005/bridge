@@ -190,6 +190,20 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 	}
 	defer destinationFileHandle.Close()
 
+	// guard against invalid source files
+	// NOTE: This shouldn't be possible since we only add files to a list to
+	// be removed once we verify checksum and collect file size details, but
+	// to be complete (e.g, perhaps if/when this function is moved to a
+	// standalone package for use by other applications one day) we go ahead
+	// and verify again that the source file is a valid backup source
+	sourceFileStat, err := os.Stat(sourceFilename)
+	if err != nil {
+		return err
+	}
+	if !sourceFileStat.Mode().IsRegular() {
+		return fmt.Errorf("%q is not a regular file", sourceFileStat)
+	}
+
 	sourceFileHandle, err := os.Open(sourceFilename)
 	if err != nil {
 		return fmt.Errorf("unable to open source file %q in order to create backup copy: %s",
