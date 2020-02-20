@@ -20,6 +20,7 @@ A small CLI utility used to find duplicate files
     - [Single path, recursive](#single-path-recursive)
     - [Multiple paths, non-recursive](#multiple-paths-non-recursive)
     - [Invalid flag](#invalid-flag)
+  - [Application Logic](#application-logic)
   - [License](#license)
     - [Core project files](#core-project-files)
     - [`ByteCountSI`, `ByteCountIEC` functions](#bytecountsi-bytecountiec-functions)
@@ -147,6 +148,28 @@ Accidentally typing the wrong flag results in a message like this one:
 ```ShellSession
 flag provided but not defined: -fake-flag
 ```
+
+## Application Logic
+
+**TODO**: Candidate for later removal. Moving here from out of source file
+until I can make a decision regarding whether this adds any long-term value;
+reading the source directly should tell anyone interested in the internals
+what is going on (those not interested in the internals likely won't be
+interested in this level of detail)
+
+1. Parse config options
+1. Open CSV file
+1. Create CSV Reader object
+1. Apply CSV parsing requirements
+   - Require specific number of fields
+   - Skip blank lines
+1. Loop over rows
+1. Validate row fields
+   - Field content?
+     - e.g., checksum field has a length expected of current hash algorithm
+1. Verify files exist
+1. Verify checksum for each file removal candidate
+1. Backup file removal candidate (if option is set)
 
 ## License
 
