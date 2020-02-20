@@ -180,7 +180,7 @@ func validateInputRow(dfsEntry DuplicateFileSetEntry, rowNum int) error {
 	fileFullPath := filepath.Join(dfsEntry.ParentDirectory, dfsEntry.Filename)
 	if !paths.PathExists(fileFullPath) {
 		return fmt.Errorf(
-			"row %d, has invalid path to file (parent directory + filename", rowNum)
+			"row %d, has invalid path to file: %q", rowNum, fileFullPath)
 	}
 
 	// Now that we know the parent directory exists and the full path to the
