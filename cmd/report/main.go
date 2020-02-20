@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/atc0005/bridge/config"
 	"github.com/atc0005/bridge/matches"
@@ -103,10 +104,12 @@ func main() {
 		log.Printf("Successfully created workbook file: %q", appConfig.ExcelFile)
 	}
 
-	fmt.Printf("\n\nNext steps:\n")
-	fmt.Printf("Open %q\n", appConfig.OutputCSVFile)
-	fmt.Printf("Fill in the %q field with \"true\" for any file that you wish to remove\n", csvRemoveFileColumnHeaderName)
-	fmt.Printf("Run \"%s %s\" with applicable options\n", os.Args[0], config.PruneSubcommand)
-	fmt.Println("Read the README for specific options, including optional \"backup first\" behavior.")
+	fmt.Printf("\n\nNext steps:\n\n")
+	fmt.Printf("* Open %q\n", appConfig.OutputCSVFile)
+	fmt.Printf("* Fill in the %q field with \"true\" for any file that you wish to remove\n",
+		matches.CSVRemoveFileColumnHeaderName)
+	fmt.Printf("* Run \"%s %s -h\" for a quick list of applicable options\n",
+		filepath.Base(os.Args[0]), config.PruneSubcommand)
+	fmt.Println("* Read the README for examples, including optional \"backup first\" behavior.")
 
 }

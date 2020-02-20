@@ -236,12 +236,12 @@ func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
 // header row.
 func (fi FileChecksumIndex) GenerateCSVHeaderRow() []string {
 	return []string{
-		csvDirectoryColumnHeaderName,
-		csvFileColumnHeaderName,
-		csvSizeColumnHeaderName,
-		csvSizeInBytesDirectoryColumnHeaderName,
-		csvChecksumColumnHeaderName,
-		csvRemoveFileColumnHeaderName,
+		CSVDirectoryColumnHeaderName,
+		CSVFileColumnHeaderName,
+		CSVSizeColumnHeaderName,
+		CSVSizeInBytesDirectoryColumnHeaderName,
+		CSVChecksumColumnHeaderName,
+		CSVRemoveFileColumnHeaderName,
 	}
 }
 
