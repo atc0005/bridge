@@ -17,6 +17,7 @@ import (
 	"os"
 
 	"github.com/atc0005/bridge/config"
+	"github.com/atc0005/bridge/dupesets"
 	"github.com/atc0005/bridge/matches"
 	"github.com/atc0005/bridge/paths"
 )
@@ -56,7 +57,7 @@ func main() {
 		// whitespace has been removed
 		csvReader.TrimLeadingSpace = true
 
-		var dfsEntries DuplicateFileSetEntries
+		var dfsEntries dupesets.DuplicateFileSetEntries
 		var rowCounter int = 0
 		for {
 
@@ -84,7 +85,7 @@ func main() {
 				log.Println("Attempting to parse row 1 from input CSV file as requested")
 			}
 
-			dfsEntry, err := parseInputRow(record, config.InputCSVFieldCount, rowCounter)
+			dfsEntry, err := dupesets.ParseInputRow(record, config.InputCSVFieldCount, rowCounter)
 			if err != nil {
 				log.Println("Error encountered parsing CSV file:", err)
 				if appConfig.IgnoreErrors {
@@ -95,7 +96,7 @@ func main() {
 			}
 
 			// validate input row before we consider it OK
-			if err = validateInputRow(dfsEntry, rowCounter); err != nil {
+			if err = dupesets.ValidateInputRow(dfsEntry, rowCounter); err != nil {
 				log.Println("Error encountered validating CSV row values:", err)
 				if appConfig.IgnoreErrors {
 					log.Printf("IgnoringErrors set, ignoring input row %d.\n", rowCounter)
