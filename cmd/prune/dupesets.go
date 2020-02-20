@@ -117,14 +117,14 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 	w.Flush()
 }
 
-// FilesToRemove returns true if there are any files flagged for removal, false
-// otherwise.
-func (dfsEntries DuplicateFileSetEntries) FilesToRemove() int {
+// FilesToRemove returns a dfsEntries object representing the files that the
+// user has flagged for removal
+func (dfsEntries DuplicateFileSetEntries) FilesToRemove() DuplicateFileSetEntries {
 
-	var filesToRemove int
+	var filesToRemove DuplicateFileSetEntries
 	for _, entry := range dfsEntries {
 		if entry.RemoveFile {
-			filesToRemove++
+			filesToRemove = append(filesToRemove, entry)
 		}
 	}
 

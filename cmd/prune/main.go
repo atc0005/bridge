@@ -112,6 +112,9 @@ func main() {
 			log.Fatal("IgnoringErrors NOT set. Exiting.")
 		}
 
+		// Start off with collecting all entries in the CSV file that contain
+		// all required fields. We'll filter the entries later to just those
+		// that have been flagged for removal.
 		dfsEntries = append(dfsEntries, dfsEntry)
 
 	}
@@ -130,7 +133,7 @@ func main() {
 
 	// if there are no files flagged for removal, say so and exit.
 	filesToRemove := dfsEntries.FilesToRemove()
-	if filesToRemove == 0 {
+	if len(filesToRemove) == 0 {
 		fmt.Printf("0 entries out of %d marked for removal in the %q input CSV file.\n",
 			len(dfsEntries), appConfig.InputCSVFile)
 		fmt.Println("Nothing to do, exiting.")
@@ -138,7 +141,10 @@ func main() {
 	}
 
 	// INFO? DEBUG?
-	log.Printf("Found %d files to remove in %q", filesToRemove, appConfig.InputCSVFile)
+	log.Printf("Found %d files to remove in %q", len(filesToRemove), appConfig.InputCSVFile)
+
+	// DEBUG
+	filesToRemove.Print(appConfig.BlankLineBetweenSets)
 
 	// Skip backup logic and file removal if running in "dry-run" mode
 	if !appConfig.DryRun {
@@ -172,13 +178,10 @@ func main() {
 				)
 			}
 
-			// attempt to backup file
-			// NOTE: at this point the only files that would be removed (or backed
-			// up) are those that were flagged for removal in the CSV file
-			for _, file := range dfsEntries {
+			// attempt to backup files that the user marked for removal
+			for _, file := range filesToRemove {
 
 				fullPathToFile := filepath.Join(file.ParentDirectory, file.Filename)
-				// paths.CreateBackupDirectoryTree(fullPathToFile, appConfig.BackupDirectory)
 
 				// attempt to backup files if user requested that we do so. if backup
 				// failure occurs, abort. If file already exists in specified backup
