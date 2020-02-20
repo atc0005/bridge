@@ -173,6 +173,16 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 	baseFileName := filepath.Base(sourceFilename)
 	destinationFile := filepath.Join(targetBackupDirPath, baseFileName)
 
+	// verify that destinationFile does not already exist before calling
+	// os.Create(), otherwise we will end up truncating the existing file
+	if PathExists(destinationFile) {
+		return fmt.Errorf(
+			"destination file %q already exists; skipping backup of %q to prevent overwriting existing file",
+			destinationFile,
+			sourceFilename,
+		)
+	}
+
 	// open source file for reading
 	// open destination file for reading
 	destinationFileHandle, err := os.Create(destinationFile)
