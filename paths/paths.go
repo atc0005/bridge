@@ -105,7 +105,7 @@ func GetBackupTargetDir(filename string, fullPathToBackupDir string) (string, er
 
 	if !dirInfo.IsDir() {
 		return "", fmt.Errorf(
-			"provided path %q is a file, not an existing directory to use for backups",
+			"provided path %q is not an existing directory to use for backups",
 			fullPathToBackupDir,
 		)
 	}
