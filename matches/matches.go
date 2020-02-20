@@ -714,17 +714,16 @@ func (fi FileChecksumIndex) PrintFileMatches(blankLineBetweenSets bool) {
 
 	// Header row in output
 	fmt.Fprintln(w,
-		"Directory\tFile\tSize\tSize in bytes\tChecksum\t")
+		"Directory\tFile\tSize\tChecksum\t")
 	for _, fileMatches := range fi {
 		for _, file := range fileMatches {
 
 			// TODO: Confirm that newline between file sets is useful
 			fmt.Fprintf(w,
-				"%s\t%s\t%s\t%s\t%s\n",
+				"%s\t%s\t%s\t%s\n",
 				file.ParentDirectory,
 				file.Name(),
 				file.SizeHR(),
-				strconv.FormatInt(file.Size(), 10),
 				file.Checksum)
 		}
 
