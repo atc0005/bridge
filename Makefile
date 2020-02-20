@@ -39,7 +39,7 @@ LINTINSTALLCMD			:=   bash testing/install_linting_tools.sh
 # Targets will not work properly if a file with the same name is ever created
 # in this directory. We explicitly declare our targets to be phony by
 # making them a prerequisite of the special target .PHONY
-.PHONY: help clean goclean gitclean pristine all windows linux linting lintinstall gotests build
+.PHONY: help clean goclean gitclean pristine all windows linux linting lintinstall gotests
 
 # WARNING: Make expects you to use tabs to introduce recipe lines
 help:
@@ -47,8 +47,8 @@ help:
 	@echo "  clean          go clean to remove local build artifacts, temporary files, etc"
 	@echo "  pristine       go clean and git clean local changes"
 	@echo "  all            to generate binary files for Windows and Linux"
-	@echo "  build-prune    to generate binary files for the prune command"
-	@echo "  build-report   to generate binary files for the report command"
+	@echo "  linux          to generate binary files for Linux only"
+	@echo "  windows        to generate binary files for Windows only"
 	@echo "  lintinstall    use wrapper script to install common linting tools"
 	@echo "  linting        use wrapper script to run common linting checks"
 	@echo "  gotests        go test recursively, verbosely"
@@ -86,26 +86,39 @@ gitclean:
 pristine: goclean gitclean
 
 # https://stackoverflow.com/questions/3267145/makefile-execute-another-target
-all: clean build
+all: clean windows linux
 	@echo "Completed all cross-platform builds ..."
 
-build:
-	@echo "Building release assets ..."
+windows:
+	@echo "Building release assets for windows ..."
 
-	@mkdir -p $(OUTPUTDIR)/prune
+	@mkdir -p $(OUTPUTDIR)/$(APPNAME)
 
 	@echo "Building 386 binaries"
-	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)-$(VERSION)-windows-386.exe ${PWD}/cmd/prune
-	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)-$(VERSION)-linux-386 ${PWD}/cmd/prune
+	@env GOOS=windows GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe ${PWD}/cmd/$(APPNAME)
 
 	@echo "Building amd64 binaries"
-	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)-$(VERSION)-windows-amd64.exe ${PWD}/cmd/prune
-	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)-$(VERSION)-linux-amd64 ${PWD}/cmd/prune
+	@env GOOS=windows GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe ${PWD}/cmd/$(APPNAME)
 
 	@echo "Generating checksum files"
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/$(APPNAME)-$(VERSION)-windows-386.exe.sha256
-	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/$(APPNAME)-$(VERSION)-windows-amd64.exe.sha256
-	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)-$(VERSION)-linux-386" > "$(OUTPUTDIR)/$(APPNAME)-$(VERSION)-linux-386.sha256"
-	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)-$(VERSION)-linux-amd64" > "$(OUTPUTDIR)/$(APPNAME)-$(VERSION)-linux-amd64.sha256"
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe > $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-386.exe.sha256
+	@$(CHECKSUMCMD) $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe > $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-windows-amd64.exe.sha256
 
-	@echo "Completed build tasks"
+	@echo "Completed build tasks for windows"
+
+linux:
+	@echo "Building release assets for linux ..."
+
+	@mkdir -p $(OUTPUTDIR)/$(APPNAME)
+
+	@echo "Building 386 binaries"
+	@env GOOS=linux GOARCH=386 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386 ${PWD}/cmd/$(APPNAME)
+
+	@echo "Building amd64 binaries"
+	@env GOOS=linux GOARCH=amd64 $(BUILDCMD) -o $(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64 ${PWD}/cmd/$(APPNAME)
+
+	@echo "Generating checksum files"
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386" > "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-386.sha256"
+	@$(CHECKSUMCMD) "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64" > "$(OUTPUTDIR)/$(APPNAME)/$(APPNAME)-$(VERSION)-linux-amd64.sha256"
+
+	@echo "Completed build tasks for linux"
