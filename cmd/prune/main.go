@@ -119,17 +119,19 @@ func main() {
 
 	}
 
+	// at this point we have parsed the CSV file into dfsEntries, validated
+	// their content, regenerated file size details (if applicable) and are
+	// now ready to begin work to remove flagged files.
+
 	// DEBUG
 	// fmt.Println("Length of dfsEntries:", len(dfsEntries))
 
 	// Print parsed CSV file to the console if user requested it
+	// NOTE: This contains ALL CSV file entries, not just those flagged for
+	// removal.
 	if appConfig.ConsoleReport {
 		dfsEntries.Print(appConfig.BlankLineBetweenSets)
 	}
-
-	// at this point we have parsed the CSV file into dfsEntries, validated
-	// their content, regenerated file size details (if applicable) and are
-	// now ready to begin work to remove flagged files.
 
 	// if there are no files flagged for removal, say so and exit.
 	filesToRemove := dfsEntries.FilesToRemove()
@@ -212,14 +214,9 @@ func main() {
 
 		var filesRemovedSuccess int
 		var filesRemovedFail int
-		for _, dfsEntry := range dfsEntries {
+		for _, dfsEntry := range filesToRemove {
 
 			fullPathToFile := filepath.Join(dfsEntry.ParentDirectory, dfsEntry.Filename)
-
-			// FIXME: Need to limit file removal to just those dfsEntries that
-			// we flagged for removal
-			//
-			// call Prune method to pare them down?
 
 			err = paths.RemoveFile(fullPathToFile, appConfig.DryRun)
 			if err != nil {
