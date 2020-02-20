@@ -165,13 +165,13 @@ func NewConfig() (*Config, error) {
 
 	// For every subcommand, we parse its own flags and have access to trailing positional arguments.
 	switch os.Args[1] {
-	case pruneSubcommand:
+	case PruneSubcommand:
 		// DEBUG
 		fmt.Printf("subcommand '%s'\n", PruneSubcommand)
 		if err := pruneCmd.Parse(os.Args[2:]); err != nil {
 			log.Fatal(err)
 		}
-	case reportSubcommand:
+	case ReportSubcommand:
 		// DEBUG
 		fmt.Printf("subcommand '%s'\n", ReportSubcommand)
 		if err := reportCmd.Parse(os.Args[2:]); err != nil {
@@ -195,10 +195,10 @@ func (c Config) Validate() error {
 	// and then specific requirements as applicable to each subcommand.
 	switch os.Args[1] {
 
-	case pruneSubcommand:
+	case PruneSubcommand:
 
 		// DEBUG
-		fmt.Printf("validating subcommand '%s'\n", pruneSubcommand)
+		fmt.Printf("validating subcommand '%s'\n", PruneSubcommand)
 
 		// FIXME: The PathExists checks are currently duplicated here and within
 		// matches package
@@ -222,10 +222,10 @@ func (c Config) Validate() error {
 			}
 		}
 
-	case reportSubcommand:
+	case ReportSubcommand:
 
 		// DEBUG
-		fmt.Printf("validating subcommand '%s'\n", reportSubcommand)
+		fmt.Printf("validating subcommand '%s'\n", ReportSubcommand)
 
 		if c.Paths == nil {
 			return fmt.Errorf("one or more paths not provided")
