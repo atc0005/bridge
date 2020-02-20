@@ -234,6 +234,22 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		return fmt.Errorf("failed to copy %q to %q: %s", sourceFilename, destinationFile, err)
 	}
 
+	// I encountered this when I unintentionally switched the dest/source
+	// values for io.Copy() (I keep thinking of copying source to destination,
+	// not copy to destination from source)
+	if sizeCopied != sourceFileStat.Size() {
+		// no content copied failed, we should consider this a failure
+		sizeCopiedMismatchMsg := fmt.Sprintf(
+			"failed to copy %q to %q: %d of %d bytes copied\n",
+			sourceFilename,
+			destinationFile,
+			sizeCopied,
+			sourceFileStat.Size(),
+		)
+		log.Printf(sizeCopiedMismatchMsg)
+		return fmt.Errorf(sizeCopiedMismatchMsg)
+	}
+
 	// copy was successful, we should cleanup and log (DEBUG) how much data
 	// was written (in case we need that for troubleshooting later)
 
