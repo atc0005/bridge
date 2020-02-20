@@ -185,6 +185,10 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 	baseFileName := filepath.Base(sourceFilename)
 	destinationFile := filepath.Join(targetBackupDirPath, baseFileName)
 
+	// DEBUG
+	fmt.Printf("sourceFilename: %q, baseFilename: %q, destinationFile: %q\n",
+		sourceFilename, baseFileName, destinationFile)
+
 	// verify that destinationFile does not already exist before calling
 	// os.Create(), otherwise we will end up truncating the existing file
 	if PathExists(destinationFile) {
@@ -223,7 +227,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 	}
 	defer sourceFileHandle.Close()
 
-	sizeCopied, err := io.Copy(sourceFileHandle, destinationFileHandle)
+	sizeCopied, err := io.Copy(destinationFileHandle, sourceFileHandle)
 	if err != nil {
 		// copy failed, we should cleanup here
 		log.Printf("failed to copy %q to %q: %s\n", sourceFilename, destinationFile, err)
