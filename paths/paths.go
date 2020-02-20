@@ -183,8 +183,6 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		)
 	}
 
-	// open source file for reading
-	// open destination file for reading
 	destinationFileHandle, err := os.Create(destinationFile)
 	if err != nil {
 		return fmt.Errorf("unable to create new backup file %q: %s",
