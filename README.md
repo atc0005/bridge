@@ -226,4 +226,6 @@ of this document for links to additional information.
 - <https://golang.org/pkg/os/#File.Sync>
 - <https://www.linode.com/docs/development/go/creating-reading-and-writing-files-in-go-a-tutorial/>
 
+- <https://medium.com/@sebassegros/golang-dealing-with-maligned-structs-9b77bacf4b97>
+
 - <https://github.com/360EntSecGroup-Skylar/excelize>
