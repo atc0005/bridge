@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/atc0005/bridge/config"
 	"github.com/atc0005/bridge/matches"
@@ -109,7 +108,7 @@ func main() {
 	fmt.Printf("* Fill in the %q field with \"true\" for any file that you wish to remove\n",
 		matches.CSVRemoveFileColumnHeaderName)
 	fmt.Printf("* Run \"%s %s -h\" for a quick list of applicable options\n",
-		filepath.Base(os.Args[0]), config.PruneSubcommand)
+		os.Args[0], config.PruneSubcommand)
 	fmt.Println("* Read the README for examples, including optional \"backup first\" behavior.")
 
 }
