@@ -182,6 +182,10 @@ func main() {
 				// directory check to see if they're identical. Report identical status
 				// (yeah, nay) and abort unless an override or force option is given
 				// (potential future work).
+
+				// DEBUG
+				// fmt.Printf("Calling BackupFile(%s, %s)\n", fullPathToFile, appConfig.BackupDirectory)
+
 				err := paths.BackupFile(fullPathToFile, appConfig.BackupDirectory)
 				if err != nil {
 					// FIXME: Implement check for appconfig.IgnoreErrors

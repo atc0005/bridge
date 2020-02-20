@@ -49,7 +49,7 @@ func PathExists(path string) bool {
 // are encountered.
 func RemoveFile(filename string, dryRun bool) error {
 
-	if !dryRun {
+	if dryRun {
 		log.Printf("File removal not enabled, not removing %q\n", filename)
 		return nil
 	}
@@ -120,9 +120,12 @@ func GetBackupTargetDir(filename string, fullPathToBackupDir string) (string, er
 	volumeName := filepath.VolumeName(slashConvertedSourcePath)
 	volRemoved := strings.ReplaceAll(slashConvertedSourcePath, volumeName+"/", "")
 
+	// Strip off filename
+	filenameRemoved := filepath.Dir(volRemoved)
+
 	// fully-qualified path to place file backup which approximates
 	// the original fully-qualified path
-	targetBackupDirPath := filepath.Join(fullPathToBackupDir, volRemoved)
+	targetBackupDirPath := filepath.Join(fullPathToBackupDir, filenameRemoved)
 
 	return targetBackupDirPath, err
 
@@ -136,10 +139,16 @@ func GetBackupTargetDir(filename string, fullPathToBackupDir string) (string, er
 // empty string and the error is returned.
 func CreateBackupDirectoryTree(filename string, fullPathToBackupDir string) (string, error) {
 
+	// DEBUG
+	// fmt.Printf("Calling GetBackupTargetDir(%s, %s)\n", filename, fullPathToBackupDir)
+
 	targetBackupDirPath, err := GetBackupTargetDir(filename, fullPathToBackupDir)
 	if err != nil {
 		return "", err
 	}
+
+	// DEBUG
+	//fmt.Printf("Calling os.MkdirAll(%v, %v)\n", targetBackupDirPath, defaultDirectoryPerms)
 
 	if err := os.MkdirAll(targetBackupDirPath, defaultDirectoryPerms); err != nil {
 		return "", fmt.Errorf("failed to create fully-qualified backup path %q for %q: %s",
@@ -159,6 +168,9 @@ func CreateBackupDirectoryTree(filename string, fullPathToBackupDir string) (str
 // directory structure, omitting any OS-specific volume names (e.g., "C:\" on
 // Windows).
 func BackupFile(sourceFilename string, destinationDirectory string) error {
+
+	// DEBUG
+	// fmt.Printf("Calling CreateBackupDirectoryTree(%s, %s)\n", sourceFilename, destinationDirectory)
 
 	targetBackupDirPath, err := CreateBackupDirectoryTree(sourceFilename, destinationDirectory)
 	if err != nil {
