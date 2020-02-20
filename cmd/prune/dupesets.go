@@ -53,9 +53,11 @@ type DuplicateFileSetEntry struct {
 	RemoveFile bool
 }
 
-// DuplicateFileSetEntries is a collection of DuplicateFileSetEntry objects
-// representing rows that should be acted upon in some way, usually file
-// pruning actions.
+// DuplicateFileSetEntries is a collection of DuplicateFileSetEntry objects.
+// These objects represent rows in a CSV file containing metadata for
+// duplicate file sets previously detected and reported by this application.
+// If flagged (by the user), the files noted by these entries may be
+// (optionally) backed up and removed.
 type DuplicateFileSetEntries []DuplicateFileSetEntry
 
 // Print writes DuplicateFileSetEntry objects to a provided Writer, falling
