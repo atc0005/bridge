@@ -21,7 +21,7 @@ func main() {
 	var err error
 
 	if appConfig, err = config.NewConfig(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	// DEBUG

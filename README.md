@@ -17,9 +17,10 @@ A small CLI utility used to find duplicate files
   - [Configuration Options](#configuration-options)
     - [Command-line Arguments](#command-line-arguments)
   - [Examples](#examples)
-    - [Single path, recursive](#single-path-recursive)
-    - [Multiple paths, non-recursive](#multiple-paths-non-recursive)
-    - [Invalid flag](#invalid-flag)
+    - [Generating a report](#generating-a-report)
+      - [Single path, recursive](#single-path-recursive)
+      - [Multiple paths, non-recursive](#multiple-paths-non-recursive)
+      - [Invalid flag](#invalid-flag)
   - [Application Logic](#application-logic)
   - [License](#license)
     - [Core project files](#core-project-files)
@@ -123,25 +124,31 @@ Tested using:
 
 ## Examples
 
-### Single path, recursive
+### Generating a report
+
+Generating a report is the first step towards indicating which files from a
+duplicate file set that you wish to remove (specified explicitly) and which
+you wish to keep (default behavior).
+
+#### Single path, recursive
 
 This example illustrates using the application to process a single path,
 recursively.
 
 ```ShellSession
-./bridge.exe -recurse -path "/tmp/path1" -csvfile "path1-report.csv"
+./bridge.exe report -recurse -path "/tmp/path1" -csvfile "path1-report.csv"
 ```
 
-### Multiple paths, non-recursive
+#### Multiple paths, non-recursive
 
 This example illustrates using the application to process multiple paths,
 without recursively evaluating any subdirectories.
 
 ```ShellSession
-./bridge.exe -path "/tmp/path1" -path "/tmp/path2"  -csvfile "report.csv"
+./bridge.exe report -path "/tmp/path1" -path "/tmp/path2"  -csvfile "report.csv"
 ```
 
-### Invalid flag
+#### Invalid flag
 
 Accidentally typing the wrong flag results in a message like this one:
 
