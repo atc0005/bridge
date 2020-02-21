@@ -148,10 +148,6 @@ func pruneSubcommand(appConfig *config.Config) {
 			// DEBUG
 			log.Println("Backup directory specified")
 
-			// FIXME: The Config.Validate() method is also performing path checks
-			// which is probably outside the normal scope for a config validation
-			// function to perform. Because of that, we don't actually make it
-			// to this point when a user provides an invalid backup directory path.
 			if !paths.PathExists(appConfig.BackupDirectory) {
 				// directory doesn't exist, what about the parent directory? do we
 				// have permission to create content within the parent directory

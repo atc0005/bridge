@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+
 	var appConfig *config.Config
 	var err error
 

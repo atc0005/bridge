@@ -199,27 +199,14 @@ func (c Config) Validate() error {
 		// DEBUG
 		fmt.Printf("validating subcommand '%s'\n", PruneSubcommand)
 
-		// FIXME: The PathExists checks are currently duplicated here and within
-		// matches package
-		// NOTE: Checking at this point is (potentially) cheaper than waiting
-		// until later and then attempting to read in the file. Optional flag, but
-		// if set we require that the path actually exist
-		if c.InputCSVFile != "" {
-			if !paths.PathExists(c.InputCSVFile) {
-				return fmt.Errorf("specified CSV file to process does not exist")
-			}
+		if strings.TrimSpace(c.InputCSVFile) == "" {
+			return fmt.Errorf("required input CSV file to process not specified")
 		}
 
-		// FIXME: The PathExists checks are currently duplicated here and within
-		// matches package
-		// NOTE: Checking at this point is cheaper than waiting until later and
-		// then attempting to write out the file.
-		// Optional flag, optional file backups
-		if c.BackupDirectory != "" {
-			if !paths.PathExists(c.BackupDirectory) {
-				return fmt.Errorf("directory for backup files does not exist: %q", c.BackupDirectory)
-			}
-		}
+		// c.BackupDirectory is optional; applying length checks here
+		// if user provides value would be unreliable. Path exist check
+		// is applied later at use point, so not duplicating here as it
+		// would be outsid the intent/scope of this function's purpose.
 
 	case ReportSubcommand:
 
