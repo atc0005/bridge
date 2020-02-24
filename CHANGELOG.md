@@ -40,6 +40,11 @@ The following types of changes will be recorded in this file:
 
 - README coverage for help flags
 
+### Changed
+
+- GitHub Actions Workflow: `Validate Codebase`
+  - `Build with default options` updated to use cmd dir path
+
 ## [v0.3.0] - 2020-02-09
 
 ### Added
