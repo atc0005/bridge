@@ -34,12 +34,17 @@ FEATURES
 
 • generate (rough) console equivalent of CSV file for quick review
 
+• (optionally) remove user-flagged duplicate files using a previously
+  generated CSV report
+
 USAGE
 
 Help output is below. See the README for examples.
 
-    Usage of T:\github\bridge\bridge.exe:
+$ ./bridge.exe report -h
 
+    subcommand 'report'
+    Usage of report:
     -console
             Dump (approximate) CSV file equivalent to console.
     -csvfile string
@@ -56,6 +61,25 @@ Help output is below. See the README for examples.
             Perform recursive search into subdirectories per provided path.
     -size int
             File size limit (in bytes) for evaluation. Files smaller than this will be skipped. (default 1)
+
+$ ./bridge.exe prune -h
+
+    subcommand 'prune'
+    Usage of prune:
+    -backup-dir string
+            The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.
+    -blank-line
+            Add a blank line between sets of matching files in console and file output.
+    -console
+            Dump (approximate) CSV file equivalent to console.
+    -dry-run
+            Don't actually remove files. Echo what would have been done to stdout.
+    -ignore-errors
+            Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.
+    -input-csvfile string
+            The fully-qualified path to a CSV file that this application should use for file removal decisions.
+    -use-first-row
+            Attempt to use the first row of the input file. Normally this row is skipped since it is usually the header row and not duplicate file data.
 
 */
 package main
