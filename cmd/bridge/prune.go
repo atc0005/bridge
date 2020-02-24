@@ -120,6 +120,7 @@ func pruneSubcommand(appConfig *config.Config) {
 	// NOTE: This contains ALL CSV file entries, not just those flagged for
 	// removal.
 	if appConfig.ConsoleReport {
+		fmt.Println("Parsed CSV contents:")
 		dfsEntries.Print(appConfig.BlankLineBetweenSets)
 	}
 
@@ -136,7 +137,12 @@ func pruneSubcommand(appConfig *config.Config) {
 	log.Printf("Found %d files to remove in %q", len(filesToRemove), appConfig.InputCSVFile)
 
 	// DEBUG
-	filesToRemove.Print(appConfig.BlankLineBetweenSets)
+	// Is this really debug-level output, or is it useful to print upon
+	// request via the `console` flag?
+	if appConfig.ConsoleReport {
+		fmt.Println("Files marked for removal:")
+		filesToRemove.Print(appConfig.BlankLineBetweenSets)
+	}
 
 	// Skip backup logic and file removal if running in "dry-run" mode
 	if !appConfig.DryRun {
