@@ -12,7 +12,6 @@ package config
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -168,13 +167,13 @@ func NewConfig() (*Config, error) {
 		// DEBUG
 		fmt.Printf("subcommand '%s'\n", PruneSubcommand)
 		if err := pruneCmd.Parse(os.Args[2:]); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 	case ReportSubcommand:
 		// DEBUG
 		fmt.Printf("subcommand '%s'\n", ReportSubcommand)
 		if err := reportCmd.Parse(os.Args[2:]); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 	default:
 		return nil, ErrInvalidSubcommand
