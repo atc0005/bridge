@@ -153,7 +153,7 @@ func NewConfig() (*Config, error) {
 	reportCmd.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
 
 	pruneCmd := flag.NewFlagSet("prune", flag.ExitOnError)
-	pruneCmd.BoolVar(&config.DryRun, "dry-run", false, "Don't actually remove files. Echo what would have been done to stdout. ")
+	pruneCmd.BoolVar(&config.DryRun, "dry-run", false, "Don't actually remove files. Echo what would have been done to stdout.")
 	pruneCmd.BoolVar(&config.BlankLineBetweenSets, "blank-line", false, "Add a blank line between sets of matching files in console and file output.")
 	pruneCmd.StringVar(&config.InputCSVFile, "input-csvfile", "", "The fully-qualified path to a CSV file that this application should use for file removal decisions.")
 	pruneCmd.StringVar(&config.BackupDirectory, "backup-dir", "", "The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.")
