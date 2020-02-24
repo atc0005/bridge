@@ -16,6 +16,8 @@ A small CLI utility used to find duplicate files
   - [How to install it](#how-to-install-it)
   - [Configuration Options](#configuration-options)
     - [Command-line Arguments](#command-line-arguments)
+      - [`report` subcommand](#report-subcommand)
+      - [`prune` subcommand](#prune-subcommand)
   - [Examples](#examples)
     - [Generating a report](#generating-a-report)
       - [Single path, recursive](#single-path-recursive)
@@ -36,11 +38,11 @@ inclusion into the project.
 ## Overview
 
 1. Generate report
-   - Find duplicate files and report them via console-only output or an ouput
-    CSV file
+   - Find duplicate files and report them via console-only output or an output
+     CSV file
 1. Remove flagged files
-   - Process CSV file report generated earlier and if flag is set, (optionally)
-    backup and then remove marked files
+   - Process CSV file report generated earlier: if flag is set,
+     (optionally) backup and then remove marked files
 
 ## Features
 
@@ -110,9 +112,11 @@ Tested using:
 
 ### Command-line Arguments
 
+#### `report` subcommand
+
 | Option          | Required | Default        | Repeat | Possible                            | Description                                                                                                                                  |
 | --------------- | -------- | -------------- | ------ | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `h`, `help`     | No       | `false`        | No     | `0+`                                | Keep specified number of matching files.                                                                                                     |
+| `h`, `help`     | No       | `false`        | No     | `h`, `help`                         | Show Help text along with the list of supported flags.                                                                                       |
 | `console`       | No       | `false`        | No     | `true`, `false`                     | Dump (approximate) CSV file equivalent to console.                                                                                           |
 | `csvfile`       | Yes      | *empty string* | No     | *valid file name characters*        | The fully-qualified path to a CSV file that this application should generate.                                                                |
 | `excelfile`     | No       | *empty string* | No     | *valid file name characters*        | The fully-qualified path to a Microsoft Excel file that this application should generate.                                                    |
@@ -121,6 +125,19 @@ Tested using:
 | `ignore-errors` | No       | `false`        | No     | `true`, `false`                     | Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files. |
 | `path`          | Yes      | *empty string* | Yes    | *one or more valid directory paths* | Path to process. This flag may be repeated for each additional path to evaluate.                                                             |
 | `recurse`       | No       | `false`        | No     | `true`, `false`                     | Perform recursive search into subdirectories per provided path.                                                                              |
+
+#### `prune` subcommand
+
+| Option          | Required | Default        | Repeat | Possible                     | Description                                                                                                                                                                     |
+| --------------- | -------- | -------------- | ------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `h`, `help`     | No       | `false`        | No     | `h`, `help`                  | Show Help text along with the list of supported flags.                                                                                                                          |
+| `console`       | No       | `false`        | No     | `true`, `false`              | Dump (approximate) CSV file equivalent to console.                                                                                                                              |
+| `dry-run`       | No       | `false`        | No     | `true`, `false`              | Don't actually remove files. Echo what would have been done to stdout.                                                                                                          |
+| `ignore-errors` | No       | `false`        | No     | `true`, `false`              | Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.                                    |
+| `input-csvfile` | Yes      | *empty string* | No     | *valid file name characters* | The fully-qualified path to a CSV file that this application should use for file removal decisions.                                                                             |
+| `backup-dir`    | No       | *empty string* | No     | *valid directory path*       | The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root. |
+| `blank-line`    | No       | `false`        | No     | `true`, `false`              | Add a blank line between sets of matching files in console and file output.                                                                                                     |
+| `use-first-row` | No       | `false`        | No     | `true`, `false`              | Attempt to use the first row of the input file. Normally this row is skipped since it is usually the header row and not duplicate file data.                                    |
 
 ## Examples
 
