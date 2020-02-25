@@ -21,9 +21,12 @@ func main() {
 	var err error
 
 	if appConfig, err = config.NewConfig(); err != nil {
-
 		// if the type is config.ErrMissingSubcommand we could mute the
 		// error message since the Help text is likely descriptive enough?
+		// TODO: Replace this with Go 1.13 error equality check once 1.12 goes EOL
+		if err == config.ErrMissingSubcommand {
+			os.Exit(0)
+		}
 		log.Fatal(err)
 	}
 
@@ -45,8 +48,9 @@ func main() {
 
 		reportSubcommand(appConfig)
 
+	// We should not be able to reach this section
 	default:
-		log.Fatal(config.ErrInvalidSubcommand)
+		log.Fatalf("invalid subcommand: %s", os.Args[1])
 	}
 
 }
