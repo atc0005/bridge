@@ -10,6 +10,7 @@
 package config
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -21,11 +22,16 @@ import (
 
 // ErrInvalidSubcommand represents cases where the user did not pass a valid
 // subcommand
-var ErrInvalidSubcommand = fmt.Errorf(
-	"expected '%s' or '%s' subcommands",
-	PruneSubcommand,
-	ReportSubcommand,
-)
+// var ErrInvalidSubcommand = fmt.Errorf(
+// 	"expected '%s' or '%s' subcommands",
+// 	PruneSubcommand,
+// 	ReportSubcommand,
+// )
+var ErrInvalidSubcommand = errors.New("invalid subcommand")
+
+// ErrMissingSubcommand represents cases where the user did not pass a
+// subcommand
+var ErrMissingSubcommand = errors.New("missing subcommand")
 
 // PruneSubcommand is meant as a label to be easily used/referenced in place
 // of the subcommand of the same name.
@@ -79,7 +85,7 @@ func (i *multiValueFlag) Set(value string) error {
 
 // Branding is responsible for emitting application name, version and origin
 func Branding() {
-	fmt.Fprintf(flag.CommandLine.Output(), "%s %s\n%s\n\n", myAppName, version, myAppURL)
+	fmt.Fprintf(flag.CommandLine.Output(), "\n%s %s\n%s\n\n", myAppName, version, myAppURL)
 }
 
 // MainHelp is meant to be called whenever a valid subcommand is
@@ -88,11 +94,18 @@ func MainHelp(subCmds ...string) func() {
 
 	return func() {
 
+		myBinaryName := filepath.Base(os.Args[0])
+
 		Branding()
 
 		fmt.Fprintln(flag.CommandLine.Output(), "Available subcommands:")
 		for _, subCmd := range subCmds {
 			fmt.Fprintf(flag.CommandLine.Output(), "\t%s\n", subCmd)
+		}
+		fmt.Fprintln(flag.CommandLine.Output(), "")
+		fmt.Fprintln(flag.CommandLine.Output(), "See available options for each subcommand by running:")
+		for _, subCmd := range subCmds {
+			fmt.Fprintf(flag.CommandLine.Output(), "\t%s %s -h\n", myBinaryName, subCmd)
 		}
 		fmt.Fprintln(flag.CommandLine.Output(), "")
 	}
@@ -104,10 +117,12 @@ func MainHelp(subCmds ...string) func() {
 // output.
 func SubcommandUsage(flagSet *flag.FlagSet) {
 
+	myBinaryName := filepath.Base(os.Args[0])
+
 	Branding()
 
 	fmt.Fprintf(flag.CommandLine.Output(), "Usage of \"%s %s\":\n",
-		os.Args[0],
+		myBinaryName,
 		flagSet.Name(),
 	)
 	flagSet.PrintDefaults()
@@ -197,8 +212,8 @@ func NewConfig() (*Config, error) {
 
 	// The subcommand is expected as the first argument to the program.
 	if len(os.Args) < 2 {
-		mainFlagSet.PrintDefaults()
-		return nil, ErrInvalidSubcommand
+		MainHelp(validSubcommands...)()
+		return nil, ErrMissingSubcommand
 	}
 
 	reportCmd := flag.NewFlagSet("report", flag.ContinueOnError)
@@ -226,14 +241,14 @@ func NewConfig() (*Config, error) {
 		// DEBUG
 		fmt.Printf("subcommand '%s'\n", PruneSubcommand)
 		if err := pruneCmd.Parse(os.Args[2:]); err != nil {
-			SubcommandUsage(pruneCmd)
+			//SubcommandUsage(pruneCmd)
 			return nil, err
 		}
 	case ReportSubcommand:
 		// DEBUG
 		fmt.Printf("subcommand '%s'\n", ReportSubcommand)
 		if err := reportCmd.Parse(os.Args[2:]); err != nil {
-			SubcommandUsage(reportCmd)
+			//SubcommandUsage(reportCmd)
 			return nil, err
 		}
 	default:

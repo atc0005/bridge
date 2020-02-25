@@ -21,6 +21,9 @@ func main() {
 	var err error
 
 	if appConfig, err = config.NewConfig(); err != nil {
+
+		// if the type is config.ErrMissingSubcommand we could mute the
+		// error message since the Help text is likely descriptive enough?
 		log.Fatal(err)
 	}
 
