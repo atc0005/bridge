@@ -23,39 +23,19 @@ import (
 // subcommand
 var ErrInvalidSubcommand = errors.New("invalid subcommand")
 
-// subcommandHelp is meant to be called whenever an invalid subcommand is
-// provided or not provided at all
-func subcommandHelp(subCmds ...string) {
+// MainHelp is meant to be called whenever a valid subcommand is
+// missing (not provided or invalid)
+func MainHelp(subCmds ...string) {
 
-	fmt.Println("Invalid command. Run one of these commands for further details:")
+	Branding()
+
+	fmt.Fprintln(flag.CommandLine.Output(), "Available subcommands:")
 	for _, subCmd := range subCmds {
-		fmt.Println(subcmd)
+		fmt.Fprintf(flag.CommandLine.Output(), "\t%s\n", subcmd)
 	}
-	fmt.Println("")
+	fmt.Fprintln(flag.CommandLine.Output(), "")
 
 }
-fmt.Errorf(
-	"invalid subcommand; expected '%s' or '%s'",
-
-
-	. Run \"%s SUBCOMMAND -h\" for details",
-// PruneSubcommand,
-// ReportSubcommand,
-// os.Args[0],
-
-
-func(subCmds []string) error {
-
-
-
-	// "invalid subcommand; expected '%s' or '%s'. Run \"%s SUBCOMMAND -h\" for details",
-	// PruneSubcommand,
-	// ReportSubcommand,
-	// os.Args[0],
-
-	errorMessage := ""
-	return fmt.Errorf(errorMessage)
-}()
 
 // Updated via Makefile builds. Setting placeholder value here so that
 // something resembling a version string will be provided for non-Makefile
@@ -90,7 +70,7 @@ func Branding() {
 
 // Usage is a custom override for the default Help text provided by the flag
 // package. Here we prepend some additional metadata to the existing output.
-func Usage(flagSet *flag.FlagSet) {
+func SubcommandUsage(flagSet *flag.FlagSet) {
 	Branding()
 	fmt.Fprintf(flag.CommandLine.Output(), "Usage of \"%s %s\":\n",
 		os.Args[0],
@@ -196,13 +176,13 @@ func NewConfig() (*Config, error) {
 	if len(os.Args) < 2 {
 		// DEBUG
 		fmt.Println("Triggered length check")
-		Branding()
+		MainHelp(validSubcommands)
 		return nil, ErrInvalidSubcommand
 	}
 
 	config := Config{}
 
-	reportCmd := flag.NewFlagSet("report", flag.ExitOnError)
+	reportCmd := flag.NewFlagSet("report", flag.ContinueOnError)
 
 	// Override the default Help output
 	reportCmd.Usage = func() {
@@ -217,7 +197,7 @@ func NewConfig() (*Config, error) {
 	reportCmd.StringVar(&config.OutputCSVFile, "csvfile", "", "The (required) fully-qualified path to a CSV file that this application should generate.")
 	reportCmd.StringVar(&config.ExcelFile, "excelfile", "", "The (optional) fully-qualified path to an Excel file that this application should generate.")
 
-	pruneCmd := flag.NewFlagSet("prune", flag.ExitOnError)
+	pruneCmd := flag.NewFlagSet("prune", flag.ContinueOnError)
 
 	// Override the default Help output
 	pruneCmd.Usage = func() {
@@ -230,6 +210,16 @@ func NewConfig() (*Config, error) {
 	pruneCmd.BoolVar(&config.ConsoleReport, "console", false, "Dump (approximate) CSV file equivalent to console.")
 	pruneCmd.BoolVar(&config.IgnoreErrors, "ignore-errors", false, "Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.")
 	pruneCmd.BoolVar(&config.UseFirstRow, "use-first-row", false, "Attempt to use the first row of the input file. Normally this row is skipped since it is usually the header row and not duplicate file data.")
+
+
+
+	for _, subcmd := range validSubcommands {
+		if strings.ToLower(os.Args[1]) == subcmd {
+			// setup here
+		}
+	}
+
+	// failure case here?
 
 	// For every subcommand, we parse its own flags and have access to trailing positional arguments.
 	switch os.Args[1] {
