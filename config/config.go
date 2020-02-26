@@ -115,17 +115,21 @@ func MainHelp(subCmds ...string) func() {
 // SubcommandUsage is a custom override for the default Help text provided by
 // the flag package. Here we prepend some additional metadata to the existing
 // output.
-func SubcommandUsage(flagSet *flag.FlagSet) {
+func SubcommandUsage(flagSet *flag.FlagSet) func() {
 
-	myBinaryName := filepath.Base(os.Args[0])
+	return func() {
 
-	Branding()
+		myBinaryName := filepath.Base(os.Args[0])
 
-	fmt.Fprintf(flag.CommandLine.Output(), "Usage of \"%s %s\":\n",
-		myBinaryName,
-		flagSet.Name(),
-	)
-	flagSet.PrintDefaults()
+		Branding()
+
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of \"%s %s\":\n",
+			myBinaryName,
+			flagSet.Name(),
+		)
+		flagSet.PrintDefaults()
+
+	}
 }
 
 // Config represents the application configuration as specified via
@@ -239,22 +243,32 @@ func NewConfig() (*Config, error) {
 	switch os.Args[1] {
 	case PruneSubcommand:
 		// DEBUG
-		fmt.Printf("subcommand '%s'\n", PruneSubcommand)
+		fmt.Printf("DEBUG: subcommand '%s'\n", PruneSubcommand)
 		if err := pruneCmd.Parse(os.Args[2:]); err != nil {
-			//SubcommandUsage(pruneCmd)
+			pruneCmd.Usage = SubcommandUsage(pruneCmd)
+			fmt.Println("DEBUG: err returned from pruneCmd.Parse():", err)
 			return nil, err
 		}
 	case ReportSubcommand:
 		// DEBUG
-		fmt.Printf("subcommand '%s'\n", ReportSubcommand)
+		fmt.Printf("DEBUG: subcommand '%s'\n", ReportSubcommand)
+		reportCmd.Usage = SubcommandUsage(reportCmd)
 		if err := reportCmd.Parse(os.Args[2:]); err != nil {
-			//SubcommandUsage(reportCmd)
+			fmt.Println("DEBUG: err returned from reportCmd.Parse():", err)
 			return nil, err
 		}
+	// TODO: How can we allow the flag package to deal with this instead of
+	// explicitly matching against the flags here? Otherwise the default case
+	// statement is used ...
+	case "-h", "-help":
+		fmt.Println("Help flags used")
+		mainFlagSet.PrintDefaults()
+		return nil, ErrMissingSubcommand
 	default:
 		// TODO: Confirm whether MainHelp() is used here automatically or
 		// whether we have to call it explicitly
 		mainFlagSet.PrintDefaults()
+		fmt.Println("DEBUG: default case statement for subcommand")
 		return nil, ErrInvalidSubcommand
 	}
 
@@ -275,7 +289,7 @@ func (c Config) Validate() error {
 	case PruneSubcommand:
 
 		// DEBUG
-		fmt.Printf("validating subcommand '%s'\n", PruneSubcommand)
+		fmt.Printf("DEBUG: validating subcommand '%s'\n", PruneSubcommand)
 
 		if strings.TrimSpace(c.InputCSVFile) == "" {
 			return fmt.Errorf("required input CSV file to process not specified")
@@ -289,7 +303,7 @@ func (c Config) Validate() error {
 	case ReportSubcommand:
 
 		// DEBUG
-		fmt.Printf("validating subcommand '%s'\n", ReportSubcommand)
+		fmt.Printf("DEBUG: validating subcommand '%s'\n", ReportSubcommand)
 
 		if c.Paths == nil {
 			return fmt.Errorf("one or more paths not provided")
