@@ -8,6 +8,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -21,10 +22,13 @@ func main() {
 	var err error
 
 	if appConfig, err = config.NewConfig(); err != nil {
-		// if the type is config.ErrMissingSubcommand we could mute the
-		// error message since the Help text is likely descriptive enough?
-		// TODO: Replace this with Go 1.13 error equality check once 1.12 goes EOL
-		if err == config.ErrMissingSubcommand {
+		// if err is config.ErrMissingSubcommand or flag.ErrHelp we can skip
+		// emitting err since the Help output shown by Parse() should be
+		// sufficient enough
+		// TODO: Replace this with Go 1.13 error equality check once 1.12 goes
+		// EOL *and* we update CI to no longer use Go 1.12
+		// if errors.Is(err, config.ErrMissingSubcommand) || errors.Is(err, flag.ErrHelp) {
+		if (err == config.ErrMissingSubcommand) || (err == flag.ErrHelp) {
 			os.Exit(0)
 		}
 		log.Fatal(err)
