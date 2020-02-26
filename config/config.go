@@ -240,6 +240,8 @@ func NewConfig() (*Config, error) {
 	pruneCmd.BoolVar(&config.UseFirstRow, "use-first-row", false, "Attempt to use the first row of the input file. Normally this row is skipped since it is usually the header row and not duplicate file data.")
 
 	// For every subcommand, we parse its own flags and have access to trailing positional arguments.
+	// FIXME: How can we have "-h" and "-help" *not* caught by this switch
+	// statement?
 	switch os.Args[1] {
 	case PruneSubcommand:
 		// DEBUG
