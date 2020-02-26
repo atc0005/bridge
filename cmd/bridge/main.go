@@ -8,6 +8,8 @@
 package main
 
 import (
+	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -21,7 +23,15 @@ func main() {
 	var err error
 
 	if appConfig, err = config.NewConfig(); err != nil {
-		panic(err)
+		// if err is config.ErrMissingSubcommand or flag.ErrHelp we can skip
+		// emitting err since the Help output shown by Parse() should be
+		// sufficient enough
+		// if errors.Is(err, config.ErrMissingSubcommand) || errors.Is(err, flag.ErrHelp) {
+		if errors.Is(err, flag.ErrHelp) {
+			os.Exit(0)
+		}
+		fmt.Printf("\nERROR: %s\n", err)
+		os.Exit(1)
 	}
 
 	// DEBUG
@@ -42,8 +52,9 @@ func main() {
 
 		reportSubcommand(appConfig)
 
+	// We should not be able to reach this section
 	default:
-		log.Fatal(config.ErrInvalidSubcommand)
+		log.Fatalf("invalid subcommand: %s", os.Args[1])
 	}
 
 }
