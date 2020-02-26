@@ -26,12 +26,12 @@ func main() {
 		// if err is config.ErrMissingSubcommand or flag.ErrHelp we can skip
 		// emitting err since the Help output shown by Parse() should be
 		// sufficient enough
-		// TODO: Replace this with Go 1.13 error equality check once 1.12 goes
-		// EOL *and* we update CI to no longer use Go 1.12
-		if errors.Is(err, config.ErrMissingSubcommand) || errors.Is(err, flag.ErrHelp) {
+		// if errors.Is(err, config.ErrMissingSubcommand) || errors.Is(err, flag.ErrHelp) {
+		if errors.Is(err, flag.ErrHelp) {
 			os.Exit(0)
 		}
-		log.Fatal(err)
+		fmt.Printf("\nERROR: %s\n", err)
+		os.Exit(1)
 	}
 
 	// DEBUG
