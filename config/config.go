@@ -88,9 +88,9 @@ func Branding() {
 	fmt.Fprintf(flag.CommandLine.Output(), "\n%s %s\n%s\n\n", myAppName, version, myAppURL)
 }
 
-// MainHelp is meant to be called whenever a valid subcommand is
-// missing (not provided or invalid)
-func MainHelp(subCmds ...string) func() {
+// MainCmdUsage is meant to be called whenever a valid subcommand is missing
+// (not provided or invalid)
+func MainCmdUsage(subCmds ...string) func() {
 
 	return func() {
 
@@ -210,13 +210,13 @@ func NewConfig() (*Config, error) {
 	// (as noted in "Learning CoreDNS") is to protect against other imported
 	// packages overriding flags set for this application.
 	mainFlagSet := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	mainFlagSet.Usage = MainHelp(validSubcommands...)
+	mainFlagSet.Usage = MainCmdUsage(validSubcommands...)
 	flag.CommandLine = mainFlagSet
 	flag.Parse()
 
 	// The subcommand is expected as the first argument to the program.
 	if len(os.Args) < 2 {
-		MainHelp(validSubcommands...)()
+		MainCmdUsage(validSubcommands...)()
 		return nil, ErrMissingSubcommand
 	}
 
@@ -267,7 +267,7 @@ func NewConfig() (*Config, error) {
 		mainFlagSet.PrintDefaults()
 		return nil, ErrMissingSubcommand
 	default:
-		// TODO: Confirm whether MainHelp() is used here automatically or
+		// TODO: Confirm whether MainCmdUsage() is used here automatically or
 		// whether we have to call it explicitly
 		mainFlagSet.PrintDefaults()
 		fmt.Println("DEBUG: default case statement for subcommand")
