@@ -93,7 +93,7 @@ official release is also provided for further review.
 
 ## Requirements
 
-- Go 1.12+ (for building)
+- Go 1.13+ (for building)
 - GCC
   - if building with custom options (as the provided `Makefile` does)
 - `make`
