@@ -246,8 +246,8 @@ func NewConfig() (*Config, error) {
 	case PruneSubcommand:
 		// DEBUG
 		fmt.Printf("DEBUG: subcommand '%s'\n", PruneSubcommand)
+		pruneCmd.Usage = SubcommandUsage(pruneCmd)
 		if err := pruneCmd.Parse(os.Args[2:]); err != nil {
-			pruneCmd.Usage = SubcommandUsage(pruneCmd)
 			fmt.Println("DEBUG: err returned from pruneCmd.Parse():", err)
 			return nil, err
 		}
