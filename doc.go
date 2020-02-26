@@ -41,10 +41,32 @@ USAGE
 
 Help output is below. See the README for examples.
 
-$ ./bridge.exe report -h
+$ ./bridge -h
 
-    subcommand 'report'
-    Usage of report:
+    bridge x.y.z
+    https://github.com/atc0005/bridge
+
+    Available subcommands:
+            prune
+            report
+
+    See available options for each subcommand by running:
+            bridge prune -h
+            bridge report -h
+
+    DEBUG: Help flags used
+
+    ERROR: missing subcommand
+
+
+$ ./bridge report -h
+
+    DEBUG: subcommand 'report'
+
+    bridge x.y.z
+    https://github.com/atc0005/bridge
+
+    Usage of "bridge report":
     -console
             Dump (approximate) CSV file equivalent to console.
     -csvfile string
@@ -61,11 +83,16 @@ $ ./bridge.exe report -h
             Perform recursive search into subdirectories per provided path.
     -size int
             File size limit (in bytes) for evaluation. Files smaller than this will be skipped. (default 1)
+    DEBUG: err returned from reportCmd.Parse(): flag: help requested
 
-$ ./bridge.exe prune -h
+$ ./bridge prune -h
 
-    subcommand 'prune'
-    Usage of prune:
+    DEBUG: subcommand 'prune'
+
+    bridge x.y.z
+    https://github.com/atc0005/bridge
+
+    Usage of "bridge prune":
     -backup-dir string
             The writable directory path where files should be relocated instead of removing them. The original path structure will be created starting with the specified path as the root.
     -blank-line
@@ -80,6 +107,6 @@ $ ./bridge.exe prune -h
             The fully-qualified path to a CSV file that this application should use for file removal decisions.
     -use-first-row
             Attempt to use the first row of the input file. Normally this row is skipped since it is usually the header row and not duplicate file data.
-
+    DEBUG: err returned from pruneCmd.Parse(): flag: help requested
 */
 package main
