@@ -8,6 +8,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -27,8 +28,7 @@ func main() {
 		// sufficient enough
 		// TODO: Replace this with Go 1.13 error equality check once 1.12 goes
 		// EOL *and* we update CI to no longer use Go 1.12
-		// if errors.Is(err, config.ErrMissingSubcommand) || errors.Is(err, flag.ErrHelp) {
-		if (err == config.ErrMissingSubcommand) || (err == flag.ErrHelp) {
+		if errors.Is(err, config.ErrMissingSubcommand) || errors.Is(err, flag.ErrHelp) {
 			os.Exit(0)
 		}
 		log.Fatal(err)
