@@ -191,7 +191,33 @@ without recursively evaluating any subdirectories.
 Accidentally typing the wrong flag results in a message like this one:
 
 ```ShellSession
+$ ./bridge.exe report -fake-flag
+DEBUG: subcommand 'report'
 flag provided but not defined: -fake-flag
+
+bridge x.y.z
+https://github.com/atc0005/bridge
+
+Usage of "bridge report":
+  -console
+        Dump (approximate) CSV file equivalent to console.
+  -csvfile string
+        The (required) fully-qualified path to a CSV file that this application should generate.
+  -duplicates int
+        Number of files of the same file size needed before duplicate validation logic is applied. (default 2)
+  -excelfile string
+        The (optional) fully-qualified path to an Excel file that this application should generate.
+  -ignore-errors
+        Ignore minor errors whenever possible. This option does not affect handling of fatal errors such as failure to generate output report files.
+  -path value
+        Path to process. This flag may be repeated for each additional path to evaluate.
+  -recurse
+        Perform recursive search into subdirectories per provided path.
+  -size int
+        File size limit (in bytes) for evaluation. Files smaller than this will be skipped. (default 1)
+DEBUG: err returned from reportCmd.Parse(): flag provided but not defined: -fake-flag
+
+ERROR: flag provided but not defined: -fake-flag
 ```
 
 ### Pruning duplicate files
