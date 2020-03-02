@@ -330,4 +330,7 @@ of this document for links to additional information.
 
 - <https://medium.com/@sebassegros/golang-dealing-with-maligned-structs-9b77bacf4b97>
 
+- <https://goenning.net/2017/01/25/adding-custom-data-go-binaries-compile-time/>
+  - covers updating variables at build time, particularly sub-packages (GH-55)
+
 - <https://github.com/360EntSecGroup-Skylar/excelize>

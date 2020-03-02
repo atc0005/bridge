@@ -26,6 +26,12 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.1] - 2020-03-02
+
+### Fixed
+
+- (GH-55) `Makefile` builds failed to set version information
+
 ## [v0.4.0] - 2020-02-27
 
 ### Added
@@ -113,7 +119,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.1...HEAD
+[v0.4.1]: https://github.com/atc0005/bridge/releases/tag/v0.4.1
 [v0.4.0]: https://github.com/atc0005/bridge/releases/tag/v0.4.0
 [v0.3.0]: https://github.com/atc0005/bridge/releases/tag/v0.3.0
 [v0.2.0]: https://github.com/atc0005/bridge/releases/tag/v0.2.0
