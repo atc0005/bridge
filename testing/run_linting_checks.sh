@@ -24,44 +24,12 @@ failed_app=""
 ###########################################################
 
 
-# https://stackoverflow.com/a/42510278/903870
-diff -u <(echo -n) <(gofmt -l -e -d .)
-
-status=$?
-if [[ $status -ne 0 ]]; then
-    final_exit_code=$status
-    failed_app="gofmt"
-    echo "Non-zero exit code from $failed_app: $status"
-fi
-
 go vet ./...
 
 status=$?
 if [[ $status -ne 0 ]]; then
     final_exit_code=$status
     failed_app="go vet"
-    echo "Non-zero exit code from $failed_app: $status"
-fi
-
-if ! which golint > /dev/null; then
-cat <<\EOF
-Error: Unable to locate "golint"
-
-Install golint with the following command:
-
-make lintinstall
-
-EOF
-    exit 1
-else
-    golint -set_exit_status ./...
-fi
-
-# TODO: This might not be needed based on use of "-set_exit_status"
-status=$?
-if [[ $status -ne 0 ]]; then
-    final_exit_code=$status
-    failed_app="staticcheck"
     echo "Non-zero exit code from $failed_app: $status"
 fi
 
@@ -76,19 +44,7 @@ make lintinstall
 EOF
     exit 1
 else
-    golangci-lint run \
-        -E goimports \
-        -E gosec \
-        -E stylecheck \
-        -E goconst \
-        -E depguard \
-        -E prealloc \
-        -E misspell \
-        -E maligned \
-        -E dupl \
-        -E unconvert \
-        -E golint \
-        -E gocritic
+    golangci-lint run
 fi
 
 status=$?
