@@ -34,8 +34,7 @@ FEATURES
 
 • generate (rough) console equivalent of CSV file for quick review
 
-• (optionally) remove user-flagged duplicate files using a previously
-  generated CSV report
+• (optionally) remove user-flagged duplicate files using a previously generated CSV report
 
 USAGE
 
