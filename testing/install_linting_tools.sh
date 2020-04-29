@@ -20,7 +20,6 @@ export GO111MODULE="off"
 # https://github.com/golangci/golangci-lint/releases/latest
 GOLANGCI_LINT_VERSION="v1.25.1"
 
-go get -u golang.org/x/lint/golint
 go get -u honnef.co/go/tools/cmd/staticcheck
 
 echo Installing golangci-lint ${GOLANGCI_LINT_VERSION} per official binary installation docs ...
