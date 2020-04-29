@@ -24,7 +24,7 @@ import (
 	"github.com/atc0005/bridge/paths"
 	"github.com/atc0005/bridge/units"
 
-	"github.com/360EntSecGroup-Skylar/excelize"
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 )
 
 // CSV header names referenced from both inside and outside of the package
