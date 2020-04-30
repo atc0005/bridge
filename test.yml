@@ -1,0 +1,77 @@
+# Copyright 2020 Adam Chalkley
+#
+# https:#github.com/atc0005/bridge
+#
+# Licensed under the MIT License. See LICENSE file in the project root for
+# full license information.
+
+# https://github.com/taskctl/taskctl
+# https://github.com/taskctl/taskctl/blob/master/docs/example.yaml
+
+pipelines:
+  lint:
+
+  build:
+
+  pipeline1:
+    - name: set-path
+      task: set-path
+      allow_failure: false
+
+    - name: set-version
+      task: set-version
+      allow_failure: false
+
+    - name: Testing options
+      task: lint-install
+      allow_failure: false
+      # Wait on env variables to be set first before running this task
+      depends_on: [set-path, set-version]
+
+tasks:
+  set-path:
+    command:
+      - echo ${PATH}:$(go env GOPATH)/bin
+    allow_failure: false
+    exportAs: PATH
+
+  set-version:
+    command:
+      - git describe --always --long --dirty
+    allow_failure: false
+    exportAs: APP_VERSION
+
+  lint-install:
+    allow_failure: false
+
+    # Change out of current working directory so that we don't unintentionally
+    # alter this project's go.mod file when installing linting tools with
+    # go modules support enabled.
+    #dir: /tmp
+    env:
+      # Explicitly enabling this to resolve Go v1.12.x build issues
+      GO111MODULE: "on"
+      TEST: "{{ .Name }}"
+
+    command:
+      # - echo $PATH
+      # - "echo {{ .Name }}"
+      - "echo $APP_VERSION"
+      # - echo $GO111MODULE
+      # - echo $GOFLAGS
+      # - echo $OUTPUT_DIR_BASE
+      # - echo $GOLANGCI_LINT_VERSION
+
+contexts:
+  local: # will be created automatically if not set
+    type: local
+    # executable:
+    #   bin: /bin/sh
+    #   args:
+    #     - -c
+    env:
+      GOFLAGS: -mod=vendor
+      OUTPUT_DIR_BASE: "release_assets"
+      GOLANGCI_LINT_VERSION: "v1.25.1"
+
+debug: false # debug enabled by default. To disable run with "--debug=false"

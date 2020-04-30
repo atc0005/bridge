@@ -1,0 +1,152 @@
+# Copyright 2020 Adam Chalkley
+#
+# https:#github.com/atc0005/bridge
+#
+# Licensed under the MIT License. See LICENSE file in the project root for
+# full license information.
+
+# https://github.com/taskctl/taskctl
+# https://github.com/taskctl/taskctl/blob/master/docs/example.yaml
+
+pipelines:
+  set-values:
+    # - name: Set PATH
+    #   task: set-path
+
+    - task: set-path
+    - task: set-app-version
+    - task: set-version-var-pkg
+    - task: set-go-bin-path
+
+  # This pipeline represents a complete execution of all (applicable) tasks
+  # using parallel execution where possible. The intended use case is CI jobs.
+  all:
+    - name: Install linting tools
+      pipeline: lint-install
+      depends_on: set-values
+
+    - name: Lint codebase
+      pipeline: lint
+      depends_on: lint-install
+
+    - name: Build binaries
+      pipeline: build
+      depends_on: set-values
+
+  lint-install:
+    - name: Configure environment variables
+      pipeline: set-values
+
+    - name: Install linting tools
+      task: lint-install
+      depends_on: set-values
+      allow_failure: false
+
+  lint:
+    # Run in parallel with build task
+    - name: Lint codebase
+      task: lint
+      depends_on: set-values
+      allow_failure: false
+
+  build:
+    - name: Build codebase
+      task: build
+      depends_on: set-values
+
+tasks:
+  set-path:
+    description: "Ensure GOPATH/bin is part of PATH"
+    command: "echo ${PATH}:$(go env GOPATH)/bin"
+    exportAs: PATH
+
+  set-app-version:
+    description: "Set APP_VERSION using git describe"
+    command:
+      - git describe --always --long --dirty
+    exportAs: APP_VERSION
+
+  set-version-var-pkg:
+    description: "Set VERSION_VAR_PKG to identify app version"
+    command:
+      # our application version is referenced from config.version
+      - go list ./config
+    exportAs: VERSION_VAR_PKG
+
+  set-go-bin-path:
+    description: "Set GOBIN path based on GOPATH"
+    command:
+      - "echo $(go env GOPATH)/bin"
+    exportAs: GOBIN
+
+  lint-install-golangci:
+    description: "Install golangci-lint using official install script"
+    command:
+      - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${GOBIN} ${GOLANGCI_LINT_VERSION}
+      - golangci-lint --version
+
+  lint-install-staticcheck:
+    allow_failure: false
+    # Change out of current working directory so that we don't unintentionally
+    # alter this project's go.mod file when installing linting tools with
+    # go modules support enabled.
+    dir: /tmp
+    env:
+      # Explicitly enabling this to resolve Go v1.12.x build issues
+      GO111MODULE: "on"
+    command:
+      - "echo {{ .Name }}"
+      - go get honnef.co/go/tools/cmd/staticcheck
+
+  lint:
+    allow_failure: false
+    command:
+      - go vet $(go list ./... | grep -v /vendor/)
+      - golangci-lint run
+
+  generate-checksums:
+    command:
+      - echo "Create checksums for binaries here"
+
+  build:
+    before: mkdir -p "${OUTPUT_DIR_BASE}/${APP_NAME}"
+    command:
+      - >-
+        GOOS=${GOOS}
+        GOARCH=${GOARCH}
+        go build -a -ldflags="-s -w -X ${VERSION_VAR_PKG}.version=${APP_VERSION}" -o
+        ${OUTPUT_DIR_BASE}/${APP_NAME}/${APP_NAME}-${APP_VERSION}-${GOOS}-${GOARCH}${EXT}
+        ./cmd/${APP_NAME}
+    env:
+      APP_NAME: bridge
+
+    variations:
+      - GOOS: linux
+        GOARCH: amd64
+      - GOOS: linux
+        GOARCH: 386
+
+      - GOOS: windows
+        GOARCH: amd64
+        EXT: ".exe"
+      - GOOS: windows
+        GOARCH: 386
+        EXT: ".exe"
+
+contexts:
+  local: # will be created automatically if not set
+    type: local
+    # executable:
+    #   bin: /bin/sh
+    #   args:
+    #     - -c
+    env:
+      # TODO: How can we call out to git to generate this dynamically?
+      # git describe --always --long --dirty
+      VERSION: "$(git describe --always --long --dirty)"
+
+      GOFLAGS: -mod=vendor
+      OUTPUT_DIR_BASE: "release_assets"
+      GOLANGCI_LINT_VERSION: "v1.25.1"
+
+debug: true # debug enabled by default. To disable run with "--debug=false"
