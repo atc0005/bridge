@@ -26,6 +26,54 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.2] - 2020-04-30
+
+### Fixed
+
+- GoDoc formatting issue due to forced line wrapping
+
+### Changed
+
+- README
+  - Update README to list accurate build/deploy steps based on recent
+    restructuring work
+
+- Update dependencies
+  - `stretchr/testify`
+    - `v1.4.0` to `v1.5.1`
+  - `gopkg.in/yaml.v2`
+    - `v2.2.4` to `v2.2.8`
+  - `360EntSecGroup-Skylar/excelize`
+    - `v1.4.1` to `v2.1.0`
+    - Worth noting: the API changed from v1 to v2, so our use of the library
+      changed slightly to accommodate those changes
+
+- Vendor dependencies
+
+- Makefile
+  - include `-mod=vendor` flag force builds to use new `vendor`
+    top-level directory
+  - replace two external shell scripts with equivalent embedded commands
+  - borrow heavily from existing `Makefile` for `atc0005/elbow` project
+  - dynamically determine go module path for version tag use
+
+- Update GitHub Actions Workflows
+  - Disable running `go get` after checking out code
+  - Exclude `vendor` folder from ...
+    - Markdown linting checks
+    - tests
+    - basic build
+  - include `-mod=vendor` flag force builds to use new `vendor`
+    top-level directory
+
+- Linting
+  - golangci-lint
+    - Install and use specific binary version instead of building from  master
+    - Move linters/settings to external config file
+    - Enable `gofmt` linter
+    - Enable `scopelint` linter
+    - Enable `dogsled` linter
+
 ## [v0.4.1] - 2020-03-02
 
 ### Fixed
@@ -119,7 +167,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.2...HEAD
+[v0.4.2]: https://github.com/atc0005/bridge/releases/tag/v0.4.2
 [v0.4.1]: https://github.com/atc0005/bridge/releases/tag/v0.4.1
 [v0.4.0]: https://github.com/atc0005/bridge/releases/tag/v0.4.0
 [v0.3.0]: https://github.com/atc0005/bridge/releases/tag/v0.3.0
