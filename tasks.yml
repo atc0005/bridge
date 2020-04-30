@@ -52,6 +52,11 @@ pipelines:
 
     - name: Build codebase
       task: build
+      depends_on:
+        - set-path
+        - set-app-version
+        - set-version-var-pkg
+        - set-go-bin-path
       allow_failure: false
 
 tasks:
@@ -95,7 +100,10 @@ tasks:
       # Explicitly enabling this to resolve Go v1.12.x build issues
       GO111MODULE: "on"
     command:
-      - "echo {{ .Name }}"
+      # https://github.com/taskctl/taskctl#task-variables
+      # broken as of 0.6.4 release
+      #- "echo {{ .Name }}"
+      #
       - go get honnef.co/go/tools/cmd/staticcheck
 
   lint:
@@ -106,6 +114,14 @@ tasks:
 
   build:
     command:
+      # - "echo GOOS = $GOOS"
+      # - "echo GOARCH = $GOARCH"
+      # - "echo VERSION_VAR_PKG = $VERSION_VAR_PKG"
+      # - "echo APP_VERSION = $APP_VERSION"
+      # - "echo OUTPUT_DIR_BASE = $OUTPUT_DIR_BASE"
+      # - "echo EXT = $EXT"
+      # - "echo ${APP_NAME}"
+
       - >-
         GOOS=${GOOS}
         GOARCH=${GOARCH}
