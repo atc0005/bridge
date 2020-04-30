@@ -9,53 +9,49 @@
 # https://github.com/taskctl/taskctl/blob/master/docs/example.yaml
 
 pipelines:
-  set-values:
-    # - name: Set PATH
-    #   task: set-path
+  # This pipeline represents a complete execution of all (applicable) tasks
+  # using parallel execution where possible. The intended use case is CI jobs.
+  # Note: Each referenced pipeline is responsible for calling `set-XYZ` tasks
+  # to ensure that required environment variables are set prior to other tasks
+  # within the called pipeline.
+  all:
+    - name: install-linting-tools
+      pipeline: lint-install
 
+    - name: lint-codebase
+      pipeline: lint
+      depends_on: install-linting-tools
+
+    - name: build-binaries
+      pipeline: build
+
+  lint-install:
     - task: set-path
     - task: set-app-version
     - task: set-version-var-pkg
     - task: set-go-bin-path
 
-  # This pipeline represents a complete execution of all (applicable) tasks
-  # using parallel execution where possible. The intended use case is CI jobs.
-  all:
-    - name: Install linting tools
-      pipeline: lint-install
-      depends_on: set-values
-
-    - name: Lint codebase
-      pipeline: lint
-      depends_on: lint-install
-
-    - name: Build binaries
-      pipeline: build
-      depends_on: set-values
-
-  lint-install:
-    - name: Configure environment variables
-      pipeline: set-values
-
-    - task: lint-install-staticcheck
-      depends_on: set-values
+    - task: lint-install-golangci
+      depends_on: [set-path, set-go-bin-path]
       allow_failure: false
 
-    - task: lint-install-golangci
-      depends_on: set-values
+    - task: lint-install-staticcheck
       allow_failure: false
 
   lint:
     # Run in parallel with build task
-    - name: Lint codebase
+    - name: lint-codebase
       task: lint
-      depends_on: set-values
       allow_failure: false
 
   build:
+    - task: set-path
+    - task: set-app-version
+    - task: set-version-var-pkg
+    - task: set-go-bin-path
+
     - name: Build codebase
       task: build
-      depends_on: set-values
       allow_failure: false
 
 tasks:
@@ -67,27 +63,27 @@ tasks:
   set-app-version:
     description: "Set APP_VERSION using git describe"
     command:
-      - git describe --always --long --dirty
+      - "git describe --always --long --dirty"
     exportAs: APP_VERSION
 
   set-version-var-pkg:
     description: "Set VERSION_VAR_PKG to identify app version"
     command:
       # our application version is referenced from config.version
-      - go list ./config
+      - "go list ./config"
     exportAs: VERSION_VAR_PKG
 
   set-go-bin-path:
-    description: "Set GOBIN path based on GOPATH"
+    description: "Set GOBIN_PATH path based on GOPATH"
     command:
       - "echo $(go env GOPATH)/bin"
-    exportAs: GOBIN
+    exportAs: GOBIN_PATH
 
   lint-install-golangci:
     description: "Install golangci-lint using official install script"
     command:
-      - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${GOBIN} ${GOLANGCI_LINT_VERSION}
-      - golangci-lint --version
+      - "curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${GOBIN_PATH} ${GOLANGCI_LINT_VERSION}"
+      - "golangci-lint --version"
 
   lint-install-staticcheck:
     allow_failure: false
@@ -99,7 +95,7 @@ tasks:
       # Explicitly enabling this to resolve Go v1.12.x build issues
       GO111MODULE: "on"
     command:
-      - "echo Testing task 'name' variable resolution: {{ .Name }}"
+      - "echo {{ .Name }}"
       - go get honnef.co/go/tools/cmd/staticcheck
 
   lint:
@@ -109,7 +105,6 @@ tasks:
       - golangci-lint run
 
   build:
-    before: mkdir -p "${OUTPUT_DIR_BASE}/${APP_NAME}"
     command:
       - >-
         GOOS=${GOOS}
@@ -121,6 +116,8 @@ tasks:
         sha256sum -b
         ${OUTPUT_DIR_BASE}/${APP_NAME}/${APP_NAME}-${APP_VERSION}-${GOOS}-${GOARCH}${EXT} >
         ${OUTPUT_DIR_BASE}/${APP_NAME}/${APP_NAME}-${APP_VERSION}-${GOOS}-${GOARCH}${EXT}.${CHECKSUM_FILE_EXT}
+
+    #before: mkdir -p "${OUTPUT_DIR_BASE}/${APP_NAME}"
 
     env:
       APP_NAME: bridge
@@ -148,4 +145,4 @@ contexts:
       GOLANGCI_LINT_VERSION: "v1.25.1"
       CHECKSUM_FILE_EXT: "sha256"
 
-debug: true # debug enabled by default. To disable run with "--debug=false"
+debug: false # debug enabled by default. To disable run with "--debug=false"
