@@ -121,17 +121,19 @@ Tested using:
    - for CentOS Linux
      1. `sudo yum install make gcc`
 1. Build
-   - for current operating system with default `go` build options
-     - `go build`
-   - for all supported platforms
+   - for current operating system
+     - `go build -mod=vendor ./cmd/bridge/`
+       - *forces build to use bundled dependencies in top-level `vendor`
+         folder*
+   - for all supported platforms (where `make` is installed)
       - `make all`
    - for Windows
       - `make windows`
    - for Linux
      - `make linux`
-1. Copy the applicable binary to whatever systems that need to run it
-   1. Linux: `/tmp/bridge/bridge`
-   1. Windows: `/tmp/bridge/bridge.exe`
+1. Copy the applicable binary to whatever systems needs to run it
+   - if using `Makefile`: look in `/tmp/release_assets/bridge/`
+   - if using `go build`: look in `/tmp/bridge/`
 
 ## Configuration Options
 

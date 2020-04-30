@@ -17,60 +17,90 @@
 # https://www.gnu.org/software/make/manual/html_node/Recipe-Syntax.html#Recipe-Syntax
 # https://www.gnu.org/software/make/manual/html_node/Special-Variables.html#Special-Variables
 
-APPNAME					:= bridge
+
+SHELL = /bin/bash
+
+APPNAME					= bridge
 
 # What package holds the "version" variable used in branding/version output?
-VERSION_VAR_PKG			= github.com/atc0005/bridge/config
+# VERSION_VAR_PKG			= $(shell go list .)
+VERSION_VAR_PKG			=  $(shell go list .)/config
 
-OUTPUTDIR 				:= release_assets
+OUTPUTDIR 				= release_assets
 
 # https://gist.github.com/TheHippo/7e4d9ec4b7ed4c0d7a39839e6800cc16
-VERSION 				:= $(shell git describe --always --long --dirty)
+# https://github.com/atc0005/elbow/issues/54
+VERSION 				= $(shell git describe --always --long --dirty)
+
+# https://github.com/golangci/golangci-lint#install
+# https://github.com/golangci/golangci-lint/releases/latest
+GOLANGCI_LINT_VERSION		= v1.25.1
 
 # The default `go build` process embeds debugging information. Building
 # without that debugging information reduces the binary size by around 28%.
-BUILDCMD				:=	go build -a -ldflags="-s -w -X $(VERSION_VAR_PKG).version=$(VERSION)"
-GOCLEANCMD				:=	go clean
-GITCLEANCMD				:= 	git clean -xfd
-CHECKSUMCMD				:=	sha256sum -b
-
-LINTINGCMD				:=   bash testing/run_linting_checks.sh
-LINTINSTALLCMD			:=   bash testing/install_linting_tools.sh
+BUILDCMD				=	go build -mod=vendor -a -ldflags="-s -w -X $(VERSION_VAR_PKG).version=$(VERSION)"
+GOCLEANCMD				=	go clean -mod=vendor ./...
+GITCLEANCMD				= 	git clean -xfd
+CHECKSUMCMD				=	sha256sum -b
 
 .DEFAULT_GOAL := help
 
-# Targets will not work properly if a file with the same name is ever created
-# in this directory. We explicitly declare our targets to be phony by
-# making them a prerequisite of the special target .PHONY
-.PHONY: help clean goclean gitclean pristine all windows linux linting lintinstall gotests
+  ##########################################################################
+  # Targets will not work properly if a file with the same name is ever
+  # created in this directory. We explicitly declare our targets to be phony
+  # by making them a prerequisite of the special target .PHONY
+  ##########################################################################
 
-# WARNING: Make expects you to use tabs to introduce recipe lines
+
+.PHONY: help
+## help: prints this help message
 help:
-	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  clean          go clean to remove local build artifacts, temporary files, etc"
-	@echo "  pristine       go clean and git clean local changes"
-	@echo "  all            to generate binary files for Windows and Linux"
-	@echo "  linux          to generate binary files for Linux only"
-	@echo "  windows        to generate binary files for Windows only"
-	@echo "  lintinstall    use wrapper script to install common linting tools"
-	@echo "  linting        use wrapper script to run common linting checks"
-	@echo "  gotests        go test recursively, verbosely"
+	@echo "Usage:"
+	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
 
+.PHONY: lintinstall
+## lintinstall: install common linting tools
+# https://github.com/golang/go/issues/30515#issuecomment-582044819
 lintinstall:
-	@echo "Calling wrapper script: $(LINTINSTALLCMD)"
-	@$(LINTINSTALLCMD)
-	@echo "Finished running linting tools install script"
+	@echo "Installing linting tools"
 
+	@export PATH="${PATH}:$(go env GOPATH)/bin"
+
+	@echo "Explicitly enabling Go modules mode per command"
+	(cd; GO111MODULE="on" go get honnef.co/go/tools/cmd/staticcheck)
+
+	@echo Installing golangci-lint ${GOLANGCI_LINT_VERSION} per official binary installation docs ...
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
+	golangci-lint --version
+
+	@echo "Finished updating linting tools"
+
+.PHONY: linting
+## linting: runs common linting checks
+# https://stackoverflow.com/a/42510278/903870
 linting:
-	@echo "Calling wrapper script: $(LINTINGCMD)"
-	@$(LINTINGCMD)
+	@echo "Running linting tools ..."
+
+	@echo "Running go vet ..."
+	@go vet -mod=vendor $(shell go list -mod=vendor ./... | grep -v /vendor/)
+
+	@echo "Running golangci-lint ..."
+	@golangci-lint run
+
+	@echo "Running staticcheck ..."
+	@staticcheck $(shell go list -mod=vendor ./... | grep -v /vendor/)
+
 	@echo "Finished running linting checks"
 
+.PHONY: gotests
+## gotests: runs go test recursively, verbosely
 gotests:
 	@echo "Running go tests ..."
-	@go test ./...
+	@go test -mod=vendor ./...
 	@echo "Finished running go tests"
 
+.PHONY: goclean
+## goclean: removes local build artifacts, temporary files, etc
 goclean:
 	@echo "Removing object files and cached files ..."
 	@$(GOCLEANCMD)
@@ -79,19 +109,28 @@ goclean:
 	@rm -vf $(wildcard ${OUTPUTDIR}/*/*-linux-*)
 	@rm -vf $(wildcard ${OUTPUTDIR}/*/*-windows-*)
 
-# Setup alias for user reference
+.PHONY: clean
+## clean: alias for goclean
 clean: goclean
 
+.PHONY: gitclean
+## gitclean: WARNING - recursively cleans working tree by removing non-versioned files
 gitclean:
-	@echo "Recursively cleaning working tree by removing non-versioned files ..."
+	@echo "Removing non-versioned files ..."
 	@$(GITCLEANCMD)
 
+.PHONY: pristine
+## pristine: run goclean and gitclean to remove local changes
 pristine: goclean gitclean
 
+.PHONY: all
 # https://stackoverflow.com/questions/3267145/makefile-execute-another-target
+## all: generates assets for Linux distros and Windows
 all: clean windows linux
 	@echo "Completed all cross-platform builds ..."
 
+.PHONY: windows
+## windows: generates assets for Windows systems
 windows:
 	@echo "Building release assets for windows ..."
 
@@ -109,6 +148,8 @@ windows:
 
 	@echo "Completed build tasks for windows"
 
+.PHONY: linux
+## linux: generates assets for Linux distros
 linux:
 	@echo "Building release assets for linux ..."
 
