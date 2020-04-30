@@ -1,28 +1,61 @@
 # This is an example goreleaser.yaml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
+#
+# https://goreleaser.com/customization/
+# https://goreleaser.com/build/
+
+# TODO: Try without this
+# project_name: bridge
+
+env:
+  # TODO: How can we call out to git to generate this dynamically?
+  # git describe --always --long --dirty
+  #VERSION: "$(git describe --always --long --dirty)"
+
+  - GOFLAGS=-mod=vendor
+  - OUTPUT_DIR_BASE=release_assets
+  - GOLANGCI_LINT_VERSION=v1.25.1
+  - CGO_ENABLED=0
+
 before:
   hooks:
-    # You may remove this if you don't use go modules.
-    - go mod download
-    # you may remove this if you don't need go generate
-    - go generate ./...
-builds:
-- env:
-  - CGO_ENABLED=0
-archives:
-- replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    386: i386
-    amd64: x86_64
-checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{ .Tag }}-next"
+    - go clean ./...
+    - mkdir -p "{{ .Env.OUTPUT_DIR_BASE }}/{{ .ProjectName }}"
+
+release:
+  disable: true
+
 changelog:
-  sort: asc
-  filters:
-    exclude:
-    - '^docs:'
-    - '^test:'
+  skip: true
+
+builds:
+  # You can have multiple builds defined as a yaml list
+  - main: ./cmd/bridge
+    binary: "{{.Env.OUTPUT_DIR_BASE}}/{{.ProjectName}}"
+    ldflags:
+      # FIXME
+      - -s -w -X "main.version={{.Version}}"
+    goarch:
+      - amd64
+      - 386
+    goos:
+      - linux
+      - windows
+
+checksum:
+  name_template: "{{ .ProjectName }}-checksums.txt"
+  algorithm: sha256
+
+source:
+  # Whether this pipe is enabled or not.
+  # Defaults to `false`
+  enabled: true
+
+  # Name template of the final archive.
+  # Defaults to `{{ .ProjectName }}-{{ .Version }}`
+  #name_template: "{{ .ProjectName }}"
+
+  # Format of the archive.
+  # Any format git-archive supports, this supports too.
+  # Defaults to `tar.gz`
+  format: "zip"
