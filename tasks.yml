@@ -37,8 +37,11 @@ pipelines:
     - name: Configure environment variables
       pipeline: set-values
 
-    - name: Install linting tools
-      task: lint-install
+    - task: lint-install-staticcheck
+      depends_on: set-values
+      allow_failure: false
+
+    - task: lint-install-golangci
       depends_on: set-values
       allow_failure: false
 
@@ -53,6 +56,7 @@ pipelines:
     - name: Build codebase
       task: build
       depends_on: set-values
+      allow_failure: false
 
 tasks:
   set-path:
@@ -95,7 +99,7 @@ tasks:
       # Explicitly enabling this to resolve Go v1.12.x build issues
       GO111MODULE: "on"
     command:
-      - "echo {{ .Name }}"
+      - "echo Testing task 'name' variable resolution: {{ .Name }}"
       - go get honnef.co/go/tools/cmd/staticcheck
 
   lint:
@@ -103,10 +107,6 @@ tasks:
     command:
       - go vet $(go list ./... | grep -v /vendor/)
       - golangci-lint run
-
-  generate-checksums:
-    command:
-      - echo "Create checksums for binaries here"
 
   build:
     before: mkdir -p "${OUTPUT_DIR_BASE}/${APP_NAME}"
@@ -117,21 +117,19 @@ tasks:
         go build -a -ldflags="-s -w -X ${VERSION_VAR_PKG}.version=${APP_VERSION}" -o
         ${OUTPUT_DIR_BASE}/${APP_NAME}/${APP_NAME}-${APP_VERSION}-${GOOS}-${GOARCH}${EXT}
         ./cmd/${APP_NAME}
+      - >-
+        sha256sum -b
+        ${OUTPUT_DIR_BASE}/${APP_NAME}/${APP_NAME}-${APP_VERSION}-${GOOS}-${GOARCH}${EXT} >
+        ${OUTPUT_DIR_BASE}/${APP_NAME}/${APP_NAME}-${APP_VERSION}-${GOOS}-${GOARCH}${EXT}.${CHECKSUM_FILE_EXT}
+
     env:
       APP_NAME: bridge
 
     variations:
-      - GOOS: linux
-        GOARCH: amd64
-      - GOOS: linux
-        GOARCH: 386
-
-      - GOOS: windows
-        GOARCH: amd64
-        EXT: ".exe"
-      - GOOS: windows
-        GOARCH: 386
-        EXT: ".exe"
+      - { GOOS: "linux", GOARCH: "amd64" }
+      - { GOOS: "linux", GOARCH: "386" }
+      - { GOOS: "windows", GOARCH: "amd64", EXT: ".exe" }
+      - { GOOS: "windows", GOARCH: "386", EXT: ".exe" }
 
 contexts:
   local: # will be created automatically if not set
@@ -148,5 +146,6 @@ contexts:
       GOFLAGS: -mod=vendor
       OUTPUT_DIR_BASE: "release_assets"
       GOLANGCI_LINT_VERSION: "v1.25.1"
+      CHECKSUM_FILE_EXT: "sha256"
 
 debug: true # debug enabled by default. To disable run with "--debug=false"
