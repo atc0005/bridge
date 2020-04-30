@@ -24,7 +24,7 @@ import (
 	"github.com/atc0005/bridge/paths"
 	"github.com/atc0005/bridge/units"
 
-	"github.com/360EntSecGroup-Skylar/excelize"
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 )
 
 // CSV header names referenced from both inside and outside of the package
@@ -591,40 +591,146 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 
 	f.DeleteSheet(defaultSheet)
 
-	// Write out the summary sheet labels
-	f.SetCellValue(summarySheet, "A1", "Evaluated Files")
-	f.SetCellValue(summarySheet, "A2", "Sets of files with identical size")
-	f.SetCellValue(summarySheet, "A3", "Sets of files with identical fingerprint")
-	f.SetCellValue(summarySheet, "A4", "Files with identical size")
-	f.SetCellValue(summarySheet, "A5", "Files with identical fingerprint")
-	// blank link
-	f.SetCellValue(summarySheet, "A7", "Duplicate Files")
-	f.SetCellValue(summarySheet, "A8", "Wasted Space")
+	type excelSheetEntry struct {
+		Sheet string
+		Cell  string
+		Value interface{}
+	}
 
-	// Write out the summary sheet values
-	f.SetCellValue(summarySheet, "B1", summary.TotalEvaluatedFiles)
-	f.SetCellValue(summarySheet, "B2", summary.FileSizeMatchSets)
-	f.SetCellValue(summarySheet, "B3", summary.FileHashMatchSets)
-	f.SetCellValue(summarySheet, "B4", summary.FileSizeMatches)
-	f.SetCellValue(summarySheet, "B5", summary.FileHashMatches)
-	// blank line
+	writeExcelSheet := func(file *excelize.File, entries ...excelSheetEntry) error {
 
-	f.SetCellValue(summarySheet, "B7", fi.GetDuplicateFilesCount())
-	f.SetCellValue(summarySheet, "B8", units.ByteCountIEC(summary.WastedSpace))
+		for _, entry := range entries {
+			err := file.SetCellValue(entry.Sheet, entry.Cell, entry.Value)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	summarySheetEntries := []excelSheetEntry{
+		// Summary sheet labels
+		{
+			Sheet: summarySheet,
+			Cell:  "A1",
+			Value: "Evaluated Files",
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "A2",
+			Value: "Sets of files with identical size",
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "A3",
+			Value: "Sets of files with identical fingerprint",
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "A4",
+			Value: "Files with identical size",
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "A5",
+			Value: "Files with identical fingerprint",
+		},
+		// blank line; no A6
+		{
+			Sheet: summarySheet,
+			Cell:  "A7",
+			Value: "Duplicate Files",
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "A8",
+			Value: "Wasted Space",
+		},
+		// Summary sheet values
+		{
+			Sheet: summarySheet,
+			Cell:  "B1",
+			Value: summary.TotalEvaluatedFiles,
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "B2",
+			Value: summary.FileSizeMatchSets,
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "B3",
+			Value: summary.FileHashMatchSets,
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "B4",
+			Value: summary.FileSizeMatches,
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "B5",
+			Value: summary.FileHashMatches,
+		},
+		// blank line; no B6
+		{
+			Sheet: summarySheet,
+			Cell:  "B7",
+			Value: fi.GetDuplicateFilesCount(),
+		},
+		{
+			Sheet: summarySheet,
+			Cell:  "B8",
+			Value: units.ByteCountIEC(summary.WastedSpace),
+		},
+	}
+
+	// Create summary sheet providing an overview of what we found
+	if err := writeExcelSheet(f, summarySheetEntries...); err != nil {
+		return err
+	}
 
 	for duplicateFileSetIndex, fileMatches := range fi {
 
 		//sheetHeader := []string{"directory", "file", "size", "checksum"}
 
 		// Create a new sheet for duplicate file metadata
-		f.NewSheet(duplicateFileSetIndex.String())
+		duplicateFileSetIndexSheet := duplicateFileSetIndex.String()
+		f.NewSheet(duplicateFileSetIndexSheet)
+
+		headerEntries := []excelSheetEntry{
+			{
+				Sheet: duplicateFileSetIndexSheet,
+				Cell:  "A1",
+				Value: "directory",
+			},
+			{
+				Sheet: duplicateFileSetIndexSheet,
+				Cell:  "B1",
+				Value: "file",
+			},
+			{
+				Sheet: duplicateFileSetIndexSheet,
+				Cell:  "C1",
+				Value: "size",
+			},
+			{
+				Sheet: duplicateFileSetIndexSheet,
+				Cell:  "D1",
+				Value: "size in bytes",
+			},
+			{
+				Sheet: duplicateFileSetIndexSheet,
+				Cell:  "E1",
+				Value: "checksum",
+			},
+		}
 
 		// Write out the sheet header
-		f.SetCellValue(duplicateFileSetIndex.String(), "A1", "directory")
-		f.SetCellValue(duplicateFileSetIndex.String(), "B1", "file")
-		f.SetCellValue(duplicateFileSetIndex.String(), "C1", "size")
-		f.SetCellValue(duplicateFileSetIndex.String(), "D1", "size in bytes")
-		f.SetCellValue(duplicateFileSetIndex.String(), "E1", "checksum")
+		if err := writeExcelSheet(f, headerEntries...); err != nil {
+			return err
+		}
 
 		for index, file := range fileMatches {
 
@@ -632,23 +738,50 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 			// by +2 to account for that
 			row := index + 2
 
-			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("A%d", row), file.ParentDirectory)
-			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("B%d", row), file.Name())
-			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("C%d", row), file.SizeHR())
-			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("D%d", row), file.Size())
-			f.SetCellValue(duplicateFileSetIndex.String(), fmt.Sprintf("E%d", row), file.Checksum.String())
+			dataEntries := []excelSheetEntry{
+				{
+					Sheet: duplicateFileSetIndexSheet,
+					Cell:  fmt.Sprintf("A%d", row),
+					Value: file.ParentDirectory,
+				},
+				{
+					Sheet: duplicateFileSetIndexSheet,
+					Cell:  fmt.Sprintf("B%d", row),
+					Value: file.Name(),
+				},
+				{
+					Sheet: duplicateFileSetIndexSheet,
+					Cell:  fmt.Sprintf("C%d", row),
+					Value: file.SizeHR,
+				},
+				{
+					Sheet: duplicateFileSetIndexSheet,
+					Cell:  fmt.Sprintf("D%d", row),
+					Value: file.Size(),
+				},
+				{
+					Sheet: duplicateFileSetIndexSheet,
+					Cell:  fmt.Sprintf("E%d", row),
+					Value: file.Checksum.String(),
+				},
+			}
+
+			// Write out a row of details per each entry in the fileMatch set
+			if err := writeExcelSheet(f, dataEntries...); err != nil {
+				return err
+			}
 
 		}
 
 	}
 
+	// Set the summary sheet as the active sheet so it displays first upon
+	// opening the Excel file
 	f.SetActiveSheet(summarySheetIndex)
 
 	// Save xlsx file by the given path.
 	return f.SaveAs(filename)
-	// if err := f.SaveAs("Book1.xlsx"); err != nil {
-	// 	println(err.Error())
-	// }
+
 }
 
 // WriteFileMatchesCSV writes duplicate files recorded in a FileChecksumIndex
