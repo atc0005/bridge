@@ -1,8 +1,10 @@
-# github.com/360EntSecGroup-Skylar/excelize/v2 v2.1.0
+# github.com/360EntSecGroup-Skylar/excelize/v2 v2.2.0
 github.com/360EntSecGroup-Skylar/excelize/v2
 # github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 github.com/mohae/deepcopy
-# golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+# github.com/xuri/efp v0.0.0-20191019043341-b7dc4fe9aa91
+github.com/xuri/efp
+# golang.org/x/net v0.0.0-20200506145744-7e3656a0809f
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset

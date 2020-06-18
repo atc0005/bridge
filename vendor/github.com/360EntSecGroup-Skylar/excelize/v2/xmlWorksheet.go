@@ -12,8 +12,7 @@ package excelize
 import "encoding/xml"
 
 // xlsxWorksheet directly maps the worksheet element in the namespace
-// http://schemas.openxmlformats.org/spreadsheetml/2006/main - currently I have
-// not checked it for completeness - it does as much as I need.
+// http://schemas.openxmlformats.org/spreadsheetml/2006/main.
 type xlsxWorksheet struct {
 	XMLName               xml.Name                     `xml:"http://schemas.openxmlformats.org/spreadsheetml/2006/main worksheet"`
 	SheetPr               *xlsxSheetPr                 `xml:"sheetPr"`
@@ -357,9 +356,9 @@ type xlsxBrk struct {
 
 // xlsxBreaks directly maps a collection of the row or column breaks.
 type xlsxBreaks struct {
-	Brk              *xlsxBrk `xml:"brk"`
-	Count            int      `xml:"count,attr,omitempty"`
-	ManualBreakCount int      `xml:"manualBreakCount,attr,omitempty"`
+	Brk              []*xlsxBrk `xml:"brk"`
+	Count            int        `xml:"count,attr,omitempty"`
+	ManualBreakCount int        `xml:"manualBreakCount,attr,omitempty"`
 }
 
 // xlsxCustomSheetView directly maps the customSheetView element.
@@ -475,7 +474,7 @@ func (c *xlsxC) hasValue() bool {
 // http://schemas.openxmlformats.org/spreadsheetml/2006/main - currently I have
 // not checked it for completeness - it does as much as I need.
 type xlsxF struct {
-	Content string `xml:",innerxml"`
+	Content string `xml:",chardata"`
 	T       string `xml:"t,attr,omitempty"`   // Formula type
 	Ref     string `xml:"ref,attr,omitempty"` // Shared formula ref
 	Si      string `xml:"si,attr,omitempty"`  // Shared formula index

@@ -21,16 +21,42 @@ import (
 type PivotTableOption struct {
 	DataRange       string
 	PivotTableRange string
-	Rows            []string
-	Columns         []string
-	Data            []string
-	Page            []string
+	Rows            []PivotTableField
+	Columns         []PivotTableField
+	Data            []PivotTableField
+	Filter          []PivotTableField
+}
+
+// PivotTableField directly maps the field settings of the pivot table.
+// Subtotal specifies the aggregation function that applies to this data
+// field. The default value is sum. The possible values for this attribute
+// are:
+//
+//     Average
+//     Count
+//     CountNums
+//     Max
+//     Min
+//     Product
+//     StdDev
+//     StdDevp
+//     Sum
+//     Var
+//     Varp
+//
+// Name specifies the name of the data field. Maximum 255 characters
+// are allowed in data field name, excess characters will be truncated.
+type PivotTableField struct {
+	Data     string
+	Name     string
+	Subtotal string
 }
 
 // AddPivotTable provides the method to add pivot table by given pivot table
-// options. For example, create a pivot table on the Sheet1!$G$2:$M$34 area
-// with the region Sheet1!$A$1:$E$31 as the data source, summarize by sum for
-// sales:
+// options.
+//
+// For example, create a pivot table on the Sheet1!$G$2:$M$34 area with the
+// region Sheet1!$A$1:$E$31 as the data source, summarize by sum for sales:
 //
 //    package main
 //
@@ -59,14 +85,15 @@ type PivotTableOption struct {
 //        if err := f.AddPivotTable(&excelize.PivotTableOption{
 //            DataRange:       "Sheet1!$A$1:$E$31",
 //            PivotTableRange: "Sheet1!$G$2:$M$34",
-//            Rows:            []string{"Month", "Year"},
-//            Columns:         []string{"Type"},
-//            Data:            []string{"Sales"},
+//            Rows:            []excelize.PivotTableField{{Data: "Month"}, {Data: "Year"}},
+//            Filter:          []excelize.PivotTableField{{Data: "Region"}},
+//            Columns:         []excelize.PivotTableField{{Data: "Type"}},
+//            Data:            []excelize.PivotTableField{{Data: "Sales", Name: "Summarize", Subtotal: "Sum"}},
 //        }); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //        if err := f.SaveAs("Book1.xlsx"); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //    }
 //
@@ -162,9 +189,10 @@ func (f *File) adjustRange(rangeStr string) (string, []int, error) {
 	return rng[0], []int{x1, y1, x2, y2}, nil
 }
 
+// getPivotFieldsOrder provides a function to get order list of pivot table
+// fields.
 func (f *File) getPivotFieldsOrder(dataRange string) ([]string, error) {
 	order := []string{}
-	// data range has been checked
 	dataSheet, coordinates, err := f.adjustRange(dataRange)
 	if err != nil {
 		return order, fmt.Errorf("parameter 'DataRange' parsing error: %s", err.Error())
@@ -187,10 +215,8 @@ func (f *File) addPivotCache(pivotCacheID int, pivotCacheXML string, opt *PivotT
 	if err != nil {
 		return fmt.Errorf("parameter 'DataRange' parsing error: %s", err.Error())
 	}
-	order, err := f.getPivotFieldsOrder(opt.DataRange)
-	if err != nil {
-		return err
-	}
+	// data range has been checked
+	order, _ := f.getPivotFieldsOrder(opt.DataRange)
 	hcell, _ := CoordinatesToCellName(coordinates[0], coordinates[1])
 	vcell, _ := CoordinatesToCellName(coordinates[2], coordinates[3])
 	pc := xlsxPivotCacheDefinition{
@@ -242,7 +268,6 @@ func (f *File) addPivotTable(cacheID, pivotTableID int, pivotTableXML string, op
 			FirstHeaderRow: 1,
 		},
 		PivotFields: &xlsxPivotFields{},
-		RowFields:   &xlsxRowFields{},
 		RowItems: &xlsxRowItems{
 			Count: 1,
 			I: []*xlsxI{
@@ -255,7 +280,6 @@ func (f *File) addPivotTable(cacheID, pivotTableID int, pivotTableXML string, op
 			Count: 1,
 			I:     []*xlsxI{{}},
 		},
-		DataFields: &xlsxDataFields{},
 		PivotTableStyleInfo: &xlsxPivotTableStyleInfo{
 			Name:           "PivotStyleLight16",
 			ShowRowHeaders: true,
@@ -265,49 +289,97 @@ func (f *File) addPivotTable(cacheID, pivotTableID int, pivotTableXML string, op
 	}
 
 	// pivot fields
-	err = f.addPivotFields(&pt, opt)
-	if err != nil {
-		return err
-	}
+	_ = f.addPivotFields(&pt, opt)
 
 	// count pivot fields
 	pt.PivotFields.Count = len(pt.PivotFields.PivotField)
 
+	// data range has been checked
+	_ = f.addPivotRowFields(&pt, opt)
+	_ = f.addPivotColFields(&pt, opt)
+	_ = f.addPivotPageFields(&pt, opt)
+	_ = f.addPivotDataFields(&pt, opt)
+
+	pivotTable, err := xml.Marshal(pt)
+	f.saveFileList(pivotTableXML, pivotTable)
+	return err
+}
+
+// addPivotRowFields provides a method to add row fields for pivot table by
+// given pivot table options.
+func (f *File) addPivotRowFields(pt *xlsxPivotTableDefinition, opt *PivotTableOption) error {
 	// row fields
 	rowFieldsIndex, err := f.getPivotFieldsIndex(opt.Rows, opt)
 	if err != nil {
 		return err
 	}
-	for _, filedIdx := range rowFieldsIndex {
+	for _, fieldIdx := range rowFieldsIndex {
+		if pt.RowFields == nil {
+			pt.RowFields = &xlsxRowFields{}
+		}
 		pt.RowFields.Field = append(pt.RowFields.Field, &xlsxField{
-			X: filedIdx,
+			X: fieldIdx,
 		})
 	}
 
 	// count row fields
-	pt.RowFields.Count = len(pt.RowFields.Field)
+	if pt.RowFields != nil {
+		pt.RowFields.Count = len(pt.RowFields.Field)
+	}
+	return err
+}
 
-	err = f.addPivotColFields(&pt, opt)
+// addPivotPageFields provides a method to add page fields for pivot table by
+// given pivot table options.
+func (f *File) addPivotPageFields(pt *xlsxPivotTableDefinition, opt *PivotTableOption) error {
+	// page fields
+	pageFieldsIndex, err := f.getPivotFieldsIndex(opt.Filter, opt)
 	if err != nil {
 		return err
 	}
+	pageFieldsName := f.getPivotTableFieldsName(opt.Filter)
+	for idx, pageField := range pageFieldsIndex {
+		if pt.PageFields == nil {
+			pt.PageFields = &xlsxPageFields{}
+		}
+		pt.PageFields.PageField = append(pt.PageFields.PageField, &xlsxPageField{
+			Name: pageFieldsName[idx],
+			Fld:  pageField,
+		})
+	}
 
+	// count page fields
+	if pt.PageFields != nil {
+		pt.PageFields.Count = len(pt.PageFields.PageField)
+	}
+	return err
+}
+
+// addPivotDataFields provides a method to add data fields for pivot table by
+// given pivot table options.
+func (f *File) addPivotDataFields(pt *xlsxPivotTableDefinition, opt *PivotTableOption) error {
 	// data fields
 	dataFieldsIndex, err := f.getPivotFieldsIndex(opt.Data, opt)
 	if err != nil {
 		return err
 	}
-	for _, dataField := range dataFieldsIndex {
+	dataFieldsSubtotals := f.getPivotTableFieldsSubtotal(opt.Data)
+	dataFieldsName := f.getPivotTableFieldsName(opt.Data)
+	for idx, dataField := range dataFieldsIndex {
+		if pt.DataFields == nil {
+			pt.DataFields = &xlsxDataFields{}
+		}
 		pt.DataFields.DataField = append(pt.DataFields.DataField, &xlsxDataField{
-			Fld: dataField,
+			Name:     dataFieldsName[idx],
+			Fld:      dataField,
+			Subtotal: dataFieldsSubtotals[idx],
 		})
 	}
 
 	// count data fields
-	pt.DataFields.Count = len(pt.DataFields.DataField)
-
-	pivotTable, err := xml.Marshal(pt)
-	f.saveFileList(pivotTableXML, pivotTable)
+	if pt.DataFields != nil {
+		pt.DataFields.Count = len(pt.DataFields.DataField)
+	}
 	return err
 }
 
@@ -316,6 +388,18 @@ func (f *File) addPivotTable(cacheID, pivotTableID int, pivotTableXML string, op
 func inStrSlice(a []string, x string) int {
 	for idx, n := range a {
 		if x == n {
+			return idx
+		}
+	}
+	return -1
+}
+
+// inPivotTableField provides a method to check if an element is present in
+// pivot table fields list, and return the index of its location, otherwise
+// return -1.
+func inPivotTableField(a []PivotTableField, x string) int {
+	for idx, n := range a {
+		if x == n.Data {
 			return idx
 		}
 	}
@@ -336,9 +420,9 @@ func (f *File) addPivotColFields(pt *xlsxPivotTableDefinition, opt *PivotTableOp
 	if err != nil {
 		return err
 	}
-	for _, filedIdx := range colFieldsIndex {
+	for _, fieldIdx := range colFieldsIndex {
 		pt.ColFields.Field = append(pt.ColFields.Field, &xlsxField{
-			X: filedIdx,
+			X: fieldIdx,
 		})
 	}
 
@@ -355,9 +439,10 @@ func (f *File) addPivotFields(pt *xlsxPivotTableDefinition, opt *PivotTableOptio
 		return err
 	}
 	for _, name := range order {
-		if inStrSlice(opt.Rows, name) != -1 {
+		if inPivotTableField(opt.Rows, name) != -1 {
 			pt.PivotFields.PivotField = append(pt.PivotFields.PivotField, &xlsxPivotField{
 				Axis: "axisRow",
+				Name: f.getPivotTableFieldName(name, opt.Rows),
 				Items: &xlsxItems{
 					Count: 1,
 					Item: []*xlsxItem{
@@ -367,9 +452,23 @@ func (f *File) addPivotFields(pt *xlsxPivotTableDefinition, opt *PivotTableOptio
 			})
 			continue
 		}
-		if inStrSlice(opt.Columns, name) != -1 {
+		if inPivotTableField(opt.Filter, name) != -1 {
+			pt.PivotFields.PivotField = append(pt.PivotFields.PivotField, &xlsxPivotField{
+				Axis: "axisPage",
+				Name: f.getPivotTableFieldName(name, opt.Columns),
+				Items: &xlsxItems{
+					Count: 1,
+					Item: []*xlsxItem{
+						{T: "default"},
+					},
+				},
+			})
+			continue
+		}
+		if inPivotTableField(opt.Columns, name) != -1 {
 			pt.PivotFields.PivotField = append(pt.PivotFields.PivotField, &xlsxPivotField{
 				Axis: "axisCol",
+				Name: f.getPivotTableFieldName(name, opt.Columns),
 				Items: &xlsxItems{
 					Count: 1,
 					Item: []*xlsxItem{
@@ -379,7 +478,7 @@ func (f *File) addPivotFields(pt *xlsxPivotTableDefinition, opt *PivotTableOptio
 			})
 			continue
 		}
-		if inStrSlice(opt.Data, name) != -1 {
+		if inPivotTableField(opt.Data, name) != -1 {
 			pt.PivotFields.PivotField = append(pt.PivotFields.PivotField, &xlsxPivotField{
 				DataField: true,
 			})
@@ -416,18 +515,61 @@ func (f *File) countPivotCache() int {
 
 // getPivotFieldsIndex convert the column of the first row in the data region
 // to a sequential index by given fields and pivot option.
-func (f *File) getPivotFieldsIndex(fields []string, opt *PivotTableOption) ([]int, error) {
+func (f *File) getPivotFieldsIndex(fields []PivotTableField, opt *PivotTableOption) ([]int, error) {
 	pivotFieldsIndex := []int{}
 	orders, err := f.getPivotFieldsOrder(opt.DataRange)
 	if err != nil {
 		return pivotFieldsIndex, err
 	}
 	for _, field := range fields {
-		if pos := inStrSlice(orders, field); pos != -1 {
+		if pos := inStrSlice(orders, field.Data); pos != -1 {
 			pivotFieldsIndex = append(pivotFieldsIndex, pos)
 		}
 	}
 	return pivotFieldsIndex, nil
+}
+
+// getPivotTableFieldsSubtotal prepare fields subtotal by given pivot table fields.
+func (f *File) getPivotTableFieldsSubtotal(fields []PivotTableField) []string {
+	field := make([]string, len(fields))
+	enums := []string{"average", "count", "countNums", "max", "min", "product", "stdDev", "stdDevp", "sum", "var", "varp"}
+	inEnums := func(enums []string, val string) string {
+		for _, enum := range enums {
+			if strings.ToLower(enum) == strings.ToLower(val) {
+				return enum
+			}
+		}
+		return "sum"
+	}
+	for idx, fld := range fields {
+		field[idx] = inEnums(enums, fld.Subtotal)
+	}
+	return field
+}
+
+// getPivotTableFieldsName prepare fields name list by given pivot table
+// fields.
+func (f *File) getPivotTableFieldsName(fields []PivotTableField) []string {
+	field := make([]string, len(fields))
+	for idx, fld := range fields {
+		if len(fld.Name) > 255 {
+			field[idx] = fld.Name[0:255]
+			continue
+		}
+		field[idx] = fld.Name
+	}
+	return field
+}
+
+// getPivotTableFieldName prepare field name by given pivot table fields.
+func (f *File) getPivotTableFieldName(name string, fields []PivotTableField) string {
+	fieldsName := f.getPivotTableFieldsName(fields)
+	for idx, field := range fields {
+		if field.Data == name {
+			return fieldsName[idx]
+		}
+	}
+	return ""
 }
 
 // addWorkbookPivotCache add the association ID of the pivot cache in xl/workbook.xml.

@@ -27,6 +27,7 @@ type StreamWriter struct {
 	File       *File
 	Sheet      string
 	SheetID    int
+	worksheet  *xlsxWorksheet
 	rawData    bufferedWriter
 	tableParts string
 }
@@ -41,14 +42,14 @@ type StreamWriter struct {
 //    file := excelize.NewFile()
 //    streamWriter, err := file.NewStreamWriter("Sheet1")
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    styleID, err := file.NewStyle(`{"font":{"color":"#777777"}}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    if err := streamWriter.SetRow("A1", []interface{}{excelize.Cell{StyleID: styleID, Value: "Data"}}); err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    for rowID := 2; rowID <= 102400; rowID++ {
 //        row := make([]interface{}, 50)
@@ -57,18 +58,18 @@ type StreamWriter struct {
 //        }
 //        cell, _ := excelize.CoordinatesToCellName(1, rowID)
 //        if err := streamWriter.SetRow(cell, row); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //    }
 //    if err := streamWriter.Flush(); err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    if err := file.SaveAs("Book1.xlsx"); err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //
 func (f *File) NewStreamWriter(sheet string) (*StreamWriter, error) {
-	sheetID := f.GetSheetIndex(sheet)
+	sheetID := f.getSheetID(sheet)
 	if sheetID == 0 {
 		return nil, fmt.Errorf("sheet %s is not exist", sheet)
 	}
@@ -77,15 +78,15 @@ func (f *File) NewStreamWriter(sheet string) (*StreamWriter, error) {
 		Sheet:   sheet,
 		SheetID: sheetID,
 	}
-
-	ws, err := f.workSheetReader(sheet)
+	var err error
+	sw.worksheet, err = f.workSheetReader(sheet)
 	if err != nil {
 		return nil, err
 	}
 	sw.rawData.WriteString(XMLHeader + `<worksheet` + templateNamespaceIDMap)
-	bulkAppendOtherFields(&sw.rawData, ws, "XMLName", "SheetData", "TableParts")
+	bulkAppendFields(&sw.rawData, sw.worksheet, 1, 5)
 	sw.rawData.WriteString(`<sheetData>`)
-	return sw, nil
+	return sw, err
 }
 
 // AddTable creates an Excel table for the StreamWriter using the given
@@ -364,7 +365,7 @@ func writeCell(buf *bufferedWriter, c xlsxC) {
 	buf.WriteString(`>`)
 	if c.V != "" {
 		buf.WriteString(`<v>`)
-		xml.EscapeText(buf, []byte(c.V))
+		xml.EscapeText(buf, stringToBytes(c.V))
 		buf.WriteString(`</v>`)
 	}
 	buf.WriteString(`</c>`)
@@ -373,7 +374,9 @@ func writeCell(buf *bufferedWriter, c xlsxC) {
 // Flush ending the streaming writing process.
 func (sw *StreamWriter) Flush() error {
 	sw.rawData.WriteString(`</sheetData>`)
+	bulkAppendFields(&sw.rawData, sw.worksheet, 7, 37)
 	sw.rawData.WriteString(sw.tableParts)
+	bulkAppendFields(&sw.rawData, sw.worksheet, 39, 39)
 	sw.rawData.WriteString(`</worksheet>`)
 	if err := sw.rawData.Flush(); err != nil {
 		return err
@@ -392,23 +395,15 @@ func (sw *StreamWriter) Flush() error {
 	return nil
 }
 
-// bulkAppendOtherFields bulk-appends fields in a worksheet, skipping the
-// specified field names.
-func bulkAppendOtherFields(w io.Writer, ws *xlsxWorksheet, skip ...string) {
-	skipMap := make(map[string]struct{})
-	for _, name := range skip {
-		skipMap[name] = struct{}{}
-	}
-
+// bulkAppendFields bulk-appends fields in a worksheet by specified field
+// names order range.
+func bulkAppendFields(w io.Writer, ws *xlsxWorksheet, from, to int) {
 	s := reflect.ValueOf(ws).Elem()
-	typeOfT := s.Type()
 	enc := xml.NewEncoder(w)
 	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		if _, ok := skipMap[typeOfT.Field(i).Name]; ok {
-			continue
+		if from <= i && i <= to {
+			enc.Encode(s.Field(i).Interface())
 		}
-		enc.Encode(f.Interface())
 	}
 }
 

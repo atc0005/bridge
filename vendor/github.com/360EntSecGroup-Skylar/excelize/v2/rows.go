@@ -25,18 +25,18 @@ import (
 //
 //    rows, err := f.Rows("Sheet1")
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //        return
 //    }
 //    for rows.Next() {
 //        row, err := rows.Columns()
 //        if err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //        for _, colCell := range row {
-//            print(colCell, "\t")
+//            fmt.Print(colCell, "\t")
 //        }
-//        println()
+//        fmt.Println()
 //    }
 //
 func (f *File) GetRows(sheet string) ([][]string, error) {
@@ -152,18 +152,18 @@ func (err ErrSheetNotExist) Error() string {
 //
 //    rows, err := f.Rows("Sheet1")
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //        return
 //    }
 //    for rows.Next() {
 //        row, err := rows.Columns()
 //        if err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //        for _, colCell := range row {
-//            print(colCell, "\t")
+//            fmt.Print(colCell, "\t")
 //        }
-//        println()
+//        fmt.Println()
 //    }
 //
 func (f *File) Rows(sheet string) (*Rows, error) {
@@ -174,7 +174,7 @@ func (f *File) Rows(sheet string) (*Rows, error) {
 	if f.Sheet[name] != nil {
 		// flush data
 		output, _ := xml.Marshal(f.Sheet[name])
-		f.saveFileList(name, replaceWorkSheetsRelationshipsNameSpaceBytes(output))
+		f.saveFileList(name, replaceRelationshipsNameSpaceBytes(output))
 	}
 	var (
 		err       error
@@ -238,7 +238,8 @@ func (f *File) SetRowHeight(sheet string, row int, height float64) error {
 // name and row index.
 func (f *File) getRowHeight(sheet string, row int) int {
 	xlsx, _ := f.workSheetReader(sheet)
-	for _, v := range xlsx.SheetData.Row {
+	for i := range xlsx.SheetData.Row {
+		v := &xlsx.SheetData.Row[i]
 		if v.R == row+1 && v.Ht != 0 {
 			return int(convertRowHeightToPixels(v.Ht))
 		}
@@ -300,10 +301,12 @@ func (f *File) sharedStringsReader() *xlsxSST {
 func (xlsx *xlsxC) getValueFrom(f *File, d *xlsxSST) (string, error) {
 	switch xlsx.T {
 	case "s":
-		xlsxSI := 0
-		xlsxSI, _ = strconv.Atoi(xlsx.V)
-		if len(d.SI) > xlsxSI {
-			return f.formattedValue(xlsx.S, d.SI[xlsxSI].String()), nil
+		if xlsx.V != "" {
+			xlsxSI := 0
+			xlsxSI, _ = strconv.Atoi(xlsx.V)
+			if len(d.SI) > xlsxSI {
+				return f.formattedValue(xlsx.S, d.SI[xlsxSI].String()), nil
+			}
 		}
 		return f.formattedValue(xlsx.S, xlsx.V), nil
 	case "str":
@@ -421,14 +424,16 @@ func (f *File) RemoveRow(sheet string, row int) error {
 	if row > len(xlsx.SheetData.Row) {
 		return f.adjustHelper(sheet, rows, row, -1)
 	}
-	for rowIdx := range xlsx.SheetData.Row {
-		if xlsx.SheetData.Row[rowIdx].R == row {
-			xlsx.SheetData.Row = append(xlsx.SheetData.Row[:rowIdx],
-				xlsx.SheetData.Row[rowIdx+1:]...)[:len(xlsx.SheetData.Row)-1]
-			return f.adjustHelper(sheet, rows, row, -1)
+	keep := 0
+	for rowIdx := 0; rowIdx < len(xlsx.SheetData.Row); rowIdx++ {
+		v := &xlsx.SheetData.Row[rowIdx]
+		if v.R != row {
+			xlsx.SheetData.Row[keep] = *v
+			keep++
 		}
 	}
-	return nil
+	xlsx.SheetData.Row = xlsx.SheetData.Row[:keep]
+	return f.adjustHelper(sheet, rows, row, -1)
 }
 
 // InsertRow provides a function to insert a new row after given Excel row
@@ -519,6 +524,40 @@ func (f *File) DuplicateRowTo(sheet string, row, row2 int) error {
 	} else {
 		xlsx.SheetData.Row = append(xlsx.SheetData.Row, rowCopy)
 	}
+	return f.duplicateMergeCells(sheet, xlsx, row, row2)
+}
+
+// duplicateMergeCells merge cells in the destination row if there are single
+// row merged cells in the copied row.
+func (f *File) duplicateMergeCells(sheet string, xlsx *xlsxWorksheet, row, row2 int) error {
+	if xlsx.MergeCells == nil {
+		return nil
+	}
+	if row > row2 {
+		row++
+	}
+	for _, rng := range xlsx.MergeCells.Cells {
+		coordinates, err := f.areaRefToCoordinates(rng.Ref)
+		if err != nil {
+			return err
+		}
+		if coordinates[1] < row2 && row2 < coordinates[3] {
+			return nil
+		}
+	}
+	for i := 0; i < len(xlsx.MergeCells.Cells); i++ {
+		areaData := xlsx.MergeCells.Cells[i]
+		coordinates, _ := f.areaRefToCoordinates(areaData.Ref)
+		x1, y1, x2, y2 := coordinates[0], coordinates[1], coordinates[2], coordinates[3]
+		if y1 == y2 && y1 == row {
+			from, _ := CoordinatesToCellName(x1, row2)
+			to, _ := CoordinatesToCellName(x2, row2)
+			if err := f.MergeCell(sheet, from, to); err != nil {
+				return err
+			}
+			i++
+		}
+	}
 	return nil
 }
 
@@ -553,6 +592,22 @@ func checkRow(xlsx *xlsxWorksheet) error {
 		colCount := len(rowData.C)
 		if colCount == 0 {
 			continue
+		}
+		// check and fill the cell without r attribute in a row element
+		rCount := 0
+		for idx, cell := range rowData.C {
+			rCount++
+			if cell.R != "" {
+				lastR, _, err := CellNameToCoordinates(cell.R)
+				if err != nil {
+					return err
+				}
+				if lastR > rCount {
+					rCount = lastR
+				}
+				continue
+			}
+			rowData.C[idx].R, _ = CoordinatesToCellName(rCount, rowIdx+1)
 		}
 		lastCol, _, err := CellNameToCoordinates(rowData.C[colCount-1].R)
 		if err != nil {

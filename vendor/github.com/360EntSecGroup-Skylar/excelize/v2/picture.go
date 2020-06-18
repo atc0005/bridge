@@ -59,18 +59,18 @@ func parseFormatPictureSet(formatSet string) (*formatPicture, error) {
 //        f := excelize.NewFile()
 //        // Insert a picture.
 //        if err := f.AddPicture("Sheet1", "A2", "image.jpg", ""); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //        // Insert a picture scaling in the cell with location hyperlink.
 //        if err := f.AddPicture("Sheet1", "D2", "image.png", `{"x_scale": 0.5, "y_scale": 0.5, "hyperlink": "#Sheet2!D8", "hyperlink_type": "Location"}`); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //        // Insert a picture offset in the cell with external hyperlink, printing and positioning support.
 //        if err := f.AddPicture("Sheet1", "H2", "image.gif", `{"x_offset": 15, "y_offset": 10, "hyperlink": "https://github.com/360EntSecGroup-Skylar/excelize", "hyperlink_type": "External", "print_obj": true, "lock_aspect_ratio": false, "locked": false, "positioning": "oneCell"}`); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //        if err := f.SaveAs("Book1.xlsx"); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //    }
 //
@@ -104,6 +104,7 @@ func (f *File) AddPicture(sheet, cell, picture, format string) error {
 //    package main
 //
 //    import (
+//        "fmt"
 //        _ "image/jpeg"
 //        "io/ioutil"
 //
@@ -115,13 +116,13 @@ func (f *File) AddPicture(sheet, cell, picture, format string) error {
 //
 //        file, err := ioutil.ReadFile("image.jpg")
 //        if err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //        if err := f.AddPictureFromBytes("Sheet1", "A2", "", "Excel Logo", ".jpg", file); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //        if err := f.SaveAs("Book1.xlsx"); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //    }
 //
@@ -353,7 +354,7 @@ func (f *File) setContentTypePartVMLExtensions() {
 	if !vml {
 		content.Defaults = append(content.Defaults, xlsxDefault{
 			Extension:   "vml",
-			ContentType: "application/vnd.openxmlformats-officedocument.vmlDrawing",
+			ContentType: ContentTypeVML,
 		})
 	}
 }
@@ -366,20 +367,24 @@ func (f *File) addContentTypePart(index int, contentType string) {
 		"drawings": f.setContentTypePartImageExtensions,
 	}
 	partNames := map[string]string{
-		"chart":      "/xl/charts/chart" + strconv.Itoa(index) + ".xml",
-		"comments":   "/xl/comments" + strconv.Itoa(index) + ".xml",
-		"drawings":   "/xl/drawings/drawing" + strconv.Itoa(index) + ".xml",
-		"table":      "/xl/tables/table" + strconv.Itoa(index) + ".xml",
-		"pivotTable": "/xl/pivotTables/pivotTable" + strconv.Itoa(index) + ".xml",
-		"pivotCache": "/xl/pivotCache/pivotCacheDefinition" + strconv.Itoa(index) + ".xml",
+		"chart":         "/xl/charts/chart" + strconv.Itoa(index) + ".xml",
+		"chartsheet":    "/xl/chartsheets/sheet" + strconv.Itoa(index) + ".xml",
+		"comments":      "/xl/comments" + strconv.Itoa(index) + ".xml",
+		"drawings":      "/xl/drawings/drawing" + strconv.Itoa(index) + ".xml",
+		"table":         "/xl/tables/table" + strconv.Itoa(index) + ".xml",
+		"pivotTable":    "/xl/pivotTables/pivotTable" + strconv.Itoa(index) + ".xml",
+		"pivotCache":    "/xl/pivotCache/pivotCacheDefinition" + strconv.Itoa(index) + ".xml",
+		"sharedStrings": "/xl/sharedStrings.xml",
 	}
 	contentTypes := map[string]string{
-		"chart":      "application/vnd.openxmlformats-officedocument.drawingml.chart+xml",
-		"comments":   "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml",
-		"drawings":   "application/vnd.openxmlformats-officedocument.drawing+xml",
-		"table":      "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml",
-		"pivotTable": "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml",
-		"pivotCache": "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml",
+		"chart":         ContentTypeDrawingML,
+		"chartsheet":    ContentTypeSpreadSheetMLChartsheet,
+		"comments":      ContentTypeSpreadSheetMLComments,
+		"drawings":      ContentTypeDrawing,
+		"table":         ContentTypeSpreadSheetMLTable,
+		"pivotTable":    ContentTypeSpreadSheetMLPivotTable,
+		"pivotCache":    ContentTypeSpreadSheetMLPivotCacheDefinition,
+		"sharedStrings": ContentTypeSpreadSheetMLSharedStrings,
 	}
 	s, ok := setContentType[contentType]
 	if ok {
@@ -424,16 +429,16 @@ func (f *File) getSheetRelationshipsTargetByID(sheet, rID string) string {
 //
 //    f, err := excelize.OpenFile("Book1.xlsx")
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //        return
 //    }
 //    file, raw, err := f.GetPicture("Sheet1", "A2")
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //        return
 //    }
 //    if err := ioutil.WriteFile(file, raw, 0644); err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //
 func (f *File) GetPicture(sheet, cell string) (string, []byte, error) {
@@ -507,7 +512,7 @@ func (f *File) getPicture(row, col int, drawingXML, drawingRelationships string)
 	err = nil
 	for _, anchor := range deWsDr.TwoCellAnchor {
 		deTwoCellAnchor = new(decodeTwoCellAnchor)
-		if err = f.xmlNewDecoder(bytes.NewReader([]byte("<decodeTwoCellAnchor>" + anchor.Content + "</decodeTwoCellAnchor>"))).
+		if err = f.xmlNewDecoder(strings.NewReader("<decodeTwoCellAnchor>" + anchor.Content + "</decodeTwoCellAnchor>")).
 			Decode(deTwoCellAnchor); err != nil && err != io.EOF {
 			err = fmt.Errorf("xml decode error: %s", err)
 			return
