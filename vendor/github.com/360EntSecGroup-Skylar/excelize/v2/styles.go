@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -1018,22 +1019,31 @@ func (f *File) stylesReader() *xlsxStyleSheet {
 func (f *File) styleSheetWriter() {
 	if f.Styles != nil {
 		output, _ := xml.Marshal(f.Styles)
-		f.saveFileList("xl/styles.xml", replaceStyleRelationshipsNameSpaceBytes(output))
+		f.saveFileList("xl/styles.xml", replaceRelationshipsNameSpaceBytes(output))
+	}
+}
+
+// sharedStringsWriter provides a function to save xl/sharedStrings.xml after
+// serialize structure.
+func (f *File) sharedStringsWriter() {
+	if f.SharedStrings != nil {
+		output, _ := xml.Marshal(f.SharedStrings)
+		f.saveFileList("xl/sharedStrings.xml", replaceRelationshipsNameSpaceBytes(output))
 	}
 }
 
 // parseFormatStyleSet provides a function to parse the format settings of the
 // cells and conditional formats.
-func parseFormatStyleSet(style string) (*formatStyle, error) {
-	format := formatStyle{
+func parseFormatStyleSet(style string) (*Style, error) {
+	format := Style{
 		DecimalPlaces: 2,
 	}
 	err := json.Unmarshal([]byte(style), &format)
 	return &format, err
 }
 
-// NewStyle provides a function to create style for cells by given style
-// format. Note that the color field uses RGB color code.
+// NewStyle provides a function to create the style for cells by given JSON or
+// structure pointer. Note that the color field uses RGB color code.
 //
 // The following shows the border styles sorted by excelize index number:
 //
@@ -1888,18 +1898,28 @@ func parseFormatStyleSet(style string) (*formatStyle, error) {
 //
 //    f := excelize.NewFile()
 //    f.SetCellValue("Sheet1", "A6", 42920.5)
-//    style, err := f.NewStyle(`{"custom_number_format": "[$-380A]dddd\\,\\ dd\" de \"mmmm\" de \"yyyy;@"}`)
+//    exp := "[$-380A]dddd\\,\\ dd\" de \"mmmm\" de \"yyyy;@"
+//    style, err := f.NewStyle(&excelize.Style{CustomNumFmt: &exp})
 //    err = f.SetCellStyle("Sheet1", "A6", "A6", style)
 //
 // Cell Sheet1!A6 in the Excel Application: martes, 04 de Julio de 2017
 //
-func (f *File) NewStyle(style string) (int, error) {
+func (f *File) NewStyle(style interface{}) (int, error) {
+	var fs *Style
+	var err error
 	var cellXfsID, fontID, borderID, fillID int
-	s := f.stylesReader()
-	fs, err := parseFormatStyleSet(style)
-	if err != nil {
-		return cellXfsID, err
+	switch v := style.(type) {
+	case string:
+		fs, err = parseFormatStyleSet(v)
+		if err != nil {
+			return cellXfsID, err
+		}
+	case *Style:
+		fs = v
+	default:
+		return cellXfsID, errors.New("invalid parameter type")
 	}
+	s := f.stylesReader()
 	numFmtID := setNumFmt(s, fs)
 
 	if fs.Font != nil {
@@ -1935,9 +1955,13 @@ func (f *File) NewConditionalStyle(style string) (int, error) {
 		return 0, err
 	}
 	dxf := dxf{
-		Fill:      setFills(fs, false),
-		Alignment: setAlignment(fs),
-		Border:    setBorders(fs),
+		Fill: setFills(fs, false),
+	}
+	if fs.Alignment != nil {
+		dxf.Alignment = setAlignment(fs)
+	}
+	if len(fs.Border) > 0 {
+		dxf.Border = setBorders(fs)
 	}
 	if fs.Font != nil {
 		dxf.Font = f.setFont(fs)
@@ -1978,34 +2002,34 @@ func (f *File) readDefaultFont() *xlsxFont {
 
 // setFont provides a function to add font style by given cell format
 // settings.
-func (f *File) setFont(formatStyle *formatStyle) *xlsxFont {
+func (f *File) setFont(style *Style) *xlsxFont {
 	fontUnderlineType := map[string]string{"single": "single", "double": "double"}
-	if formatStyle.Font.Size < 1 {
-		formatStyle.Font.Size = 11
+	if style.Font.Size < 1 {
+		style.Font.Size = 11
 	}
-	if formatStyle.Font.Color == "" {
-		formatStyle.Font.Color = "#000000"
+	if style.Font.Color == "" {
+		style.Font.Color = "#000000"
 	}
 	fnt := xlsxFont{
-		Sz:     &attrValFloat{Val: float64Ptr(formatStyle.Font.Size)},
-		Color:  &xlsxColor{RGB: getPaletteColor(formatStyle.Font.Color)},
-		Name:   &attrValString{Val: stringPtr(formatStyle.Font.Family)},
+		Sz:     &attrValFloat{Val: float64Ptr(style.Font.Size)},
+		Color:  &xlsxColor{RGB: getPaletteColor(style.Font.Color)},
+		Name:   &attrValString{Val: stringPtr(style.Font.Family)},
 		Family: &attrValInt{Val: intPtr(2)},
 	}
-	if formatStyle.Font.Bold {
-		fnt.B = &formatStyle.Font.Bold
+	if style.Font.Bold {
+		fnt.B = &style.Font.Bold
 	}
-	if formatStyle.Font.Italic {
-		fnt.I = &formatStyle.Font.Italic
+	if style.Font.Italic {
+		fnt.I = &style.Font.Italic
 	}
 	if *fnt.Name.Val == "" {
 		*fnt.Name.Val = f.GetDefaultFont()
 	}
-	if formatStyle.Font.Strike {
+	if style.Font.Strike {
 		strike := true
 		fnt.Strike = &strike
 	}
-	val, ok := fontUnderlineType[formatStyle.Font.Underline]
+	val, ok := fontUnderlineType[style.Font.Underline]
 	if ok {
 		fnt.U = &attrValString{Val: stringPtr(val)}
 	}
@@ -2014,36 +2038,36 @@ func (f *File) setFont(formatStyle *formatStyle) *xlsxFont {
 
 // setNumFmt provides a function to check if number format code in the range
 // of built-in values.
-func setNumFmt(style *xlsxStyleSheet, formatStyle *formatStyle) int {
+func setNumFmt(styleSheet *xlsxStyleSheet, style *Style) int {
 	dp := "0."
 	numFmtID := 164 // Default custom number format code from 164.
-	if formatStyle.DecimalPlaces < 0 || formatStyle.DecimalPlaces > 30 {
-		formatStyle.DecimalPlaces = 2
+	if style.DecimalPlaces < 0 || style.DecimalPlaces > 30 {
+		style.DecimalPlaces = 2
 	}
-	for i := 0; i < formatStyle.DecimalPlaces; i++ {
+	for i := 0; i < style.DecimalPlaces; i++ {
 		dp += "0"
 	}
-	if formatStyle.CustomNumFmt != nil {
-		return setCustomNumFmt(style, formatStyle)
+	if style.CustomNumFmt != nil {
+		return setCustomNumFmt(styleSheet, style)
 	}
-	_, ok := builtInNumFmt[formatStyle.NumFmt]
+	_, ok := builtInNumFmt[style.NumFmt]
 	if !ok {
-		fc, currency := currencyNumFmt[formatStyle.NumFmt]
+		fc, currency := currencyNumFmt[style.NumFmt]
 		if !currency {
-			return setLangNumFmt(style, formatStyle)
+			return setLangNumFmt(styleSheet, style)
 		}
 		fc = strings.Replace(fc, "0.00", dp, -1)
-		if formatStyle.NegRed {
+		if style.NegRed {
 			fc = fc + ";[Red]" + fc
 		}
-		if style.NumFmts != nil {
-			numFmtID = style.NumFmts.NumFmt[len(style.NumFmts.NumFmt)-1].NumFmtID + 1
+		if styleSheet.NumFmts != nil {
+			numFmtID = styleSheet.NumFmts.NumFmt[len(styleSheet.NumFmts.NumFmt)-1].NumFmtID + 1
 			nf := xlsxNumFmt{
 				FormatCode: fc,
 				NumFmtID:   numFmtID,
 			}
-			style.NumFmts.NumFmt = append(style.NumFmts.NumFmt, &nf)
-			style.NumFmts.Count++
+			styleSheet.NumFmts.NumFmt = append(styleSheet.NumFmts.NumFmt, &nf)
+			styleSheet.NumFmts.Count++
 		} else {
 			nf := xlsxNumFmt{
 				FormatCode: fc,
@@ -2053,61 +2077,61 @@ func setNumFmt(style *xlsxStyleSheet, formatStyle *formatStyle) int {
 				NumFmt: []*xlsxNumFmt{&nf},
 				Count:  1,
 			}
-			style.NumFmts = &numFmts
+			styleSheet.NumFmts = &numFmts
 		}
 		return numFmtID
 	}
-	return formatStyle.NumFmt
+	return style.NumFmt
 }
 
 // setCustomNumFmt provides a function to set custom number format code.
-func setCustomNumFmt(style *xlsxStyleSheet, formatStyle *formatStyle) int {
-	nf := xlsxNumFmt{FormatCode: *formatStyle.CustomNumFmt}
-	if style.NumFmts != nil {
-		nf.NumFmtID = style.NumFmts.NumFmt[len(style.NumFmts.NumFmt)-1].NumFmtID + 1
-		style.NumFmts.NumFmt = append(style.NumFmts.NumFmt, &nf)
-		style.NumFmts.Count++
+func setCustomNumFmt(styleSheet *xlsxStyleSheet, style *Style) int {
+	nf := xlsxNumFmt{FormatCode: *style.CustomNumFmt}
+	if styleSheet.NumFmts != nil {
+		nf.NumFmtID = styleSheet.NumFmts.NumFmt[len(styleSheet.NumFmts.NumFmt)-1].NumFmtID + 1
+		styleSheet.NumFmts.NumFmt = append(styleSheet.NumFmts.NumFmt, &nf)
+		styleSheet.NumFmts.Count++
 	} else {
 		nf.NumFmtID = 164
 		numFmts := xlsxNumFmts{
 			NumFmt: []*xlsxNumFmt{&nf},
 			Count:  1,
 		}
-		style.NumFmts = &numFmts
+		styleSheet.NumFmts = &numFmts
 	}
 	return nf.NumFmtID
 }
 
 // setLangNumFmt provides a function to set number format code with language.
-func setLangNumFmt(style *xlsxStyleSheet, formatStyle *formatStyle) int {
-	numFmts, ok := langNumFmt[formatStyle.Lang]
+func setLangNumFmt(styleSheet *xlsxStyleSheet, style *Style) int {
+	numFmts, ok := langNumFmt[style.Lang]
 	if !ok {
 		return 0
 	}
 	var fc string
-	fc, ok = numFmts[formatStyle.NumFmt]
+	fc, ok = numFmts[style.NumFmt]
 	if !ok {
 		return 0
 	}
 	nf := xlsxNumFmt{FormatCode: fc}
-	if style.NumFmts != nil {
-		nf.NumFmtID = style.NumFmts.NumFmt[len(style.NumFmts.NumFmt)-1].NumFmtID + 1
-		style.NumFmts.NumFmt = append(style.NumFmts.NumFmt, &nf)
-		style.NumFmts.Count++
+	if styleSheet.NumFmts != nil {
+		nf.NumFmtID = styleSheet.NumFmts.NumFmt[len(styleSheet.NumFmts.NumFmt)-1].NumFmtID + 1
+		styleSheet.NumFmts.NumFmt = append(styleSheet.NumFmts.NumFmt, &nf)
+		styleSheet.NumFmts.Count++
 	} else {
-		nf.NumFmtID = formatStyle.NumFmt
+		nf.NumFmtID = style.NumFmt
 		numFmts := xlsxNumFmts{
 			NumFmt: []*xlsxNumFmt{&nf},
 			Count:  1,
 		}
-		style.NumFmts = &numFmts
+		styleSheet.NumFmts = &numFmts
 	}
 	return nf.NumFmtID
 }
 
 // setFills provides a function to add fill elements in the styles.xml by
 // given cell format settings.
-func setFills(formatStyle *formatStyle, fg bool) *xlsxFill {
+func setFills(style *Style, fg bool) *xlsxFill {
 	var patterns = []string{
 		"none",
 		"solid",
@@ -2138,15 +2162,15 @@ func setFills(formatStyle *formatStyle, fg bool) *xlsxFill {
 	}
 
 	var fill xlsxFill
-	switch formatStyle.Fill.Type {
+	switch style.Fill.Type {
 	case "gradient":
-		if len(formatStyle.Fill.Color) != 2 {
+		if len(style.Fill.Color) != 2 {
 			break
 		}
 		var gradient xlsxGradientFill
-		switch formatStyle.Fill.Shading {
+		switch style.Fill.Shading {
 		case 0, 1, 2, 3:
-			gradient.Degree = variants[formatStyle.Fill.Shading]
+			gradient.Degree = variants[style.Fill.Shading]
 		case 4:
 			gradient.Type = "path"
 		case 5:
@@ -2159,7 +2183,7 @@ func setFills(formatStyle *formatStyle, fg bool) *xlsxFill {
 			break
 		}
 		var stops []*xlsxGradientFillStop
-		for index, color := range formatStyle.Fill.Color {
+		for index, color := range style.Fill.Color {
 			var stop xlsxGradientFillStop
 			stop.Position = float64(index)
 			stop.Color.RGB = getPaletteColor(color)
@@ -2168,18 +2192,18 @@ func setFills(formatStyle *formatStyle, fg bool) *xlsxFill {
 		gradient.Stop = stops
 		fill.GradientFill = &gradient
 	case "pattern":
-		if formatStyle.Fill.Pattern > 18 || formatStyle.Fill.Pattern < 0 {
+		if style.Fill.Pattern > 18 || style.Fill.Pattern < 0 {
 			break
 		}
-		if len(formatStyle.Fill.Color) < 1 {
+		if len(style.Fill.Color) < 1 {
 			break
 		}
 		var pattern xlsxPatternFill
-		pattern.PatternType = patterns[formatStyle.Fill.Pattern]
+		pattern.PatternType = patterns[style.Fill.Pattern]
 		if fg {
-			pattern.FgColor.RGB = getPaletteColor(formatStyle.Fill.Color[0])
+			pattern.FgColor.RGB = getPaletteColor(style.Fill.Color[0])
 		} else {
-			pattern.BgColor.RGB = getPaletteColor(formatStyle.Fill.Color[0])
+			pattern.BgColor.RGB = getPaletteColor(style.Fill.Color[0])
 		}
 		fill.PatternFill = &pattern
 	default:
@@ -2192,36 +2216,36 @@ func setFills(formatStyle *formatStyle, fg bool) *xlsxFill {
 // text alignment in cells. There are a variety of choices for how text is
 // aligned both horizontally and vertically, as well as indentation settings,
 // and so on.
-func setAlignment(formatStyle *formatStyle) *xlsxAlignment {
+func setAlignment(style *Style) *xlsxAlignment {
 	var alignment xlsxAlignment
-	if formatStyle.Alignment != nil {
-		alignment.Horizontal = formatStyle.Alignment.Horizontal
-		alignment.Indent = formatStyle.Alignment.Indent
-		alignment.JustifyLastLine = formatStyle.Alignment.JustifyLastLine
-		alignment.ReadingOrder = formatStyle.Alignment.ReadingOrder
-		alignment.RelativeIndent = formatStyle.Alignment.RelativeIndent
-		alignment.ShrinkToFit = formatStyle.Alignment.ShrinkToFit
-		alignment.TextRotation = formatStyle.Alignment.TextRotation
-		alignment.Vertical = formatStyle.Alignment.Vertical
-		alignment.WrapText = formatStyle.Alignment.WrapText
+	if style.Alignment != nil {
+		alignment.Horizontal = style.Alignment.Horizontal
+		alignment.Indent = style.Alignment.Indent
+		alignment.JustifyLastLine = style.Alignment.JustifyLastLine
+		alignment.ReadingOrder = style.Alignment.ReadingOrder
+		alignment.RelativeIndent = style.Alignment.RelativeIndent
+		alignment.ShrinkToFit = style.Alignment.ShrinkToFit
+		alignment.TextRotation = style.Alignment.TextRotation
+		alignment.Vertical = style.Alignment.Vertical
+		alignment.WrapText = style.Alignment.WrapText
 	}
 	return &alignment
 }
 
 // setProtection provides a function to set protection properties associated
 // with the cell.
-func setProtection(formatStyle *formatStyle) *xlsxProtection {
+func setProtection(style *Style) *xlsxProtection {
 	var protection xlsxProtection
-	if formatStyle.Protection != nil {
-		protection.Hidden = formatStyle.Protection.Hidden
-		protection.Locked = formatStyle.Protection.Locked
+	if style.Protection != nil {
+		protection.Hidden = style.Protection.Hidden
+		protection.Locked = style.Protection.Locked
 	}
 	return &protection
 }
 
 // setBorders provides a function to add border elements in the styles.xml by
 // given borders format settings.
-func setBorders(formatStyle *formatStyle) *xlsxBorder {
+func setBorders(style *Style) *xlsxBorder {
 	var styles = []string{
 		"none",
 		"thin",
@@ -2240,7 +2264,7 @@ func setBorders(formatStyle *formatStyle) *xlsxBorder {
 	}
 
 	var border xlsxBorder
-	for _, v := range formatStyle.Border {
+	for _, v := range style.Border {
 		if 0 <= v.Style && v.Style < 14 {
 			var color xlsxColor
 			color.RGB = getPaletteColor(v.Color)
@@ -2275,21 +2299,21 @@ func setBorders(formatStyle *formatStyle) *xlsxBorder {
 // cell.
 func setCellXfs(style *xlsxStyleSheet, fontID, numFmtID, fillID, borderID int, applyAlignment, applyProtection bool, alignment *xlsxAlignment, protection *xlsxProtection) int {
 	var xf xlsxXf
-	xf.FontID = fontID
+	xf.FontID = intPtr(fontID)
 	if fontID != 0 {
-		xf.ApplyFont = true
+		xf.ApplyFont = boolPtr(true)
 	}
-	xf.NumFmtID = numFmtID
+	xf.NumFmtID = intPtr(numFmtID)
 	if numFmtID != 0 {
-		xf.ApplyNumberFormat = true
+		xf.ApplyNumberFormat = boolPtr(true)
 	}
-	xf.FillID = fillID
-	xf.BorderID = borderID
+	xf.FillID = intPtr(fillID)
+	xf.BorderID = intPtr(borderID)
 	style.CellXfs.Count++
 	xf.Alignment = alignment
-	xf.ApplyAlignment = applyAlignment
+	xf.ApplyAlignment = boolPtr(applyAlignment)
 	if applyProtection {
-		xf.ApplyProtection = applyProtection
+		xf.ApplyProtection = boolPtr(applyProtection)
 		xf.Protection = protection
 	}
 	xfID := 0
@@ -2321,7 +2345,7 @@ func (f *File) GetCellStyle(sheet, axis string) (int, error) {
 //
 //    style, err := f.NewStyle(`{"border":[{"type":"left","color":"0000FF","style":3},{"type":"top","color":"00FF00","style":4},{"type":"bottom","color":"FFFF00","style":5},{"type":"right","color":"FF0000","style":6},{"type":"diagonalDown","color":"A020F0","style":7},{"type":"diagonalUp","color":"A020F0","style":8}]}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    err = f.SetCellStyle("Sheet1", "H9", "H9", style)
 //
@@ -2330,7 +2354,7 @@ func (f *File) GetCellStyle(sheet, axis string) (int, error) {
 //
 //    style, err := f.NewStyle(`{"fill":{"type":"gradient","color":["#FFFFFF","#E0EBF5"],"shading":1}}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    err = f.SetCellStyle("Sheet1", "H9", "H9", style)
 //
@@ -2338,7 +2362,7 @@ func (f *File) GetCellStyle(sheet, axis string) (int, error) {
 //
 //    style, err := f.NewStyle(`{"fill":{"type":"pattern","color":["#E0EBF5"],"pattern":1}}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    err = f.SetCellStyle("Sheet1", "H9", "H9", style)
 //
@@ -2346,7 +2370,7 @@ func (f *File) GetCellStyle(sheet, axis string) (int, error) {
 //
 //    style, err := f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":45,"vertical":"","wrap_text":true}}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    err = f.SetCellStyle("Sheet1", "H9", "H9", style)
 //
@@ -2357,7 +2381,7 @@ func (f *File) GetCellStyle(sheet, axis string) (int, error) {
 //    f.SetCellValue("Sheet1", "H9", 42920.5)
 //    style, err := f.NewStyle(`{"number_format": 22}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    err = f.SetCellStyle("Sheet1", "H9", "H9", style)
 //
@@ -2365,7 +2389,7 @@ func (f *File) GetCellStyle(sheet, axis string) (int, error) {
 //
 //    style, err := f.NewStyle(`{"font":{"bold":true,"italic":true,"family":"Times New Roman","size":36,"color":"#777777"}}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    err = f.SetCellStyle("Sheet1", "H9", "H9", style)
 //
@@ -2373,7 +2397,7 @@ func (f *File) GetCellStyle(sheet, axis string) (int, error) {
 //
 //    style, err := f.NewStyle(`{"protection":{"hidden":true, "locked":true}}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    err = f.SetCellStyle("Sheet1", "H9", "H9", style)
 //
@@ -2507,7 +2531,7 @@ func (f *File) SetCellStyle(sheet, hcell, vcell string, styleID int) error {
 //
 //    format, err = f.NewConditionalStyle(`{"font":{"color":"#9A0511"},"fill":{"type":"pattern","color":["#FEC7CE"],"pattern":1}}`)
 //    if err != nil {
-//        println(err.Error())
+//        fmt.Println(err)
 //    }
 //    f.SetConditionalFormat("Sheet1", "A1:A10", fmt.Sprintf(`[{"type":"cell","criteria":">","format":%d,"value":"6"}]`, format))
 //
@@ -2676,6 +2700,22 @@ func (f *File) SetConditionalFormat(sheet, area, formatSet string) error {
 	return err
 }
 
+// UnsetConditionalFormat provides a function to unset the conditional format
+// by given worksheet name and range.
+func (f *File) UnsetConditionalFormat(sheet, area string) error {
+	ws, err := f.workSheetReader(sheet)
+	if err != nil {
+		return err
+	}
+	for i, cf := range ws.ConditionalFormatting {
+		if cf.SQRef == area {
+			ws.ConditionalFormatting = append(ws.ConditionalFormatting[:i], ws.ConditionalFormatting[i+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
 // drawCondFmtCellIs provides a function to create conditional formatting rule
 // for cell value (include between, not between, equal, not equal, greater
 // than and less than) by given priority, criteria type and format settings.
@@ -2692,7 +2732,7 @@ func drawCondFmtCellIs(p int, ct string, format *formatConditional) *xlsxCfRule 
 		c.Formula = append(c.Formula, format.Minimum)
 		c.Formula = append(c.Formula, format.Maximum)
 	}
-	_, ok = map[string]bool{"equal": true, "notEqual": true, "greaterThan": true, "lessThan": true}[ct]
+	_, ok = map[string]bool{"equal": true, "notEqual": true, "greaterThan": true, "lessThan": true, "greaterThanOrEqual": true, "lessThanOrEqual": true, "containsText": true, "notContains": true, "beginsWith": true, "endsWith": true}[ct]
 	if ok {
 		c.Formula = append(c.Formula, format.Value)
 	}

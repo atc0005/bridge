@@ -11,7 +11,9 @@ package excelize
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -503,7 +505,11 @@ func parseFormatChartSet(formatSet string) (*formatChart, error) {
 //
 //    package main
 //
-//    import "github.com/360EntSecGroup-Skylar/excelize"
+//    import (
+//        "fmt"
+//
+//        "github.com/360EntSecGroup-Skylar/excelize"
+//    )
 //
 //    func main() {
 //        categories := map[string]string{"A2": "Small", "A3": "Normal", "A4": "Large", "B1": "Apple", "C1": "Orange", "D1": "Pear"}
@@ -516,12 +522,12 @@ func parseFormatChartSet(formatSet string) (*formatChart, error) {
 //            f.SetCellValue("Sheet1", k, v)
 //        }
 //        if err := f.AddChart("Sheet1", "E1", `{"type":"col3DClustered","series":[{"name":"Sheet1!$A$2","categories":"Sheet1!$B$1:$D$1","values":"Sheet1!$B$2:$D$2"},{"name":"Sheet1!$A$3","categories":"Sheet1!$B$1:$D$1","values":"Sheet1!$B$3:$D$3"},{"name":"Sheet1!$A$4","categories":"Sheet1!$B$1:$D$1","values":"Sheet1!$B$4:$D$4"}],"title":{"name":"Fruit 3D Clustered Column Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero","x_axis":{"reverse_order":true},"y_axis":{"maximum":7.5,"minimum":0.5}}`); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //            return
 //        }
 //        // Save xlsx file by the given path.
 //        if err := f.SaveAs("Book1.xlsx"); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //    }
 //
@@ -697,7 +703,11 @@ func parseFormatChartSet(formatSet string) (*formatChart, error) {
 //
 //    package main
 //
-//    import "github.com/360EntSecGroup-Skylar/excelize"
+//    import (
+//        "fmt"
+//
+//        "github.com/360EntSecGroup-Skylar/excelize"
+//    )
 //
 //    func main() {
 //        categories := map[string]string{"A2": "Small", "A3": "Normal", "A4": "Large", "B1": "Apple", "C1": "Orange", "D1": "Pear"}
@@ -710,38 +720,24 @@ func parseFormatChartSet(formatSet string) (*formatChart, error) {
 //            f.SetCellValue("Sheet1", k, v)
 //        }
 //        if err := f.AddChart("Sheet1", "E1", `{"type":"col","series":[{"name":"Sheet1!$A$2","categories":"","values":"Sheet1!$B$2:$D$2"},{"name":"Sheet1!$A$3","categories":"Sheet1!$B$1:$D$1","values":"Sheet1!$B$3:$D$3"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Clustered Column - Line Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true}}`, `{"type":"line","series":[{"name":"Sheet1!$A$4","categories":"Sheet1!$B$1:$D$1","values":"Sheet1!$B$4:$D$4"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true}}`); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //            return
 //        }
 //        // Save xlsx file by the given path.
 //        if err := f.SaveAs("Book1.xlsx"); err != nil {
-//            println(err.Error())
+//            fmt.Println(err)
 //        }
 //    }
 //
 func (f *File) AddChart(sheet, cell, format string, combo ...string) error {
-	formatSet, err := parseFormatChartSet(format)
-	if err != nil {
-		return err
-	}
-	comboCharts := []*formatChart{}
-	for _, comboFormat := range combo {
-		comboChart, err := parseFormatChartSet(comboFormat)
-		if err != nil {
-			return err
-		}
-		if _, ok := chartValAxNumFmtFormatCode[comboChart.Type]; !ok {
-			return errors.New("unsupported chart type " + comboChart.Type)
-		}
-		comboCharts = append(comboCharts, comboChart)
-	}
 	// Read sheet data.
 	xlsx, err := f.workSheetReader(sheet)
 	if err != nil {
 		return err
 	}
-	if _, ok := chartValAxNumFmtFormatCode[formatSet.Type]; !ok {
-		return errors.New("unsupported chart type " + formatSet.Type)
+	formatSet, comboCharts, err := f.getFormatChart(format, combo)
+	if err != nil {
+		return err
 	}
 	// Add first picture for given sheet, create xl/drawings/ and xl/drawings/_rels/ folder.
 	drawingID := f.countDrawings() + 1
@@ -758,6 +754,80 @@ func (f *File) AddChart(sheet, cell, format string, combo ...string) error {
 	f.addContentTypePart(chartID, "chart")
 	f.addContentTypePart(drawingID, "drawings")
 	return err
+}
+
+// AddChartSheet provides the method to create a chartsheet by given chart
+// format set (such as offset, scale, aspect ratio setting and print settings)
+// and properties set. In Excel a chartsheet is a worksheet that only contains
+// a chart.
+func (f *File) AddChartSheet(sheet, format string, combo ...string) error {
+	// Check if the worksheet already exists
+	if f.GetSheetIndex(sheet) != -1 {
+		return errors.New("the same name worksheet already exists")
+	}
+	formatSet, comboCharts, err := f.getFormatChart(format, combo)
+	if err != nil {
+		return err
+	}
+	cs := xlsxChartsheet{
+		SheetViews: []*xlsxChartsheetViews{{
+			SheetView: []*xlsxChartsheetView{{ZoomScaleAttr: 100, ZoomToFitAttr: true}}},
+		},
+	}
+	f.SheetCount++
+	wb := f.workbookReader()
+	sheetID := 0
+	for _, v := range wb.Sheets.Sheet {
+		if v.SheetID > sheetID {
+			sheetID = v.SheetID
+		}
+	}
+	sheetID++
+	path := "xl/chartsheets/sheet" + strconv.Itoa(sheetID) + ".xml"
+	f.sheetMap[trimSheetName(sheet)] = path
+	f.Sheet[path] = nil
+	drawingID := f.countDrawings() + 1
+	chartID := f.countCharts() + 1
+	drawingXML := "xl/drawings/drawing" + strconv.Itoa(drawingID) + ".xml"
+	f.prepareChartSheetDrawing(&cs, drawingID, sheet)
+	drawingRels := "xl/drawings/_rels/drawing" + strconv.Itoa(drawingID) + ".xml.rels"
+	drawingRID := f.addRels(drawingRels, SourceRelationshipChart, "../charts/chart"+strconv.Itoa(chartID)+".xml", "")
+	f.addSheetDrawingChart(drawingXML, drawingRID, &formatSet.Format)
+	f.addChart(formatSet, comboCharts)
+	f.addContentTypePart(chartID, "chart")
+	f.addContentTypePart(sheetID, "chartsheet")
+	f.addContentTypePart(drawingID, "drawings")
+	// Update xl/_rels/workbook.xml.rels
+	rID := f.addRels("xl/_rels/workbook.xml.rels", SourceRelationshipChartsheet, fmt.Sprintf("chartsheets/sheet%d.xml", sheetID), "")
+	// Update xl/workbook.xml
+	f.setWorkbook(sheet, sheetID, rID)
+	chartsheet, _ := xml.Marshal(cs)
+	f.saveFileList(path, replaceRelationshipsBytes(replaceRelationshipsNameSpaceBytes(chartsheet)))
+	return err
+}
+
+// getFormatChart provides a function to check format set of the chart and
+// create chart format.
+func (f *File) getFormatChart(format string, combo []string) (*formatChart, []*formatChart, error) {
+	comboCharts := []*formatChart{}
+	formatSet, err := parseFormatChartSet(format)
+	if err != nil {
+		return formatSet, comboCharts, err
+	}
+	for _, comboFormat := range combo {
+		comboChart, err := parseFormatChartSet(comboFormat)
+		if err != nil {
+			return formatSet, comboCharts, err
+		}
+		if _, ok := chartValAxNumFmtFormatCode[comboChart.Type]; !ok {
+			return formatSet, comboCharts, errors.New("unsupported chart type " + comboChart.Type)
+		}
+		comboCharts = append(comboCharts, comboChart)
+	}
+	if _, ok := chartValAxNumFmtFormatCode[formatSet.Type]; !ok {
+		return formatSet, comboCharts, errors.New("unsupported chart type " + formatSet.Type)
+	}
+	return formatSet, comboCharts, err
 }
 
 // DeleteChart provides a function to delete chart in XLSX by given worksheet
