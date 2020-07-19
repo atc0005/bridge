@@ -26,6 +26,32 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.3] - 2020-07-19
+
+### Added
+
+- Dependabot
+  - enable version updates
+  - enable GitHub Actions updates
+
+### Changed
+
+- Dependencies
+  - upgrade `360EntSecGroup-Skylar/excelize`
+    - `v2.1.0` to `v2.2.0`
+  - upgrade `actions/setup-go`
+    - `v1` to `v2.1.0`
+  - upgrade `actions/checkout`
+    - `v1` to `v2.3.1`
+  - upgrade `actions/setup-node`
+    - `v1` to `v2.1.0`
+
+### Fixed
+
+- Fix unintentional license change
+  - copy/paste config file from another project with a different license
+- Fix CHANGELOG section order
+
 ## [v0.4.2] - 2020-04-30
 
 ### Changed
@@ -167,7 +193,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.3...HEAD
+[v0.4.3]: https://github.com/atc0005/bridge/releases/tag/v0.4.3
 [v0.4.2]: https://github.com/atc0005/bridge/releases/tag/v0.4.2
 [v0.4.1]: https://github.com/atc0005/bridge/releases/tag/v0.4.1
 [v0.4.0]: https://github.com/atc0005/bridge/releases/tag/v0.4.0
