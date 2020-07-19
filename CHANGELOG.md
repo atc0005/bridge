@@ -28,10 +28,6 @@ The following types of changes will be recorded in this file:
 
 ## [v0.4.2] - 2020-04-30
 
-### Fixed
-
-- GoDoc formatting issue due to forced line wrapping
-
 ### Changed
 
 - README
@@ -74,6 +70,10 @@ The following types of changes will be recorded in this file:
     - Enable `scopelint` linter
     - Enable `dogsled` linter
 
+### Fixed
+
+- GoDoc formatting issue due to forced line wrapping
+
 ## [v0.4.1] - 2020-03-02
 
 ### Fixed
@@ -90,10 +90,6 @@ The following types of changes will be recorded in this file:
   - `report` for existing behavior and set of flags
   - `prune` for new behavior and new set of flags
 
-### Fixed
-
-- README coverage for help flags
-
 ### Changed
 
 - GitHub Actions Workflow: `Validate Codebase`
@@ -108,6 +104,10 @@ The following types of changes will be recorded in this file:
   - Emit overall summary of subcommands when binary is called without
     subcommands or with `-h` or `-help` flags
   - Emit branding details (`App Name`, `Version`, `Repo URL`)
+
+### Fixed
+
+- README coverage for help flags
 
 ## [v0.3.0] - 2020-02-09
 
