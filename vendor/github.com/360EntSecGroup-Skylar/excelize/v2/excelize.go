@@ -28,8 +28,9 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-// File define a populated XLSX file struct.
+// File define a populated spreadsheet file struct.
 type File struct {
+	xmlAttr          map[string][]xml.Attr
 	checked          map[string]bool
 	sheetMap         map[string]string
 	CalcChain        *xlsxCalcChain
@@ -38,6 +39,7 @@ type File struct {
 	Drawings         map[string]*xlsxWsDr
 	Path             string
 	SharedStrings    *xlsxSST
+	sharedStringsMap map[string]int
 	Sheet            map[string]*xlsxWorksheet
 	SheetCount       int
 	Styles           *xlsxStyleSheet
@@ -52,8 +54,8 @@ type File struct {
 
 type charsetTranscoderFn func(charset string, input io.Reader) (rdr io.Reader, err error)
 
-// OpenFile take the name of an XLSX file and returns a populated XLSX file
-// struct for it.
+// OpenFile take the name of an spreadsheet file and returns a populated
+// spreadsheet file struct for it.
 func OpenFile(filename string) (*File, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -71,10 +73,12 @@ func OpenFile(filename string) (*File, error) {
 // newFile is object builder
 func newFile() *File {
 	return &File{
+		xmlAttr:          make(map[string][]xml.Attr),
 		checked:          make(map[string]bool),
 		sheetMap:         make(map[string]string),
 		Comments:         make(map[string]*xlsxComments),
 		Drawings:         make(map[string]*xlsxWsDr),
+		sharedStringsMap: make(map[string]int),
 		Sheet:            make(map[string]*xlsxWorksheet),
 		DecodeVMLDrawing: make(map[string]*decodeVmlDrawing),
 		VMLDrawing:       make(map[string]*vmlDrawing),
@@ -83,7 +87,8 @@ func newFile() *File {
 	}
 }
 
-// OpenReader take an io.Reader and return a populated XLSX file.
+// OpenReader read data stream from io.Reader and return a populated
+// spreadsheet file.
 func OpenReader(r io.Reader) (*File, error) {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -163,6 +168,10 @@ func (f *File) workSheetReader(sheet string) (xlsx *xlsxWorksheet, err error) {
 			return
 		}
 		xlsx = new(xlsxWorksheet)
+		if _, ok := f.xmlAttr[name]; !ok {
+			d := f.xmlNewDecoder(bytes.NewReader(namespaceStrictToTransitional(f.readXML(name))))
+			f.xmlAttr[name] = append(f.xmlAttr[name], getRootElement(d)...)
+		}
 		if err = f.xmlNewDecoder(bytes.NewReader(namespaceStrictToTransitional(f.readXML(name)))).
 			Decode(xlsx); err != nil && err != io.EOF {
 			err = fmt.Errorf("xml decode error: %s", err)
@@ -188,16 +197,25 @@ func (f *File) workSheetReader(sheet string) (xlsx *xlsxWorksheet, err error) {
 // checkSheet provides a function to fill each row element and make that is
 // continuous in a worksheet of XML.
 func checkSheet(xlsx *xlsxWorksheet) {
-	row := len(xlsx.SheetData.Row)
-	if row >= 1 {
-		lastRow := xlsx.SheetData.Row[row-1].R
-		if lastRow >= row {
-			row = lastRow
+	var row int
+	for _, r := range xlsx.SheetData.Row {
+		if r.R != 0 && r.R > row {
+			row = r.R
+			continue
 		}
+		row++
 	}
 	sheetData := xlsxSheetData{Row: make([]xlsxRow, row)}
+	row = 0
 	for _, r := range xlsx.SheetData.Row {
-		sheetData.Row[r.R-1] = r
+		if r.R != 0 {
+			sheetData.Row[r.R-1] = r
+			row = r.R
+			continue
+		}
+		row++
+		r.R = row
+		sheetData.Row[row-1] = r
 	}
 	for i := 1; i <= row; i++ {
 		sheetData.Row[i-1].R = i
@@ -208,15 +226,24 @@ func checkSheet(xlsx *xlsxWorksheet) {
 // addRels provides a function to add relationships by given XML path,
 // relationship type, target and target mode.
 func (f *File) addRels(relPath, relType, target, targetMode string) int {
+	var uniqPart = map[string]string{
+		SourceRelationshipSharedStrings: "/xl/sharedStrings.xml",
+	}
 	rels := f.relsReader(relPath)
 	if rels == nil {
 		rels = &xlsxRelationships{}
 	}
 	var rID int
-	for _, rel := range rels.Relationships {
+	for idx, rel := range rels.Relationships {
 		ID, _ := strconv.Atoi(strings.TrimPrefix(rel.ID, "rId"))
 		if ID > rID {
 			rID = ID
+		}
+		if relType == rel.Type {
+			if partName, ok := uniqPart[rel.Type]; ok {
+				rels.Relationships[idx].Target = partName
+				return rID
+			}
 		}
 	}
 	rID++
@@ -231,14 +258,6 @@ func (f *File) addRels(relPath, relType, target, targetMode string) int {
 	})
 	f.Relationships[relPath] = rels
 	return rID
-}
-
-// replaceRelationshipsNameSpaceBytes provides a function to replace
-// XML tags to self-closing for compatible Microsoft Office Excel 2007.
-func replaceRelationshipsNameSpaceBytes(contentMarshal []byte) []byte {
-	var oldXmlns = stringToBytes(` xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`)
-	var newXmlns = []byte(templateNamespaceIDMap)
-	return bytesReplace(contentMarshal, oldXmlns, newXmlns, -1)
 }
 
 // UpdateLinkedValue fix linked values within a spreadsheet are not updating in
