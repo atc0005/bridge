@@ -16,6 +16,8 @@
 # https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
 # https://www.gnu.org/software/make/manual/html_node/Recipe-Syntax.html#Recipe-Syntax
 # https://www.gnu.org/software/make/manual/html_node/Special-Variables.html#Special-Variables
+# https://github.com/golangci/golangci-lint#install
+# https://github.com/golangci/golangci-lint/releases/latest
 
 
 SHELL = /bin/bash
@@ -31,10 +33,6 @@ OUTPUTDIR 				= release_assets
 # https://gist.github.com/TheHippo/7e4d9ec4b7ed4c0d7a39839e6800cc16
 # https://github.com/atc0005/elbow/issues/54
 VERSION 				= $(shell git describe --always --long --dirty)
-
-# https://github.com/golangci/golangci-lint#install
-# https://github.com/golangci/golangci-lint/releases/latest
-GOLANGCI_LINT_VERSION		= v1.25.1
 
 # The default `go build` process embeds debugging information. Building
 # without that debugging information reduces the binary size by around 28%.
@@ -69,8 +67,8 @@ lintinstall:
 	@echo "Explicitly enabling Go modules mode per command"
 	(cd; GO111MODULE="on" go get honnef.co/go/tools/cmd/staticcheck)
 
-	@echo Installing golangci-lint ${GOLANGCI_LINT_VERSION} per official binary installation docs ...
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
+	@echo Installing latest stable golangci-lint version per official installation script ...
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin
 	golangci-lint --version
 
 	@echo "Finished updating linting tools"
