@@ -1,3 +1,4 @@
+<!-- omit in toc -->
 # Bridge
 
 A small CLI utility used to find duplicate files
@@ -9,32 +10,34 @@ A small CLI utility used to find duplicate files
 [![Lint and Build using Makefile](https://github.com/atc0005/bridge/workflows/Lint%20and%20Build%20using%20Makefile/badge.svg)](https://github.com/atc0005/bridge/actions?query=workflow%3A%22Lint+and+Build+using+Makefile%22)
 [![Quick Validation](https://github.com/atc0005/bridge/workflows/Quick%20Validation/badge.svg)](https://github.com/atc0005/bridge/actions?query=workflow%3A%22Quick+Validation%22)
 
-- [Bridge](#bridge)
-  - [Project home](#project-home)
-  - [Overview](#overview)
-    - [Generate report](#generate-report)
-    - [Prune duplicate files](#prune-duplicate-files)
-  - [Features](#features)
-  - [Changelog](#changelog)
-  - [Requirements](#requirements)
-  - [How to install it](#how-to-install-it)
-  - [Configuration Options](#configuration-options)
-    - [Command-line Arguments](#command-line-arguments)
-      - [`report` subcommand](#report-subcommand)
-      - [`prune` subcommand](#prune-subcommand)
-  - [Examples](#examples)
-    - [Generating a report](#generating-a-report)
-      - [Single path, recursive](#single-path-recursive)
-      - [Multiple paths, non-recursive](#multiple-paths-non-recursive)
-      - [Invalid flag](#invalid-flag)
-    - [Pruning duplicate files](#pruning-duplicate-files)
-      - [Dry-run (minimal)](#dry-run-minimal)
-      - [Dry-run (verbose)](#dry-run-verbose)
-      - [Backup files before removing them](#backup-files-before-removing-them)
-  - [License](#license)
-    - [Core project files](#core-project-files)
-    - [`ByteCountSI`, `ByteCountIEC` functions](#bytecountsi-bytecountiec-functions)
-  - [References](#references)
+<!-- omit in toc -->
+## Table of Contents
+
+- [Project home](#project-home)
+- [Overview](#overview)
+  - [Generate report](#generate-report)
+  - [Prune duplicate files](#prune-duplicate-files)
+- [Features](#features)
+- [Changelog](#changelog)
+- [Requirements](#requirements)
+- [How to install it](#how-to-install-it)
+- [Configuration Options](#configuration-options)
+  - [Command-line Arguments](#command-line-arguments)
+    - [`report` subcommand](#report-subcommand)
+    - [`prune` subcommand](#prune-subcommand)
+- [Examples](#examples)
+  - [Generating a report](#generating-a-report)
+    - [Single path, recursive](#single-path-recursive)
+    - [Multiple paths, non-recursive](#multiple-paths-non-recursive)
+    - [Invalid flag](#invalid-flag)
+  - [Pruning duplicate files](#pruning-duplicate-files)
+    - [Dry-run (minimal)](#dry-run-minimal)
+    - [Dry-run (verbose)](#dry-run-verbose)
+    - [Backup files before removing them](#backup-files-before-removing-them)
+- [License](#license)
+  - [Core project files](#core-project-files)
+  - [`ByteCountSI`, `ByteCountIEC` functions](#bytecountsi-bytecountiec-functions)
+- [References](#references)
 
 ## Project home
 
