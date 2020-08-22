@@ -796,7 +796,15 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetwee
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf(
+				"error occurred closing file %q: %v",
+				filename,
+				err,
+			)
+		}
+	}()
 
 	//w := csv.NewWriter(os.Stdout)
 	w := csv.NewWriter(file)
@@ -879,7 +887,13 @@ func (fi FileChecksumIndex) PrintFileMatches(blankLineBetweenSets bool) {
 	}
 
 	fmt.Fprintln(w)
-	w.Flush()
+	if err := w.Flush(); err != nil {
+		log.Printf(
+			"error occurred flushing tabwriter: %v",
+			err,
+		)
+	}
+
 }
 
 // PrintSummary is used to generate a basic summary report of file metadata
@@ -902,6 +916,11 @@ func (dfs DuplicateFilesSummary) PrintSummary() {
 	fmt.Fprintf(w, "%s\twasted space for duplicate file sets\n", units.ByteCountIEC(dfs.WastedSpace))
 	fmt.Fprintln(w)
 
-	w.Flush()
+	if err := w.Flush(); err != nil {
+		log.Printf(
+			"error occurred flushing tabwriter: %v",
+			err,
+		)
+	}
 
 }

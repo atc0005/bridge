@@ -13,7 +13,9 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"path/filepath"
 )
 
 // SHA256Checksum is a 64 character string representing a SHA256 hash
@@ -58,14 +60,22 @@ func GenerateCheckSum(file string) (SHA256Checksum, error) {
 
 	var checksum SHA256Checksum
 
-	f, err := os.Open(file)
+	f, err := os.Open(filepath.Clean(file))
 	if err != nil {
 		//log.Fatal(err)
 		return checksum, err
 	}
 
 	// Note the duplicate f.Close() call at end of function and why
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf(
+				"error occurred closing file %q: %v",
+				file,
+				err,
+			)
+		}
+	}()
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {

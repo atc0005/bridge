@@ -204,7 +204,15 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		return fmt.Errorf("unable to create new backup file %q: %s",
 			destinationFile, err)
 	}
-	defer destinationFileHandle.Close()
+	defer func() {
+		if err := destinationFileHandle.Close(); err != nil {
+			log.Printf(
+				"error occurred closing file %q: %v",
+				destinationFile,
+				err,
+			)
+		}
+	}()
 
 	// guard against invalid source files
 	// NOTE: This shouldn't be possible since we only add files to a list to
@@ -220,12 +228,20 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		return fmt.Errorf("%q is not a regular file", sourceFileStat)
 	}
 
-	sourceFileHandle, err := os.Open(sourceFilename)
+	sourceFileHandle, err := os.Open(filepath.Clean(sourceFilename))
 	if err != nil {
 		return fmt.Errorf("unable to open source file %q in order to create backup copy: %s",
 			sourceFilename, err)
 	}
-	defer sourceFileHandle.Close()
+	defer func() {
+		if err := sourceFileHandle.Close(); err != nil {
+			log.Printf(
+				"error occurred closing file %q: %v",
+				sourceFilename,
+				err,
+			)
+		}
+	}()
 
 	sizeCopied, err := io.Copy(destinationFileHandle, sourceFileHandle)
 	if err != nil {
