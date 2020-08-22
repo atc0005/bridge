@@ -130,7 +130,13 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 	}
 
 	fmt.Fprintln(w)
-	w.Flush()
+	if err := w.Flush(); err != nil {
+		log.Printf(
+			"error occurred flushing tabwriter: %v",
+			err,
+		)
+	}
+
 }
 
 // FilesToRemove returns a dfsEntries object representing the files that the

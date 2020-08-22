@@ -32,7 +32,15 @@ func pruneSubcommand(appConfig *config.Config) {
 	}
 	// NOTE: We're not manipulating contents for this file, so relying solely
 	// on a defer statement to close the file should be sufficient?
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf(
+				"error occurred closing file %q: %v",
+				appConfig.InputCSVFile,
+				err,
+			)
+		}
+	}()
 
 	csvReader := csv.NewReader(file)
 
