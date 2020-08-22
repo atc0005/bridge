@@ -26,6 +26,78 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.4] - 2020-08-22
+
+### Added
+
+- Docker-based GitHub Actions Workflows
+  - Replace native GitHub Actions with containers created and managed through
+    the `atc0005/go-ci` project.
+
+  - New, primary workflow
+    - with parallel linting, testing and building tasks
+    - with three Go environments
+      - "old stable"
+      - "stable"
+      - "unstable"
+    - Makefile is *not* used in this workflow
+    - staticcheck linting using latest stable version provided by the
+      `atc0005/go-ci` containers
+
+  - Separate Makefile-based linting and building workflow
+    - intended to help ensure that local Makefile-based builds that are
+      referenced in project README files continue to work as advertised until
+      a better local tool can be discovered/explored further
+    - use `golang:latest` container to allow for Makefile-based linting
+      tooling installation testing since the `atc0005/go-ci` project provides
+      containers with those tools already pre-installed
+      - linting tasks use container-provided `golangci-lint` config file
+        *except* for the Makefile-driven linting task which continues to use
+        the repo-provided copy of the `golangci-lint` configuration file
+
+  - Add Quick Validation workflow
+    - run on every push, everything else on pull request updates
+    - linting via `golangci-lint` only
+    - testing
+    - no builds
+
+- Add new README badges for additional CI workflows
+  - each badge also links to the associated workflow results
+
+### Changed
+
+- Disable `golangci-lint` default exclusions
+
+- dependencies
+  - `go.mod` Go version
+    - updated from `1.13` to `1.14`
+  - upgrade `360EntSecGroup-Skylar/excelize`
+    - `v2.2.0` to `v2.3.0`
+  - upgrade `actions/setup-go`
+    - `v2.1.1` to `v2.1.2`
+      - since replaced with Docker containers
+  - upgrade `actions/setup-node`
+    - `v2.1.0` to `v2.1.1`
+  - upgrade `actions/checkout`
+    - `v2.3.1` to `v2.3.2`
+
+- README
+  - Link badges to applicable GitHub Actions workflows results
+
+- Linting
+  - Local
+    - `Makefile`
+      - install latest stable `golangci-lint` binary instead of using a fixed
+          version
+  - CI
+    - remove repo-provided copy of `golangci-lint` config file at start of
+      linting task in order to force use of Docker container-provided config
+      file
+
+### Fixed
+
+- Multiple linting issues exposed when disabling `exclude-use-default` setting
+
 ## [v0.4.3] - 2020-07-19
 
 ### Added
@@ -193,7 +265,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.4...HEAD
+[v0.4.4]: https://github.com/atc0005/bridge/releases/tag/v0.4.4
 [v0.4.3]: https://github.com/atc0005/bridge/releases/tag/v0.4.3
 [v0.4.2]: https://github.com/atc0005/bridge/releases/tag/v0.4.2
 [v0.4.1]: https://github.com/atc0005/bridge/releases/tag/v0.4.1
