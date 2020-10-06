@@ -21,7 +21,7 @@ import (
 )
 
 // pruneSubcommand is a wrapper around the "prune" subcommand logic
-func pruneSubcommand(appConfig *config.Config) {
+func pruneSubcommand(appConfig *config.Config) error {
 
 	// DEBUG
 	fmt.Printf("subcommand '%s' called\n", config.PruneSubcommand)
@@ -65,7 +65,7 @@ func pruneSubcommand(appConfig *config.Config) {
 			break
 		}
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		// If we are currently evaluating the very first line of the CSV file
@@ -87,7 +87,8 @@ func pruneSubcommand(appConfig *config.Config) {
 				log.Printf("IgnoringErrors set, ignoring input row %d.\n", rowCounter)
 				continue
 			}
-			log.Fatal("IgnoringErrors NOT set. Exiting.")
+			log.Println("IgnoringErrors NOT set. Exiting.")
+			return err
 		}
 
 		// validate input row before we consider it OK
@@ -97,7 +98,8 @@ func pruneSubcommand(appConfig *config.Config) {
 				log.Printf("IgnoringErrors set, ignoring input row %d.\n", rowCounter)
 				continue
 			}
-			log.Fatal("IgnoringErrors NOT set. Exiting.")
+			log.Println("IgnoringErrors NOT set. Exiting.")
+			return err
 		}
 
 		// update size details if found missing in CSV row
@@ -107,7 +109,8 @@ func pruneSubcommand(appConfig *config.Config) {
 				log.Printf("IgnoringErrors set, ignoring input row %d.\n", rowCounter)
 				continue
 			}
-			log.Fatal("IgnoringErrors NOT set. Exiting.")
+			log.Println("IgnoringErrors NOT set. Exiting.")
+			return err
 		}
 
 		// Start off with collecting all entries in the CSV file that contain
@@ -138,7 +141,7 @@ func pruneSubcommand(appConfig *config.Config) {
 		fmt.Printf("0 entries out of %d marked for removal in the %q input CSV file.\n",
 			len(dfsEntries), appConfig.InputCSVFile)
 		fmt.Println("Nothing to do, exiting.")
-		return
+		return nil
 	}
 
 	// INFO? DEBUG?
@@ -174,7 +177,7 @@ func pruneSubcommand(appConfig *config.Config) {
 				// permissions, creating it as this application could lead to a
 				// lot of problems that we cannot reliably anticipate and prevent
 
-				log.Fatalf(
+				return fmt.Errorf(
 					"backup directory %q specified, but does not exist",
 					appConfig.BackupDirectory,
 				)
@@ -199,7 +202,7 @@ func pruneSubcommand(appConfig *config.Config) {
 					// FIXME: Implement check for appconfig.IgnoreErrors
 					// extend error message (potentially) to note that the error
 					// was encountered when creating a backup
-					log.Fatal(err)
+					return err
 				}
 
 			}
@@ -227,7 +230,8 @@ func pruneSubcommand(appConfig *config.Config) {
 					filesRemovedFail++
 					continue
 				}
-				log.Fatal("IgnoringErrors NOT set. Exiting.")
+				log.Println("IgnoringErrors NOT set. Exiting.")
+				return err
 			}
 
 			// note that we have successfully removed a file
@@ -244,4 +248,6 @@ func pruneSubcommand(appConfig *config.Config) {
 	if appConfig.DryRun {
 		fmt.Println("Dry-run enabled, no files removed")
 	}
+
+	return nil
 }

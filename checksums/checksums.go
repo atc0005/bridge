@@ -23,7 +23,7 @@ import (
 // Goal: Set SHA256Checksum as the return type for GenerateCheckSum(), but
 // make sure that the length is locked in at the specific character length
 // for our chosen file hash.
-//type SHA256Checksum [64]string
+// type SHA256Checksum [64]string
 type SHA256Checksum string
 
 func (cs SHA256Checksum) String() string {
@@ -62,7 +62,7 @@ func GenerateCheckSum(file string) (SHA256Checksum, error) {
 
 	f, err := os.Open(filepath.Clean(file))
 	if err != nil {
-		//log.Fatal(err)
+		// log.Fatal(err)
 		return checksum, err
 	}
 
@@ -79,7 +79,7 @@ func GenerateCheckSum(file string) (SHA256Checksum, error) {
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
-		//log.Fatal(err)
+		// log.Fatal(err)
 		return checksum, err
 	}
 

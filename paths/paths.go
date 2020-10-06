@@ -36,7 +36,7 @@ func PathExists(path string) bool {
 
 	// https://gist.github.com/mattes/d13e273314c3b3ade33f
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		//log.Println("path found")
+		// log.Println("path found")
 		return true
 	}
 
@@ -148,7 +148,7 @@ func CreateBackupDirectoryTree(filename string, fullPathToBackupDir string) (str
 	}
 
 	// DEBUG
-	//fmt.Printf("Calling os.MkdirAll(%v, %v)\n", targetBackupDirPath, defaultDirectoryPerms)
+	// fmt.Printf("Calling os.MkdirAll(%v, %v)\n", targetBackupDirPath, defaultDirectoryPerms)
 
 	if err := os.MkdirAll(targetBackupDirPath, defaultDirectoryPerms); err != nil {
 		return "", fmt.Errorf("failed to create fully-qualified backup path %q for %q: %s",

@@ -19,6 +19,19 @@ import (
 
 func main() {
 
+	// Emulate returning exit code from main function by "queuing up" a
+	// default exit code that matches expectations, but allow explicitly
+	// setting the exit code in such a way that is compatible with using
+	// deferred function calls throughout the application.
+	var appExitCode *int
+	defer func(code *int) {
+		var exitCode int
+		if code != nil {
+			exitCode = *code
+		}
+		os.Exit(exitCode)
+	}(appExitCode)
+
 	var appConfig *config.Config
 	var err error
 
@@ -28,10 +41,12 @@ func main() {
 		// sufficient enough
 		// if errors.Is(err, config.ErrMissingSubcommand) || errors.Is(err, flag.ErrHelp) {
 		if errors.Is(err, flag.ErrHelp) {
-			os.Exit(0)
+			*appExitCode = 0
+			return
 		}
 		fmt.Printf("\nERROR: %s\n", err)
-		os.Exit(1)
+		*appExitCode = 1
+		return
 	}
 
 	// DEBUG
@@ -44,17 +59,27 @@ func main() {
 		// DEBUG
 		fmt.Printf("subcommand '%s' called\n", config.PruneSubcommand)
 
-		pruneSubcommand(appConfig)
+		if err := pruneSubcommand(appConfig); err != nil {
+			*appExitCode = 1
+			fmt.Println(err)
+			return
+		}
 
 	case config.ReportSubcommand:
 		// DEBUG
 		fmt.Printf("subcommand '%s' called\n", config.ReportSubcommand)
 
-		reportSubcommand(appConfig)
+		if err := reportSubcommand(appConfig); err != nil {
+			*appExitCode = 1
+			fmt.Println(err)
+			return
+		}
 
 	// We should not be able to reach this section
 	default:
-		log.Fatalf("invalid subcommand: %s", os.Args[1])
+		log.Printf("invalid subcommand: %s", os.Args[1])
+		*appExitCode = 1
+		return
 	}
 
 }
