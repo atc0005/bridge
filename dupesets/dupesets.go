@@ -76,10 +76,10 @@ type DuplicateFileSetEntries []DuplicateFileSetEntry
 func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 
 	w := &tabwriter.Writer{}
-	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
+	// w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
 
 	// Format in tab-separated columns
-	//w.Init(os.Stdout, 16, 8, 8, '\t', 0)
+	// w.Init(os.Stdout, 16, 8, 8, '\t', 0)
 	w.Init(os.Stdout, 8, 8, 4, '\t', 0)
 
 	// NOTE: Skip outputing size in bytes since this is meant to be reviewed

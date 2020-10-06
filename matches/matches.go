@@ -147,19 +147,19 @@ func MergeFileSizeIndexes(fileSizeIndexes ...FileSizeIndex) FileSizeIndex {
 
 	mergedFileSizeIndex := make(FileSizeIndex)
 
-	//log.Printf("Received %d FileSizeIndex objects", len(fileSizeIndexes))
+	// log.Printf("Received %d FileSizeIndex objects", len(fileSizeIndexes))
 
 	// loop over all received FileSizeIndex objects, then out of each FileSizeIndex
 	// object loop over each attached FileMatches object in order to append
 	// each FileMatch in the FileMatches (slice) to our combined object
-	//for counter, fileSizeIndex := range fileSizeIndexes {
+	// for counter, fileSizeIndex := range fileSizeIndexes {
 	for _, fileSizeIndex := range fileSizeIndexes {
 
-		//log.Printf("length of FileSizeIndex %d: %d", counter, len(fileSizeIndex))
+		// log.Printf("length of FileSizeIndex %d: %d", counter, len(fileSizeIndex))
 
 		for fileSize, fileMatches := range fileSizeIndex {
 
-			//log.Printf("length of FileMatches for key %d: %d", fileSize, len(fileMatches))
+			// log.Printf("length of FileMatches for key %d: %d", fileSize, len(fileMatches))
 
 			// From golangci-lint:
 			// matches.go:150:4: should replace loop with mergedFileSizeIndex[fileSize] = append(mergedFileSizeIndex[fileSize], fileMatches...) (S1011)
@@ -170,7 +170,7 @@ func MergeFileSizeIndexes(fileSizeIndexes ...FileSizeIndex) FileSizeIndex {
 		}
 	}
 
-	//log.Printf("mergedFileSizeIndex length: %d", len(mergedFileSizeIndex))
+	// log.Printf("mergedFileSizeIndex length: %d", len(mergedFileSizeIndex))
 
 	return mergedFileSizeIndex
 }
@@ -179,7 +179,7 @@ func MergeFileSizeIndexes(fileSizeIndexes ...FileSizeIndex) FileSizeIndex {
 // FileMatches objects
 func (fi FileSizeIndex) UpdateChecksums(ignoreErrors bool) error {
 
-	//for key, fileMatches := range combinedFileSizeIndex {
+	// for key, fileMatches := range combinedFileSizeIndex {
 	for _, fileMatches := range fi {
 
 		// every key is a file size
@@ -215,7 +215,7 @@ func (fm FileMatches) UpdateChecksums(ignoreErrors bool) error {
 	for index, file := range fm {
 
 		// DEBUG
-		//log.Println("Generating checksum for:", file.FullPath)
+		// log.Println("Generating checksum for:", file.FullPath)
 		result, err := checksums.GenerateCheckSum(file.FullPath)
 		if err != nil {
 
@@ -322,7 +322,7 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 	fileSizeIndex := make(FileSizeIndex)
 	var err error
 
-	//log.Println("RecursiveSearch:", recursiveSearch)
+	// log.Println("RecursiveSearch:", recursiveSearch)
 
 	if recursiveSearch {
 
@@ -555,7 +555,7 @@ func (fi FileChecksumIndex) GetWastedSpace() int64 {
 		wastedSpace += int64(duplicateFileMatchEntries) * fileSize
 	}
 
-	//return wastedSpace, nil
+	// return wastedSpace, nil
 	return wastedSpace
 }
 
@@ -693,7 +693,7 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 
 	for duplicateFileSetIndex, fileMatches := range fi {
 
-		//sheetHeader := []string{"directory", "file", "size", "checksum"}
+		// sheetHeader := []string{"directory", "file", "size", "checksum"}
 
 		// Create a new sheet for duplicate file metadata
 		duplicateFileSetIndexSheet := duplicateFileSetIndex.String()
@@ -806,7 +806,7 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetwee
 		}
 	}()
 
-	//w := csv.NewWriter(os.Stdout)
+	// w := csv.NewWriter(os.Stdout)
 	w := csv.NewWriter(file)
 
 	if err := w.Write(fi.GenerateCSVHeaderRow()); err != nil {
@@ -816,7 +816,7 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetwee
 		return err
 	}
 
-	//for key, fileMatches := range fi {
+	// for key, fileMatches := range fi {
 	for _, fileMatches := range fi {
 
 		// This can be useful when focusing just on the sets themselves.
@@ -857,10 +857,10 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetwee
 func (fi FileChecksumIndex) PrintFileMatches(blankLineBetweenSets bool) {
 
 	w := new(tabwriter.Writer)
-	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
+	// w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
 
 	// Format in tab-separated columns
-	//w.Init(os.Stdout, 16, 8, 8, '\t', 0)
+	// w.Init(os.Stdout, 16, 8, 8, '\t', 0)
 	w.Init(os.Stdout, 8, 8, 4, '\t', 0)
 
 	// Header row in output
@@ -901,7 +901,7 @@ func (fi FileChecksumIndex) PrintFileMatches(blankLineBetweenSets bool) {
 func (dfs DuplicateFilesSummary) PrintSummary() {
 
 	w := new(tabwriter.Writer)
-	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
+	// w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
 
 	// Format in tab-separated columns
 	w.Init(os.Stdout, 8, 8, 5, '\t', 0)
