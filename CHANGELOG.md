@@ -26,6 +26,39 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.5] - 2020-10-11
+
+### Added
+
+- Binary release
+  - Built using Go 1.15.2
+  - **Statically linked**
+  - Windows
+    - x86
+    - x64
+  - Linux
+    - x86
+    - x64
+
+### Changed
+
+- Dependencies
+  - `360EntSecGroup-Skylar/excelize`
+    - `v2.3.0` to `v2.3.1`
+  - `actions/checkout`
+    - `v2.3.2` to `v2.3.3`
+  - `actions/setup-node`
+    - `v2.1.1` to `v2.1.2`
+
+- Add `-trimpath` build flag
+
+### Fixed
+
+- Makefile build options do not generate static binaries
+- Misc linting errors raised by latest `gocritic` release included with
+  `golangci-lint` `v1.31.0`
+- Makefile generates checksums with qualified path
+
 ## [v0.4.4] - 2020-08-22
 
 ### Added
@@ -265,7 +298,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.4...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.5...HEAD
+[v0.4.5]: https://github.com/atc0005/bridge/releases/tag/v0.4.5
 [v0.4.4]: https://github.com/atc0005/bridge/releases/tag/v0.4.4
 [v0.4.3]: https://github.com/atc0005/bridge/releases/tag/v0.4.3
 [v0.4.2]: https://github.com/atc0005/bridge/releases/tag/v0.4.2
