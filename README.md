@@ -4,7 +4,7 @@
 A small CLI utility used to find duplicate files
 
 [![Latest Release](https://img.shields.io/github/release/atc0005/bridge.svg?style=flat-square)](https://github.com/atc0005/bridge/releases/latest)
-[![GoDoc](https://godoc.org/github.com/atc0005/bridge?status.svg)](https://godoc.org/github.com/atc0005/bridge)
+[![Go Reference](https://pkg.go.dev/badge/github.com/atc0005/bridge.svg)](https://pkg.go.dev/github.com/atc0005/bridge)
 [![Validate Codebase](https://github.com/atc0005/bridge/workflows/Validate%20Codebase/badge.svg)](https://github.com/atc0005/bridge/actions?query=workflow%3A%22Validate+Codebase%22)
 [![Validate Docs](https://github.com/atc0005/bridge/workflows/Validate%20Docs/badge.svg)](https://github.com/atc0005/bridge/actions?query=workflow%3A%22Validate+Docs%22)
 [![Lint and Build using Makefile](https://github.com/atc0005/bridge/workflows/Lint%20and%20Build%20using%20Makefile/badge.svg)](https://github.com/atc0005/bridge/actions?query=workflow%3A%22Lint+and+Build+using+Makefile%22)
