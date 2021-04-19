@@ -1,4 +1,4 @@
-# github.com/360EntSecGroup-Skylar/excelize/v2 v2.3.2
+# github.com/360EntSecGroup-Skylar/excelize/v2 v2.4.0
 ## explicit
 github.com/360EntSecGroup-Skylar/excelize/v2
 # github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
@@ -7,16 +7,16 @@ github.com/mohae/deepcopy
 github.com/richardlehane/mscfb
 # github.com/richardlehane/msoleps v1.0.1
 github.com/richardlehane/msoleps/types
-# github.com/xuri/efp v0.0.0-20201016154823-031c29024257
+# github.com/xuri/efp v0.0.0-20210322160811-ab561f5b45e3
 github.com/xuri/efp
-# golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee
+# golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
 golang.org/x/crypto/md4
 golang.org/x/crypto/ripemd160
-# golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0
+# golang.org/x/net v0.0.0-20210415231046-e915ea6b2b7d
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/text v0.3.3
+# golang.org/x/text v0.3.6
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -27,10 +27,18 @@ golang.org/x/text/encoding/korean
 golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
+golang.org/x/text/feature/plural
+golang.org/x/text/internal
+golang.org/x/text/internal/catmsg
+golang.org/x/text/internal/format
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
+golang.org/x/text/internal/number
+golang.org/x/text/internal/stringset
 golang.org/x/text/internal/tag
 golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
+golang.org/x/text/message
+golang.org/x/text/message/catalog
 golang.org/x/text/runes
 golang.org/x/text/transform
