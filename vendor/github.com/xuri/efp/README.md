@@ -11,7 +11,7 @@ Using EFP (Excel Formula Parser) you can get an Abstract Syntax Tree (AST) from 
 
 ## Installation
 
-```go
+```bash
 go get github.com/xuri/efp
 ```
 
@@ -31,7 +31,7 @@ func main() {
 
 Get AST
 
-```
+```text
 SUM <Function> <Start>
     A3 <Operand> <Range>
     + <OperatorInfix> <Math>
@@ -49,7 +49,7 @@ Contributions are welcome! Open a pull request to fix a bug, or open an issue to
 
 ## Credits
 
-EFP (Excel Formula Parser) is a Golang port of [E. W. Bachtal's](http://ewbi.blogs.com/develops/2004/12/excel_formula_p.html) Excel formula parser.
+EFP (Excel Formula Parser) is a Golang port of [E. W. Bachtal's](https://ewbi.blogs.com/develops/2004/12/excel_formula_p.html) Excel formula parser.
 
 ## Licenses
 
