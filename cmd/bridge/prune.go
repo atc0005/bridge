@@ -53,7 +53,7 @@ func pruneSubcommand(appConfig *config.Config) error {
 	csvReader.TrimLeadingSpace = true
 
 	var dfsEntries dupesets.DuplicateFileSetEntries
-	var rowCounter int = 0
+	var rowCounter = 0
 	for {
 
 		// Go ahead and bump the counter to reflect that humans start counting
