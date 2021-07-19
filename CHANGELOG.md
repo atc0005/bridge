@@ -26,6 +26,39 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.7] - 2021-07-19
+
+### Overview
+
+- Dependency updates
+- Minor fixes
+- Built using Go 1.16.6
+  - **Statically linked**
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Added
+
+- Add "canary" Dockerfile to track stable Go releases, serve as a reminder to
+  generate fresh binaries
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.15.8` to `1.16.6`
+  - `360EntSecGroup-Skylar/excelize`
+    - `v2.3.2` to `v2.4.0`
+  - `actions/setup-node`
+    - `v2.1.4` to `v2.2.0`
+    - update `node-version` value to always use latest LTS version instead of
+      hard-coded version
+
+### Fixed
+
+- ST1023: should omit type int from declaration; it will be inferred from the
+  right-hand side (stylecheck)
+
 ## [v0.4.6] - 2021-02-21
 
 ### Overview
@@ -326,7 +359,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.6...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.7...HEAD
+[v0.4.7]: https://github.com/atc0005/bridge/releases/tag/v0.4.7
 [v0.4.6]: https://github.com/atc0005/bridge/releases/tag/v0.4.6
 [v0.4.5]: https://github.com/atc0005/bridge/releases/tag/v0.4.5
 [v0.4.4]: https://github.com/atc0005/bridge/releases/tag/v0.4.4
