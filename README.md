@@ -3,7 +3,7 @@
 
 A small CLI utility used to find duplicate files
 
-[![Latest Release](https://img.shields.io/github/release/atc0005/bridge.svg?style=flat-square)](https://github.com/atc0005/bridge/releases/latest)
+[![Latest Release](https://img.shields.io/github/release/atc0005/bridge.svg?style=flat-square)][repo-url]
 [![Go Reference](https://pkg.go.dev/badge/github.com/atc0005/bridge.svg)](https://pkg.go.dev/github.com/atc0005/bridge)
 [![Validate Codebase](https://github.com/atc0005/bridge/workflows/Validate%20Codebase/badge.svg)](https://github.com/atc0005/bridge/actions?query=workflow%3A%22Validate+Codebase%22)
 [![Validate Docs](https://github.com/atc0005/bridge/workflows/Validate%20Docs/badge.svg)](https://github.com/atc0005/bridge/actions?query=workflow%3A%22Validate+Docs%22)
@@ -21,6 +21,8 @@ A small CLI utility used to find duplicate files
 - [Changelog](#changelog)
 - [Requirements](#requirements)
 - [How to install it](#how-to-install-it)
+  - [From source](#from-source)
+  - [Using release binaries](#using-release-binaries)
 - [Configuration Options](#configuration-options)
   - [Command-line Arguments](#command-line-arguments)
     - [`report` subcommand](#report-subcommand)
@@ -41,9 +43,8 @@ A small CLI utility used to find duplicate files
 
 ## Project home
 
-See [our GitHub repo](https://github.com/atc0005/bridge) for the latest
-code, to file an issue or submit improvements for review and potential
-inclusion into the project.
+See [our GitHub repo][repo-url] for the latest code, to file an issue or
+submit improvements for review and potential inclusion into the project.
 
 ## Overview
 
@@ -114,8 +115,10 @@ Tested using:
 
 ## How to install it
 
-1. [Download](https://golang.org/dl/) Go
-1. [Install](https://golang.org/doc/install) Go
+### From source
+
+1. [Download][go-docs-download] Go
+1. [Install][go-docs-install] Go
 1. Clone the repo
    1. `cd /tmp`
    1. `git clone https://github.com/atc0005/bridge`
@@ -139,6 +142,13 @@ Tested using:
 1. Copy the applicable binary to whatever systems needs to run it
    - if using `Makefile`: look in `/tmp/release_assets/bridge/`
    - if using `go build`: look in `/tmp/bridge/`
+
+### Using release binaries
+
+1. Download the [latest release][repo-url] binaries
+1. Deploy
+   - Place `bridge` in a location of your choice
+     - e.g., `/usr/local/bin/bridge`
 
 ## Configuration Options
 
@@ -341,3 +351,13 @@ of this document for links to additional information.
   - covers updating variables at build time, particularly sub-packages (GH-55)
 
 - <https://github.com/360EntSecGroup-Skylar/excelize>
+
+<!-- Footnotes here  -->
+
+[repo-url]: <https://github.com/atc0005/bridge>  "This project's GitHub repo"
+
+[go-docs-download]: <https://golang.org/dl>  "Download Go"
+
+[go-docs-install]: <https://golang.org/doc/install>  "Install Go"
+
+<!-- []: PLACEHOLDER "DESCRIPTION_HERE" -->
