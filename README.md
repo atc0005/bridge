@@ -21,6 +21,8 @@ A small CLI utility used to find duplicate files
 - [Changelog](#changelog)
 - [Requirements](#requirements)
 - [How to install it](#how-to-install-it)
+  - [From source](#from-source)
+  - [Using release binaries](#using-release-binaries)
 - [Configuration Options](#configuration-options)
   - [Command-line Arguments](#command-line-arguments)
     - [`report` subcommand](#report-subcommand)
@@ -113,6 +115,8 @@ Tested using:
 
 ## How to install it
 
+### From source
+
 1. [Download][go-docs-download] Go
 1. [Install][go-docs-install] Go
 1. Clone the repo
@@ -138,6 +142,13 @@ Tested using:
 1. Copy the applicable binary to whatever systems needs to run it
    - if using `Makefile`: look in `/tmp/release_assets/bridge/`
    - if using `go build`: look in `/tmp/bridge/`
+
+### Using release binaries
+
+1. Download the [latest release][repo-url] binaries
+1. Deploy
+   - Place `bridge` in a location of your choice
+     - e.g., `/usr/local/bin/bridge`
 
 ## Configuration Options
 
