@@ -796,6 +796,10 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetwee
 	if err != nil {
 		return err
 	}
+
+	// #nosec G307
+	// Believed to be a false-positive from recent gosec release
+	// https://github.com/securego/gosec/issues/714
 	defer func() {
 		if err := file.Close(); err != nil {
 			log.Printf(

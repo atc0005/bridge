@@ -204,6 +204,10 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		return fmt.Errorf("unable to create new backup file %q: %s",
 			destinationFile, err)
 	}
+
+	// #nosec G307
+	// Believed to be a false-positive from recent gosec release
+	// https://github.com/securego/gosec/issues/714
 	defer func() {
 		if err := destinationFileHandle.Close(); err != nil {
 			log.Printf(
@@ -233,6 +237,10 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		return fmt.Errorf("unable to open source file %q in order to create backup copy: %s",
 			sourceFilename, err)
 	}
+
+	// #nosec G307
+	// Believed to be a false-positive from recent gosec release
+	// https://github.com/securego/gosec/issues/714
 	defer func() {
 		if err := sourceFileHandle.Close(); err != nil {
 			log.Printf(

@@ -30,6 +30,11 @@ func pruneSubcommand(appConfig *config.Config) error {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// #nosec G307
+	// Believed to be a false-positive from recent gosec release
+	// https://github.com/securego/gosec/issues/714
+	//
 	// NOTE: We're not manipulating contents for this file, so relying solely
 	// on a defer statement to close the file should be sufficient?
 	defer func() {
