@@ -26,6 +26,31 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.10] - 2021-11-10
+
+### Overview
+
+- Dependency updates
+- Built using Go 1.16.10
+  - **Statically linked**
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.16.8` to `1.16.10`
+  - `actions/checkout`
+    - `v2.3.4` to `v2.4.0`
+  - `actions/setup-node`
+    - `v2.4.0` to `v2.4.1`
+
+### Fixed
+
+- (GH-161) False positive `G307: Deferring unsafe method "Close" on type
+  "*os.File" (gosec)` linting error
+
 ## [v0.4.9] - 2021-09-27
 
 ### Overview
@@ -393,7 +418,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.9...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.10...HEAD
+[v0.4.10]: https://github.com/atc0005/bridge/releases/tag/v0.4.10
 [v0.4.9]: https://github.com/atc0005/bridge/releases/tag/v0.4.9
 [v0.4.8]: https://github.com/atc0005/bridge/releases/tag/v0.4.8
 [v0.4.7]: https://github.com/atc0005/bridge/releases/tag/v0.4.7
