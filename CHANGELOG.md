@@ -26,6 +26,24 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.11] - 2021-12-29
+
+### Overview
+
+- Dependency updates
+- Built using Go 1.16.12
+  - **Statically linked**
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.16.10` to `1.16.12`
+  - `actions/setup-node`
+    - `v2.4.1` to `v2.5.1`
+
 ## [v0.4.10] - 2021-11-10
 
 ### Overview
@@ -418,7 +436,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.10...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.11...HEAD
+[v0.4.11]: https://github.com/atc0005/bridge/releases/tag/v0.4.11
 [v0.4.10]: https://github.com/atc0005/bridge/releases/tag/v0.4.10
 [v0.4.9]: https://github.com/atc0005/bridge/releases/tag/v0.4.9
 [v0.4.8]: https://github.com/atc0005/bridge/releases/tag/v0.4.8
