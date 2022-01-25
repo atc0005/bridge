@@ -20,7 +20,9 @@ A small CLI utility used to find duplicate files
 - [Features](#features)
 - [Changelog](#changelog)
 - [Requirements](#requirements)
-- [How to install it](#how-to-install-it)
+  - [Building source code](#building-source-code)
+  - [Running](#running)
+- [Installation](#installation)
   - [From source](#from-source)
   - [Using release binaries](#using-release-binaries)
 - [Configuration Options](#configuration-options)
@@ -99,21 +101,29 @@ official release is also provided for further review.
 
 ## Requirements
 
-- Go 1.13+ (for building)
+The following is a loose guideline. Other combinations of Go and operating
+systems for building and running tools from this repo may work, but have not
+been tested.
+
+### Building source code
+
+- Go
+  - see this project's `go.mod` file for *preferred* version
+  - this project tests against [officially supported Go
+    releases][go-supported-releases]
+    - the most recent stable release (aka, "stable")
+    - the prior, but still supported release (aka, "oldstable")
 - GCC
   - if building with custom options (as the provided `Makefile` does)
 - `make`
   - if using the provided `Makefile`
 
-Tested using:
+### Running
 
-- Go 1.13+
-- Windows 10 Version 1903
-  - native
-  - WSL
-- Ubuntu Linux 16.04+
+- Windows 10
+- Ubuntu Linux 18.04+
 
-## How to install it
+## Installation
 
 ### From source
 
@@ -359,5 +369,7 @@ of this document for links to additional information.
 [go-docs-download]: <https://golang.org/dl>  "Download Go"
 
 [go-docs-install]: <https://golang.org/doc/install>  "Install Go"
+
+[go-supported-releases]: <https://go.dev/doc/devel/release#policy> "Go Release Policy"
 
 <!-- []: PLACEHOLDER "DESCRIPTION_HERE" -->
