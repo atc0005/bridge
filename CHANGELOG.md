@@ -26,6 +26,24 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.12] - 2022-01-25
+
+### Overview
+
+- Dependency updates
+- Built using Go 1.17.6
+  - **Statically linked**
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.16.12` to `1.17.6`
+    - (GH-170) Update go.mod file, canary Dockerfile to reflect current
+      dependencies
+
 ## [v0.4.11] - 2021-12-29
 
 ### Overview
@@ -436,7 +454,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.11...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.12...HEAD
+[v0.4.12]: https://github.com/atc0005/bridge/releases/tag/v0.4.12
 [v0.4.11]: https://github.com/atc0005/bridge/releases/tag/v0.4.11
 [v0.4.10]: https://github.com/atc0005/bridge/releases/tag/v0.4.10
 [v0.4.9]: https://github.com/atc0005/bridge/releases/tag/v0.4.9
