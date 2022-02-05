@@ -45,7 +45,7 @@ const ReportSubcommand string = "report"
 // path to this variable, including the package. We set a placeholder value so
 // that something resembling a version string will be provided for
 // non-Makefile builds.
-var version string = "x.y.z"
+var version = "x.y.z"
 
 const myAppName string = "bridge"
 const myAppURL string = "https://github.com/atc0005/bridge"

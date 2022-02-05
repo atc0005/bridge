@@ -788,11 +788,11 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 // to the specified CSV file.
 func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetweenSets bool) error {
 
-	if !paths.PathExists(filepath.Dir(filename)) {
+	if !paths.PathExists(filepath.Dir(filepath.Clean(filename))) {
 		return fmt.Errorf("parent directory for specified CSV file to create does not exist")
 	}
 
-	file, err := os.Create(filename)
+	file, err := os.Create(filepath.Clean(filename))
 	if err != nil {
 		return err
 	}

@@ -199,7 +199,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 		)
 	}
 
-	destinationFileHandle, err := os.Create(destinationFile)
+	destinationFileHandle, err := os.Create(filepath.Clean(destinationFile))
 	if err != nil {
 		return fmt.Errorf("unable to create new backup file %q: %s",
 			destinationFile, err)
