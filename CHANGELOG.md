@@ -26,6 +26,36 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.13] - 2022-03-03
+
+### Overview
+
+- Dependency updates
+- CI / linting improvements
+- built using Go 1.17.7
+  - Statically linked
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.17.6` to `1.17.7`
+  - `actions/checkout`
+    - `v2.4.0` to `v3`
+  - `actions/setup-node`
+    - `v2.5.1` to `v3`
+
+- (GH-175) Expand linting GitHub Actions Workflow to include `oldstable`,
+  `unstable` container images
+- (GH-176) Switch Docker image source from Docker Hub to GitHub Container
+  Registry (GHCR)
+
+### Fixed
+
+- (GH-177) revive, gosec linting errors surfaced by GHAWs refresh
+
 ## [v0.4.12] - 2022-01-25
 
 ### Overview
@@ -454,7 +484,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.12...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.13...HEAD
+[v0.4.13]: https://github.com/atc0005/bridge/releases/tag/v0.4.13
 [v0.4.12]: https://github.com/atc0005/bridge/releases/tag/v0.4.12
 [v0.4.11]: https://github.com/atc0005/bridge/releases/tag/v0.4.11
 [v0.4.10]: https://github.com/atc0005/bridge/releases/tag/v0.4.10
