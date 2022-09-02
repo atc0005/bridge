@@ -23,9 +23,11 @@ import (
 // ErrInvalidSubcommand represents cases where the user did not pass a valid
 // subcommand
 // var ErrInvalidSubcommand = fmt.Errorf(
-// 	"expected '%s' or '%s' subcommands",
-// 	PruneSubcommand,
-// 	ReportSubcommand,
+//
+//	"expected '%s' or '%s' subcommands",
+//	PruneSubcommand,
+//	ReportSubcommand,
+//
 // )
 var ErrInvalidSubcommand = errors.New("invalid subcommand")
 
