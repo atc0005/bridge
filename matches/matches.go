@@ -12,7 +12,6 @@ package matches
 import (
 	"encoding/csv"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -393,17 +392,14 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 	} else {
 
 		// If recursiveSearch is not enabled, process just the provided path
-
-		// err is already declared earlier at a higher scope, so do not
-		// redeclare here
-		var files []os.FileInfo
-		files, err = ioutil.ReadDir(path)
+		files, err := os.ReadDir(path)
 
 		if err != nil {
-			// TODO: Wrap error?
-			log.Printf("Error from ioutil.ReadDir(): %s", err)
-
-			return fileSizeIndex, err
+			return nil, fmt.Errorf(
+				"error reading directory %s: %w",
+				path,
+				err,
+			)
 		}
 
 		// Use []os.FileInfo returned from ioutil.ReadDir() to build slice of
@@ -415,8 +411,17 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 				continue
 			}
 
+			fileInfo, err := file.Info()
+			if err != nil {
+				return nil, fmt.Errorf(
+					"file %s renamed or removed since directory read: %w",
+					fileInfo.Name(),
+					err,
+				)
+			}
+
 			// ignore files below the size threshold
-			if file.Size() < fileSizeThreshold {
+			if fileInfo.Size() < fileSizeThreshold {
 				continue
 			}
 
@@ -431,10 +436,10 @@ func ProcessPath(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold int6
 			// has met all criteria to be evaluated by this application. Let's
 			// add the file to our slice of files of the same size using our
 			// index based on file size.
-			fileSizeIndex[file.Size()] = append(
-				fileSizeIndex[file.Size()],
+			fileSizeIndex[fileInfo.Size()] = append(
+				fileSizeIndex[fileInfo.Size()],
 				FileMatch{
-					FileInfo: file,
+					FileInfo: fileInfo,
 					FullPath: filepath.Join(path, file.Name()),
 					// Record fully-qualified path that can be referenced
 					// from any location in the filesystem.
