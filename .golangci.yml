@@ -16,18 +16,18 @@ issues:
 
 linters:
   enable:
+    - depguard
     - dogsled
+    - dupl
+    - exportloopref
+    - goconst
+    - gocritic
+    - gofmt
     - goimports
     - gosec
-    - stylecheck
-    - goconst
-    - depguard
-    - prealloc
-    - misspell
     - maligned
-    - dupl
+    - misspell
+    - prealloc
+    - revive
+    - stylecheck
     - unconvert
-    - gofmt
-    - golint
-    - gocritic
-    - scopelint
