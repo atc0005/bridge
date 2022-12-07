@@ -4,26 +4,26 @@ github.com/360EntSecGroup-Skylar/excelize/v2
 # github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 ## explicit
 github.com/mohae/deepcopy
-# github.com/richardlehane/mscfb v1.0.3
+# github.com/richardlehane/mscfb v1.0.4
 ## explicit
 github.com/richardlehane/mscfb
-# github.com/richardlehane/msoleps v1.0.1
+# github.com/richardlehane/msoleps v1.0.3
 ## explicit
 github.com/richardlehane/msoleps/types
-# github.com/xuri/efp v0.0.0-20210322160811-ab561f5b45e3
+# github.com/xuri/efp v0.0.0-20220603152613-6918739fd470
 ## explicit; go 1.11
 github.com/xuri/efp
-# golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
-## explicit; go 1.11
+# golang.org/x/crypto v0.3.0
+## explicit; go 1.17
 golang.org/x/crypto/md4
 golang.org/x/crypto/ripemd160
-# golang.org/x/net v0.0.0-20210415231046-e915ea6b2b7d
-## explicit; go 1.11
+# golang.org/x/net v0.4.0
+## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/text v0.3.6
-## explicit; go 1.11
+# golang.org/x/text v0.5.0
+## explicit; go 1.17
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
