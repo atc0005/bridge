@@ -26,8 +26,8 @@ SHELL = /bin/bash
 WHAT					= bridge
 
 # What package holds the "version" variable used in branding/version output?
-# VERSION_VAR_PKG			= $(shell go list .)
-VERSION_VAR_PKG			=  $(shell go list .)/config
+# VERSION_VAR_PKG			= $(shell go list -m)
+VERSION_VAR_PKG			=  $(shell go list -m)/config
 
 OUTPUTDIR 				= release_assets
 
