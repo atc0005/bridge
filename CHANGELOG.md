@@ -26,6 +26,46 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.15] - 2022-12-07
+
+### Overview
+
+- Dependency updates
+- built using Go 1.19.4
+  - Statically linked
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.17.9` to `1.19.4`
+  - `golang.org/x/crypto`
+    - `v0.0.0-20210415154028-4f45737414dc` to `v0.3.0`
+  - `golang.org/x/net`
+    - `v0.0.0-20210415231046-e915ea6b2b7d` to `v0.4.0`
+  - `golang.org/x/sys`
+    - `v0.0.0-20210927094055-39ccf1dd6fa6` to `v0.3.0`
+  - `golang.org/x/text`
+    - `v0.3.6` to `v0.5.0`
+  - `github.com/richardlehane/mscfb`
+    - `v1.0.3` to `v1.0.4`
+  - `github.com/richardlehane/msoleps`
+    - `v1.0.1` to `v1.0.3`
+  - `github.com/xuri/efp`
+    - `v0.0.0-20210322160811-ab561f5b45e3` to `v0.0.0-20220603152613-6918739fd470`
+- (GH-192) Update project to Go 1.19
+- (GH-195) Update Makefile and GitHub Actions Workflows
+- (GH-201) Refactor GitHub Actions workflows to import logic
+
+### Fixed
+
+- (GH-190) Update lintinstall Makefile recipe
+- (GH-193) Apply linting fixes for Go 1.19 release
+- (GH-194) Add missing cmd doc file
+- (GH-205) Fix Makefile Go module base path detection
+
 ## [v0.4.14] - 2022-05-06
 
 ### Overview
@@ -500,7 +540,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.14...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.15...HEAD
+[v0.4.15]: https://github.com/atc0005/bridge/releases/tag/v0.4.15
 [v0.4.14]: https://github.com/atc0005/bridge/releases/tag/v0.4.14
 [v0.4.13]: https://github.com/atc0005/bridge/releases/tag/v0.4.13
 [v0.4.12]: https://github.com/atc0005/bridge/releases/tag/v0.4.12
