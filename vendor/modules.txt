@@ -10,9 +10,12 @@ github.com/richardlehane/msoleps/types
 # github.com/xuri/efp v0.0.0-20220603152613-6918739fd470
 ## explicit; go 1.11
 github.com/xuri/efp
-# github.com/xuri/excelize/v2 v2.4.1
+# github.com/xuri/excelize/v2 v2.6.1
 ## explicit; go 1.15
 github.com/xuri/excelize/v2
+# github.com/xuri/nfp v0.0.0-20220409054826-5e722a1d9e22
+## explicit; go 1.15
+github.com/xuri/nfp
 # golang.org/x/crypto v0.3.0
 ## explicit; go 1.17
 golang.org/x/crypto/md4
