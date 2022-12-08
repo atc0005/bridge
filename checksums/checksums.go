@@ -11,6 +11,7 @@ package checksums
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -67,17 +68,16 @@ func GenerateCheckSum(file string) (SHA256Checksum, error) {
 	}
 
 	// Note the duplicate f.Close() call at end of function and why
-	//
-	// #nosec G307
-	// Believed to be a false-positive from recent gosec release
-	// https://github.com/securego/gosec/issues/714
 	defer func() {
 		if err := f.Close(); err != nil {
-			log.Printf(
-				"error occurred closing file %q: %v",
-				file,
-				err,
-			)
+			// Ignore "file already closed" errors
+			if !errors.Is(err, os.ErrClosed) {
+				log.Printf(
+					"error occurred closing file %q: %v",
+					file,
+					err,
+				)
+			}
 		}
 	}()
 
