@@ -592,9 +592,20 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 	defaultSheet := "Sheet1"
 
 	// Create a new sheet for duplicate file metadata
-	summarySheetIndex := f.NewSheet(summarySheet)
+	summarySheetIndex, err := f.NewSheet(summarySheet)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to create new worksheet : %w",
+			err,
+		)
+	}
 
-	f.DeleteSheet(defaultSheet)
+	if err := f.DeleteSheet(defaultSheet); err != nil {
+		return fmt.Errorf(
+			"failed to remove default worksheet: %w",
+			err,
+		)
+	}
 
 	type excelSheetEntry struct {
 		Sheet string
@@ -702,7 +713,12 @@ func (fi FileChecksumIndex) WriteFileMatchesWorkbook(filename string, summary Du
 
 		// Create a new sheet for duplicate file metadata
 		duplicateFileSetIndexSheet := duplicateFileSetIndex.String()
-		f.NewSheet(duplicateFileSetIndexSheet)
+		if _, err := f.NewSheet(duplicateFileSetIndexSheet); err != nil {
+			return fmt.Errorf(
+				"failed to add new worksheet: %w",
+				err,
+			)
+		}
 
 		headerEntries := []excelSheetEntry{
 			{
