@@ -26,6 +26,48 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.4.16] - 2022-04-09
+
+### Overview
+
+- Dependency updates
+- built using Go 1.19.8
+  - Statically linked
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Added
+
+- (GH-220) Add Go Module Validation, Dependency Updates jobs
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.19.4` to `1.19.8`
+  - `golang.org/x/crypto`
+    - `v0.3.0` to `v0.8.0`
+  - `golang.org/x/net`
+    - `v0.4.0` to `v0.9.0`
+  - `golang.org/x/text`
+    - `v0.5.0` to `v0.9.0`
+  - `360EntSecGroup-Skylar/excelize` renamed to `xuri/excelize/v2`
+  - `xuri/excelize/v2`
+    - `v2.4.0` to `v2.7.0`
+  - `xuri/nfp`
+    - `v0.0.0-20220409054826-5e722a1d9e22`
+- (GH-227) Drop `Push Validation` workflow
+- (GH-228) Rework workflow scheduling
+- (GH-230) Remove `Push Validation` workflow status badge
+
+### Fixed
+
+- (GH-208) Spurious "file already closed" errors emitted during app execution
+- (GH-212) The `github.com/360EntSecGroup-Skylar/excelize/v2` dependency has
+  moved?
+- (GH-226) Fix breakage from `xuri/excelize` dependency update
+- (GH-235) Update vuln analysis GHAW to use on.push hook
+
 ## [v0.4.15] - 2022-12-07
 
 ### Overview
@@ -540,7 +582,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.15...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.16...HEAD
+[v0.4.16]: https://github.com/atc0005/bridge/releases/tag/v0.4.16
 [v0.4.15]: https://github.com/atc0005/bridge/releases/tag/v0.4.15
 [v0.4.14]: https://github.com/atc0005/bridge/releases/tag/v0.4.14
 [v0.4.13]: https://github.com/atc0005/bridge/releases/tag/v0.4.13
