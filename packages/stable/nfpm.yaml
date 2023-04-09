@@ -1,0 +1,49 @@
+# Copyright 2023 Adam Chalkley
+#
+# https://github.com/atc0005/bridge
+#
+# Licensed under the MIT License. See LICENSE file in the project root for
+# full license information.
+
+# nfpm config file used for generating RPM and DEB packages.
+#
+# https://nfpm.goreleaser.com/usage/
+# https://nfpm.goreleaser.com/configuration/
+
+name: "bridge"
+arch: "amd64"
+platform: "linux"
+
+# The SEMVER environment variable is set via the Makefile. Call `make
+# packages` to generate packages.
+version: ${SEMVER}
+
+section: "default"
+priority: "extra"
+maintainer: "Adam Chalkley <atc0005@users.noreply.github.com>"
+description: A small CLI utility used to find duplicate files.
+vendor: "atc0005"
+homepage: "https://github.com/atc0005/bridge"
+license: "MIT"
+# changelog: "changelog.yaml"
+contents:
+  - src: ../../release_assets/bridge/bridge-linux-amd64
+    dst: /usr/bin/bridge
+    file_info:
+      mode: 0755
+
+overrides:
+  rpm:
+    depends:
+      # Provides selinuxenabled tool.
+      # Installed by default even via the "minimal" installation option.
+      - libselinux-utils
+    scripts:
+      # preinstall: ./scripts/rpm/preinstall.sh
+      postinstall: ./scripts/rpm/postinstall.sh
+      # postremove: ./scripts/rpm/postremove.sh
+  deb:
+    scripts:
+      # preinstall: ./scripts/deb/preinstall.sh
+      postinstall: ./scripts/deb/postinstall.sh
+      # preremove: ./scripts/deb/preremove.sh
