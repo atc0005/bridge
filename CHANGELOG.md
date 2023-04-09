@@ -26,6 +26,41 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.5.0] - 2022-04-09
+
+### Overview
+
+- Add support for generating DEB, RPM packages
+- Build improvements
+- Generated binary changes
+  - filename patterns
+  - compression (~ 66% smaller)
+  - executable metadata
+- built using Go 1.19.8
+  - Statically linked
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Added
+
+- (GH-246) Generate RPM/DEB packages using nFPM
+- (GH-245) Add version details to Windows executables
+
+### Changed
+
+- (GH-247) Switch to semantic versioning (semver) compatible versioning
+  pattern
+- (GH-244) Makefile: Compress binaries & use fixed filenames
+- (GH-243) Makefile: Refresh recipes to add "standard" set, new
+  package-related options
+- (GH-242) Build dev/stable releases using go-ci Docker image
+- (GH-248) Move internal packages to internal path
+
+### Fixed
+
+- (GH-241) Fix v0.4.16 release summary
+- (GH-251) Fix errwrap linting errors
+
 ## [v0.4.16] - 2022-04-09
 
 ### Overview
@@ -585,7 +620,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.4.16...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.0...HEAD
+[v0.5.0]: https://github.com/atc0005/bridge/releases/tag/v0.5.0
 [v0.4.16]: https://github.com/atc0005/bridge/releases/tag/v0.4.16
 [v0.4.15]: https://github.com/atc0005/bridge/releases/tag/v0.4.15
 [v0.4.14]: https://github.com/atc0005/bridge/releases/tag/v0.4.14
