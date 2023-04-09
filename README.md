@@ -1,7 +1,7 @@
 <!-- omit in toc -->
 # Bridge
 
-A small CLI utility used to find duplicate files
+A small CLI utility used to find duplicate files.
 
 [![Latest Release](https://img.shields.io/github/release/atc0005/bridge.svg?style=flat-square)][repo-url]
 [![Go Reference](https://pkg.go.dev/badge/github.com/atc0005/bridge.svg)](https://pkg.go.dev/github.com/atc0005/bridge)
@@ -152,12 +152,23 @@ been tested.
    - if using `Makefile`: look in `/tmp/release_assets/bridge/`
    - if using `go build`: look in `/tmp/bridge/`
 
+**NOTE**: Depending on which `Makefile` recipe you use the generated binary
+may be compressed and have an `xz` extension. If so, you should decompress the
+binary first before deploying it (e.g., `xz -d bridge-linux-amd64.xz`).
+
 ### Using release binaries
 
 1. Download the [latest release][repo-url] binaries
+1. Decompress binaries
+   - e.g., `xz -d bridge-linux-amd64.xz`
 1. Deploy
    - Place `bridge` in a location of your choice
      - e.g., `/usr/local/bin/bridge`
+
+**NOTE**:
+
+DEB and RPM packages are provided as an alternative to manually deploying
+binaries.
 
 ## Configuration Options
 
