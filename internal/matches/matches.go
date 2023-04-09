@@ -299,7 +299,7 @@ func NewFileSizeIndex(recursiveSearch bool, ignoreErrors bool, fileSizeThreshold
 		// TODO: Call ProcessPath here
 		fileSizeIndex, err := ProcessPath(recursiveSearch, ignoreErrors, fileSizeThreshold, path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to process path %q: %v", path, err)
+			return nil, fmt.Errorf("failed to process path %q: %w", path, err)
 		}
 
 		// FIXME: This needs to occur at the end of each loop?
@@ -848,14 +848,14 @@ func (fi FileChecksumIndex) WriteFileMatchesCSV(filename string, blankLineBetwee
 		if blankLineBetweenSets {
 			if err := w.Write(fileMatches.GenerateEmptyCSVDataRow()); err != nil {
 				// TODO: Use error wrapping instead?
-				return fmt.Errorf("error writing record to csv: %v", err)
+				return fmt.Errorf("error writing record to csv: %w", err)
 			}
 		}
 
 		for _, file := range fileMatches {
 			if err := w.Write(file.GenerateCSVDataRow()); err != nil {
 				// TODO: Use error wrapping instead?
-				return fmt.Errorf("error writing record to csv: %v", err)
+				return fmt.Errorf("error writing record to csv: %w", err)
 			}
 		}
 

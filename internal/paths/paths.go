@@ -57,7 +57,7 @@ func RemoveFile(filename string, dryRun bool) error {
 	log.Printf("File removal enabled, attempting to remove %q\n", filename)
 	err := os.Remove(filename)
 	if err != nil {
-		return fmt.Errorf("error encountered while removing %q: %s", filename, err)
+		return fmt.Errorf("error encountered while removing %q: %w", filename, err)
 	}
 
 	log.Printf("Successfully removed %q\n", filename)
@@ -72,7 +72,7 @@ func GetBackupTargetDir(filename string, fullPathToBackupDir string) (string, er
 
 	fullPathToFile, err := filepath.Abs(filename)
 	if err != nil {
-		return "", fmt.Errorf("unable to determine absolute path to %q: %s",
+		return "", fmt.Errorf("unable to determine absolute path to %q: %w",
 			filename,
 			err,
 		)
@@ -151,7 +151,7 @@ func CreateBackupDirectoryTree(filename string, fullPathToBackupDir string) (str
 	// fmt.Printf("Calling os.MkdirAll(%v, %v)\n", targetBackupDirPath, defaultDirectoryPerms)
 
 	if err := os.MkdirAll(targetBackupDirPath, defaultDirectoryPerms); err != nil {
-		return "", fmt.Errorf("failed to create fully-qualified backup path %q for %q: %s",
+		return "", fmt.Errorf("failed to create fully-qualified backup path %q for %q: %w",
 			targetBackupDirPath,
 			filename,
 			err,
@@ -175,7 +175,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 	targetBackupDirPath, err := CreateBackupDirectoryTree(sourceFilename, destinationDirectory)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to create directory %q in order to backup %q: %s",
+			"failed to create directory %q in order to backup %q: %w",
 			sourceFilename,
 			targetBackupDirPath,
 			err,
@@ -201,7 +201,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 
 	destinationFileHandle, err := os.Create(filepath.Clean(destinationFile))
 	if err != nil {
-		return fmt.Errorf("unable to create new backup file %q: %s",
+		return fmt.Errorf("unable to create new backup file %q: %w",
 			destinationFile, err)
 	}
 
@@ -234,7 +234,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 
 	sourceFileHandle, err := os.Open(filepath.Clean(sourceFilename))
 	if err != nil {
-		return fmt.Errorf("unable to open source file %q in order to create backup copy: %s",
+		return fmt.Errorf("unable to open source file %q in order to create backup copy: %w",
 			sourceFilename, err)
 	}
 
@@ -255,7 +255,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 	if err != nil {
 		// copy failed, we should cleanup here
 		log.Printf("failed to copy %q to %q: %s\n", sourceFilename, destinationFile, err)
-		return fmt.Errorf("failed to copy %q to %q: %s", sourceFilename, destinationFile, err)
+		return fmt.Errorf("failed to copy %q to %q: %w", sourceFilename, destinationFile, err)
 	}
 
 	// I encountered this when I unintentionally switched the dest/source
@@ -286,7 +286,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 
 	if err := destinationFileHandle.Sync(); err != nil {
 		return fmt.Errorf(
-			"failed to explicitly sync file %q after backup attempt: %s",
+			"failed to explicitly sync file %q after backup attempt: %w",
 			destinationFile,
 			err,
 		)
@@ -294,7 +294,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 
 	if err := sourceFileHandle.Close(); err != nil {
 		return fmt.Errorf(
-			"failed to close original file %q after backup attempt: %s",
+			"failed to close original file %q after backup attempt: %w",
 			sourceFilename,
 			err,
 		)

@@ -171,7 +171,11 @@ func (dfsEntry *DuplicateFileSetEntry) UpdateSizeInfo() error {
 		// checksum validation
 		fileInfo, err := os.Stat(fileFullPath)
 		if err != nil {
-			return fmt.Errorf("unable to stat %q to determine size in bytes", fileFullPath)
+			return fmt.Errorf(
+				"unable to stat %q to determine size in bytes: %w",
+				fileFullPath,
+				err,
+			)
 		}
 		dfsEntry.SizeInBytes = fileInfo.Size()
 	}
@@ -211,7 +215,7 @@ func ValidateInputRow(dfsEntry DuplicateFileSetEntry, rowNum int) error {
 	// file exists, verify checksum before proceeding further
 	if err := dfsEntry.Checksum.Verify(fileFullPath); err != nil {
 		return fmt.Errorf(
-			"checksum validation failed for %q: %s", fileFullPath, err)
+			"checksum validation failed for %q: %w", fileFullPath, err)
 	}
 
 	// TODO: Any validation needed against the RemoveFile field? At this point
@@ -274,7 +278,7 @@ func ParseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEn
 		sizeInBytes, err = strconv.ParseInt(row[3], 10, 64)
 		if err != nil {
 			log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 4, row[3])
-			return dfsEntry, fmt.Errorf("failed to convert CSV sizeInBytes field %v", err)
+			return dfsEntry, fmt.Errorf("failed to convert CSV sizeInBytes field: %w", err)
 		}
 	}
 
@@ -294,7 +298,7 @@ func ParseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEn
 		removeFile, err = strconv.ParseBool(row[5])
 		if err != nil {
 			log.Printf("DEBUG | CSV row %d, field %d: %q\n", rowNum, 6, row[5])
-			return dfsEntry, fmt.Errorf("failed to convert CSV remove_file field %v", err)
+			return dfsEntry, fmt.Errorf("failed to convert CSV remove_file field: %w", err)
 		}
 	}
 
