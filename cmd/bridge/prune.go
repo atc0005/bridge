@@ -15,9 +15,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/atc0005/bridge/config"
-	"github.com/atc0005/bridge/dupesets"
-	"github.com/atc0005/bridge/paths"
+	"github.com/atc0005/bridge/internal/config"
+	"github.com/atc0005/bridge/internal/dupesets"
+	"github.com/atc0005/bridge/internal/paths"
 )
 
 // pruneSubcommand is a wrapper around the "prune" subcommand logic

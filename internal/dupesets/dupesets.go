@@ -18,9 +18,9 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/atc0005/bridge/checksums"
-	"github.com/atc0005/bridge/paths"
-	"github.com/atc0005/bridge/units"
+	"github.com/atc0005/bridge/internal/checksums"
+	"github.com/atc0005/bridge/internal/paths"
+	"github.com/atc0005/bridge/internal/units"
 )
 
 // Tabwriter header names displayed in console output

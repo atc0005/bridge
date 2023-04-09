@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/atc0005/bridge/units"
+	"github.com/atc0005/bridge/internal/units"
 )
 
 const defaultDirectoryPerms os.FileMode = 0700

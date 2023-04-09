@@ -14,7 +14,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/atc0005/bridge/config"
+	"github.com/atc0005/bridge/internal/config"
 )
 
 func main() {
