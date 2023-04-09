@@ -12,8 +12,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/atc0005/bridge/config"
-	"github.com/atc0005/bridge/matches"
+	"github.com/atc0005/bridge/internal/config"
+	"github.com/atc0005/bridge/internal/matches"
 )
 
 // reportSubcommand is a wrapper around the "report" subcommand logic.

@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/atc0005/bridge/paths"
+	"github.com/atc0005/bridge/internal/paths"
 )
 
 // ErrInvalidSubcommand represents cases where the user did not pass a valid
