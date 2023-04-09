@@ -30,6 +30,9 @@ The following types of changes will be recorded in this file:
 
 ### Overview
 
+- Bug fixes
+- Build improvements
+- GitHub Actions workflows updates
 - Dependency updates
 - built using Go 1.19.8
   - Statically linked
