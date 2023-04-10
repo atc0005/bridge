@@ -92,7 +92,7 @@ func (cols *Cols) Rows(opts ...Options) ([]string, error) {
 	if cols.stashCol >= cols.curCol {
 		return rowIterator.cells, rowIterator.err
 	}
-	cols.rawCellValue = parseOptions(opts...).RawCellValue
+	cols.rawCellValue = getOptions(opts...).RawCellValue
 	if cols.sst, rowIterator.err = cols.f.sharedStringsReader(); rowIterator.err != nil {
 		return rowIterator.cells, rowIterator.err
 	}
@@ -300,7 +300,7 @@ func (f *File) SetColVisible(sheet, columns string, visible bool) error {
 	colData := xlsxCol{
 		Min:         min,
 		Max:         max,
-		Width:       defaultColWidth, // default width
+		Width:       float64Ptr(defaultColWidth),
 		Hidden:      !visible,
 		CustomWidth: true,
 	}
@@ -449,7 +449,7 @@ func (f *File) SetColStyle(sheet, columns string, styleID int) error {
 	ws.Cols.Col = flatCols(xlsxCol{
 		Min:   min,
 		Max:   max,
-		Width: defaultColWidth,
+		Width: float64Ptr(defaultColWidth),
 		Style: styleID,
 	}, ws.Cols.Col, func(fc, c xlsxCol) xlsxCol {
 		fc.BestFit = c.BestFit
@@ -493,7 +493,7 @@ func (f *File) SetColWidth(sheet, startCol, endCol string, width float64) error 
 	col := xlsxCol{
 		Min:         min,
 		Max:         max,
-		Width:       width,
+		Width:       float64Ptr(width),
 		CustomWidth: true,
 	}
 	if ws.Cols == nil {
@@ -639,8 +639,8 @@ func (f *File) getColWidth(sheet string, col int) int {
 	if ws.Cols != nil {
 		var width float64
 		for _, v := range ws.Cols.Col {
-			if v.Min <= col && col <= v.Max {
-				width = v.Width
+			if v.Min <= col && col <= v.Max && v.Width != nil {
+				width = *v.Width
 			}
 		}
 		if width != 0 {
@@ -691,8 +691,8 @@ func (f *File) GetColWidth(sheet, col string) (float64, error) {
 	if ws.Cols != nil {
 		var width float64
 		for _, v := range ws.Cols.Col {
-			if v.Min <= colNum && colNum <= v.Max {
-				width = v.Width
+			if v.Min <= colNum && colNum <= v.Max && v.Width != nil {
+				width = *v.Width
 			}
 		}
 		if width != 0 {

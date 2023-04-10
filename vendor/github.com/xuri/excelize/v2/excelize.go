@@ -16,10 +16,8 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -132,15 +130,9 @@ func newFile() *File {
 	}
 }
 
-// OpenReader read data stream from io.Reader and return a populated
-// spreadsheet file.
-func OpenReader(r io.Reader, opts ...Options) (*File, error) {
-	b, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	f := newFile()
-	f.options = parseOptions(opts...)
+// checkOpenReaderOptions check and validate options field value for open
+// reader.
+func (f *File) checkOpenReaderOptions() error {
 	if f.options.UnzipSizeLimit == 0 {
 		f.options.UnzipSizeLimit = UnzipSizeLimit
 		if f.options.UnzipXMLSizeLimit > f.options.UnzipSizeLimit {
@@ -154,7 +146,22 @@ func OpenReader(r io.Reader, opts ...Options) (*File, error) {
 		}
 	}
 	if f.options.UnzipXMLSizeLimit > f.options.UnzipSizeLimit {
-		return nil, ErrOptionsUnzipSizeLimit
+		return ErrOptionsUnzipSizeLimit
+	}
+	return nil
+}
+
+// OpenReader read data stream from io.Reader and return a populated
+// spreadsheet file.
+func OpenReader(r io.Reader, opts ...Options) (*File, error) {
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	f := newFile()
+	f.options = getOptions(opts...)
+	if err = f.checkOpenReaderOptions(); err != nil {
+		return nil, err
 	}
 	if bytes.Contains(b, oleIdentifier) {
 		if b, err = Decrypt(b, f.options); err != nil {
@@ -189,9 +196,9 @@ func OpenReader(r io.Reader, opts ...Options) (*File, error) {
 	return f, err
 }
 
-// parseOptions provides a function to parse the optional settings for open
+// getOptions provides a function to parse the optional settings for open
 // and reading spreadsheet.
-func parseOptions(opts ...Options) *Options {
+func getOptions(opts ...Options) *Options {
 	options := &Options{}
 	for _, opt := range opts {
 		options = &opt
@@ -451,27 +458,33 @@ func (f *File) UpdateLinkedValue() error {
 }
 
 // AddVBAProject provides the method to add vbaProject.bin file which contains
-// functions and/or macros. The file extension should be .xlsm. For example:
+// functions and/or macros. The file extension should be XLSM or XLTM. For
+// example:
 //
 //	codeName := "Sheet1"
 //	if err := f.SetSheetProps("Sheet1", &excelize.SheetPropsOptions{
 //	    CodeName: &codeName,
 //	}); err != nil {
 //	    fmt.Println(err)
+//	    return
 //	}
-//	if err := f.AddVBAProject("vbaProject.bin"); err != nil {
+//	file, err := os.ReadFile("vbaProject.bin")
+//	if err != nil {
 //	    fmt.Println(err)
+//	    return
+//	}
+//	if err := f.AddVBAProject(file); err != nil {
+//	    fmt.Println(err)
+//	    return
 //	}
 //	if err := f.SaveAs("macros.xlsm"); err != nil {
 //	    fmt.Println(err)
+//	    return
 //	}
-func (f *File) AddVBAProject(bin string) error {
+func (f *File) AddVBAProject(file []byte) error {
 	var err error
 	// Check vbaProject.bin exists first.
-	if _, err = os.Stat(bin); os.IsNotExist(err) {
-		return fmt.Errorf("stat %s: no such file or directory", bin)
-	}
-	if path.Ext(bin) != ".bin" {
+	if !bytes.Contains(file, oleIdentifier) {
 		return ErrAddVBAProject
 	}
 	rels, err := f.relsReader(f.getWorkbookRelsPath())
@@ -500,7 +513,6 @@ func (f *File) AddVBAProject(bin string) error {
 			Type:   SourceRelationshipVBAProject,
 		})
 	}
-	file, _ := os.ReadFile(filepath.Clean(bin))
 	f.Pkg.Store("xl/vbaProject.bin", file)
 	return err
 }

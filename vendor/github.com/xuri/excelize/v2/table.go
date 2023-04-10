@@ -17,30 +17,37 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // parseTableOptions provides a function to parse the format settings of the
 // table with default value.
-func parseTableOptions(opts *TableOptions) *TableOptions {
+func parseTableOptions(opts *Table) (*Table, error) {
+	var err error
 	if opts == nil {
-		return &TableOptions{ShowRowStripes: boolPtr(true)}
+		return &Table{ShowRowStripes: boolPtr(true)}, err
 	}
 	if opts.ShowRowStripes == nil {
 		opts.ShowRowStripes = boolPtr(true)
 	}
-	return opts
+	if err = checkTableName(opts.Name); err != nil {
+		return opts, err
+	}
+	return opts, err
 }
 
 // AddTable provides the method to add table in a worksheet by given worksheet
 // name, range reference and format set. For example, create a table of A1:D5
 // on Sheet1:
 //
-//	err := f.AddTable("Sheet1", "A1:D5", nil)
+//	err := f.AddTable("Sheet1", &excelize.Table{Range: "A1:D5"})
 //
 // Create a table of F2:H6 on Sheet2 with format set:
 //
 //	disable := false
-//	err := f.AddTable("Sheet2", "F2:H6", &excelize.TableOptions{
+//	err := f.AddTable("Sheet2", &excelize.Table{
+//	    Range:             "F2:H6",
 //	    Name:              "table",
 //	    StyleName:         "TableStyleMedium2",
 //	    ShowFirstColumn:   true,
@@ -54,17 +61,22 @@ func parseTableOptions(opts *TableOptions) *TableOptions {
 // header row data of the table before calling the AddTable function. Multiple
 // tables range reference that can't have an intersection.
 //
-// Name: The name of the table, in the same worksheet name of the table should be unique
+// Name: The name of the table, in the same worksheet name of the table should
+// be unique, starts with a letter or underscore (_), doesn't include a
+// space or character, and should be no more than 255 characters
 //
 // StyleName: The built-in table style names
 //
 //	TableStyleLight1 - TableStyleLight21
 //	TableStyleMedium1 - TableStyleMedium28
 //	TableStyleDark1 - TableStyleDark11
-func (f *File) AddTable(sheet, rangeRef string, opts *TableOptions) error {
-	options := parseTableOptions(opts)
+func (f *File) AddTable(sheet string, table *Table) error {
+	options, err := parseTableOptions(table)
+	if err != nil {
+		return err
+	}
 	// Coordinate conversion, convert C1:B3 to 2,0,1,2.
-	coordinates, err := rangeRefToCoordinates(rangeRef)
+	coordinates, err := rangeRefToCoordinates(options.Range)
 	if err != nil {
 		return err
 	}
@@ -120,7 +132,7 @@ func (f *File) addSheetTable(sheet string, rID int) error {
 
 // setTableHeader provides a function to set cells value in header row for the
 // table.
-func (f *File) setTableHeader(sheet string, x1, y1, x2 int) ([]*xlsxTableColumn, error) {
+func (f *File) setTableHeader(sheet string, showHeaderRow bool, x1, y1, x2 int) ([]*xlsxTableColumn, error) {
 	var (
 		tableColumns []*xlsxTableColumn
 		idx          int
@@ -133,11 +145,15 @@ func (f *File) setTableHeader(sheet string, x1, y1, x2 int) ([]*xlsxTableColumn,
 		}
 		name, _ := f.GetCellValue(sheet, cell)
 		if _, err := strconv.Atoi(name); err == nil {
-			_ = f.SetCellStr(sheet, cell, name)
+			if showHeaderRow {
+				_ = f.SetCellStr(sheet, cell, name)
+			}
 		}
 		if name == "" {
 			name = "Column" + strconv.Itoa(idx)
-			_ = f.SetCellStr(sheet, cell, name)
+			if showHeaderRow {
+				_ = f.SetCellStr(sheet, cell, name)
+			}
 		}
 		tableColumns = append(tableColumns, &xlsxTableColumn{
 			ID:   idx,
@@ -147,20 +163,46 @@ func (f *File) setTableHeader(sheet string, x1, y1, x2 int) ([]*xlsxTableColumn,
 	return tableColumns, nil
 }
 
+// checkSheetName check whether there are illegal characters in the table name.
+// Verify that the name:
+// 1. Starts with a letter or underscore (_)
+// 2. Doesn't include a space or character that isn't allowed
+func checkTableName(name string) error {
+	if utf8.RuneCountInString(name) > MaxFieldLength {
+		return ErrTableNameLength
+	}
+	for i, c := range name {
+		if string(c) == "_" {
+			continue
+		}
+		if unicode.IsLetter(c) {
+			continue
+		}
+		if i > 0 && unicode.IsDigit(c) {
+			continue
+		}
+		return newInvalidTableNameError(name)
+	}
+	return nil
+}
+
 // addTable provides a function to add table by given worksheet name,
 // range reference and format set.
-func (f *File) addTable(sheet, tableXML string, x1, y1, x2, y2, i int, opts *TableOptions) error {
+func (f *File) addTable(sheet, tableXML string, x1, y1, x2, y2, i int, opts *Table) error {
 	// Correct the minimum number of rows, the table at least two lines.
 	if y1 == y2 {
 		y2++
 	}
-
+	hideHeaderRow := opts != nil && opts.ShowHeaderRow != nil && !*opts.ShowHeaderRow
+	if hideHeaderRow {
+		y1++
+	}
 	// Correct table range reference, such correct C1:B3 to B1:C3.
 	ref, err := f.coordinatesToRangeRef([]int{x1, y1, x2, y2})
 	if err != nil {
 		return err
 	}
-	tableColumns, _ := f.setTableHeader(sheet, x1, y1, x2)
+	tableColumns, _ := f.setTableHeader(sheet, !hideHeaderRow, x1, y1, x2)
 	name := opts.Name
 	if name == "" {
 		name = "Table" + strconv.Itoa(i)
@@ -186,6 +228,10 @@ func (f *File) addTable(sheet, tableXML string, x1, y1, x2, y2, i int, opts *Tab
 			ShowColumnStripes: opts.ShowColumnStripes,
 		},
 	}
+	if hideHeaderRow {
+		t.AutoFilter = nil
+		t.HeaderRowCount = intPtr(0)
+	}
 	table, _ := xml.Marshal(t)
 	f.saveFileList(tableXML, table)
 	return nil
@@ -196,12 +242,12 @@ func (f *File) addTable(sheet, tableXML string, x1, y1, x2, y2, i int, opts *Tab
 // way of filtering a 2D range of data based on some simple criteria. For
 // example applying an auto filter to a cell range A1:D4 in the Sheet1:
 //
-//	err := f.AutoFilter("Sheet1", "A1:D4", nil)
+//	err := f.AutoFilter("Sheet1", "A1:D4", []excelize.AutoFilterOptions{})
 //
 // Filter data in an auto filter:
 //
-//	err := f.AutoFilter("Sheet1", "A1:D4", &excelize.AutoFilterOptions{
-//	    Column: "B", Expression: "x != blanks",
+//	err := f.AutoFilter("Sheet1", "A1:D4", []excelize.AutoFilterOptions{
+//	    {Column: "B", Expression: "x != blanks"},
 //	})
 //
 // Column defines the filter columns in an auto filter range based on simple
@@ -262,7 +308,7 @@ func (f *File) addTable(sheet, tableXML string, x1, y1, x2, y2, i int, opts *Tab
 //	x     < 2000
 //	col   < 2000
 //	Price < 2000
-func (f *File) AutoFilter(sheet, rangeRef string, opts *AutoFilterOptions) error {
+func (f *File) AutoFilter(sheet, rangeRef string, opts []AutoFilterOptions) error {
 	coordinates, err := rangeRefToCoordinates(rangeRef)
 	if err != nil {
 		return err
@@ -309,7 +355,7 @@ func (f *File) AutoFilter(sheet, rangeRef string, opts *AutoFilterOptions) error
 
 // autoFilter provides a function to extract the tokens from the filter
 // expression. The tokens are mainly non-whitespace groups.
-func (f *File) autoFilter(sheet, ref string, columns, col int, opts *AutoFilterOptions) error {
+func (f *File) autoFilter(sheet, ref string, columns, col int, opts []AutoFilterOptions) error {
 	ws, err := f.workSheetReader(sheet)
 	if err != nil {
 		return err
@@ -322,66 +368,65 @@ func (f *File) autoFilter(sheet, ref string, columns, col int, opts *AutoFilterO
 		Ref: ref,
 	}
 	ws.AutoFilter = filter
-	if opts == nil || opts.Column == "" || opts.Expression == "" {
-		return nil
+	for _, opt := range opts {
+		if opt.Column == "" || opt.Expression == "" {
+			continue
+		}
+		fsCol, err := ColumnNameToNumber(opt.Column)
+		if err != nil {
+			return err
+		}
+		offset := fsCol - col
+		if offset < 0 || offset > columns {
+			return fmt.Errorf("incorrect index of column '%s'", opt.Column)
+		}
+		fc := &xlsxFilterColumn{ColID: offset}
+		re := regexp.MustCompile(`"(?:[^"]|"")*"|\S+`)
+		token := re.FindAllString(opt.Expression, -1)
+		if len(token) != 3 && len(token) != 7 {
+			return fmt.Errorf("incorrect number of tokens in criteria '%s'", opt.Expression)
+		}
+		expressions, tokens, err := f.parseFilterExpression(opt.Expression, token)
+		if err != nil {
+			return err
+		}
+		f.writeAutoFilter(fc, expressions, tokens)
+		filter.FilterColumn = append(filter.FilterColumn, fc)
 	}
-
-	fsCol, err := ColumnNameToNumber(opts.Column)
-	if err != nil {
-		return err
-	}
-	offset := fsCol - col
-	if offset < 0 || offset > columns {
-		return fmt.Errorf("incorrect index of column '%s'", opts.Column)
-	}
-
-	filter.FilterColumn = append(filter.FilterColumn, &xlsxFilterColumn{
-		ColID: offset,
-	})
-	re := regexp.MustCompile(`"(?:[^"]|"")*"|\S+`)
-	token := re.FindAllString(opts.Expression, -1)
-	if len(token) != 3 && len(token) != 7 {
-		return fmt.Errorf("incorrect number of tokens in criteria '%s'", opts.Expression)
-	}
-	expressions, tokens, err := f.parseFilterExpression(opts.Expression, token)
-	if err != nil {
-		return err
-	}
-	f.writeAutoFilter(filter, expressions, tokens)
 	ws.AutoFilter = filter
 	return nil
 }
 
 // writeAutoFilter provides a function to check for single or double custom
 // filters as default filters and handle them accordingly.
-func (f *File) writeAutoFilter(filter *xlsxAutoFilter, exp []int, tokens []string) {
+func (f *File) writeAutoFilter(fc *xlsxFilterColumn, exp []int, tokens []string) {
 	if len(exp) == 1 && exp[0] == 2 {
 		// Single equality.
 		var filters []*xlsxFilter
 		filters = append(filters, &xlsxFilter{Val: tokens[0]})
-		filter.FilterColumn[0].Filters = &xlsxFilters{Filter: filters}
+		fc.Filters = &xlsxFilters{Filter: filters}
 	} else if len(exp) == 3 && exp[0] == 2 && exp[1] == 1 && exp[2] == 2 {
 		// Double equality with "or" operator.
 		var filters []*xlsxFilter
 		for _, v := range tokens {
 			filters = append(filters, &xlsxFilter{Val: v})
 		}
-		filter.FilterColumn[0].Filters = &xlsxFilters{Filter: filters}
+		fc.Filters = &xlsxFilters{Filter: filters}
 	} else {
 		// Non default custom filter.
 		expRel := map[int]int{0: 0, 1: 2}
 		andRel := map[int]bool{0: true, 1: false}
 		for k, v := range tokens {
-			f.writeCustomFilter(filter, exp[expRel[k]], v)
+			f.writeCustomFilter(fc, exp[expRel[k]], v)
 			if k == 1 {
-				filter.FilterColumn[0].CustomFilters.And = andRel[exp[k]]
+				fc.CustomFilters.And = andRel[exp[k]]
 			}
 		}
 	}
 }
 
 // writeCustomFilter provides a function to write the <customFilter> element.
-func (f *File) writeCustomFilter(filter *xlsxAutoFilter, operator int, val string) {
+func (f *File) writeCustomFilter(fc *xlsxFilterColumn, operator int, val string) {
 	operators := map[int]string{
 		1:  "lessThan",
 		2:  "equal",
@@ -395,12 +440,12 @@ func (f *File) writeCustomFilter(filter *xlsxAutoFilter, operator int, val strin
 		Operator: operators[operator],
 		Val:      val,
 	}
-	if filter.FilterColumn[0].CustomFilters != nil {
-		filter.FilterColumn[0].CustomFilters.CustomFilter = append(filter.FilterColumn[0].CustomFilters.CustomFilter, &customFilter)
+	if fc.CustomFilters != nil {
+		fc.CustomFilters.CustomFilter = append(fc.CustomFilters.CustomFilter, &customFilter)
 	} else {
 		var customFilters []*xlsxCustomFilter
 		customFilters = append(customFilters, &customFilter)
-		filter.FilterColumn[0].CustomFilters = &xlsxCustomFilters{CustomFilter: customFilters}
+		fc.CustomFilters = &xlsxCustomFilters{CustomFilter: customFilters}
 	}
 }
 

@@ -38,70 +38,90 @@ var (
 
 // Source relationship and namespace.
 const (
-	ContentTypeAddinMacro                        = "application/vnd.ms-excel.addin.macroEnabled.main+xml"
-	ContentTypeDrawing                           = "application/vnd.openxmlformats-officedocument.drawing+xml"
-	ContentTypeDrawingML                         = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml"
-	ContentTypeMacro                             = "application/vnd.ms-excel.sheet.macroEnabled.main+xml"
-	ContentTypeSheetML                           = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"
-	ContentTypeSpreadSheetMLChartsheet           = "application/vnd.openxmlformats-officedocument.spreadsheetml.chartsheet+xml"
-	ContentTypeSpreadSheetMLComments             = "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"
-	ContentTypeSpreadSheetMLPivotCacheDefinition = "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml"
-	ContentTypeSpreadSheetMLPivotTable           = "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml"
-	ContentTypeSpreadSheetMLSharedStrings        = "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"
-	ContentTypeSpreadSheetMLTable                = "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml"
-	ContentTypeSpreadSheetMLWorksheet            = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
-	ContentTypeTemplate                          = "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml"
-	ContentTypeTemplateMacro                     = "application/vnd.ms-excel.template.macroEnabled.main+xml"
-	ContentTypeVBA                               = "application/vnd.ms-office.vbaProject"
-	ContentTypeVML                               = "application/vnd.openxmlformats-officedocument.vmlDrawing"
-	NameSpaceDublinCore                          = "http://purl.org/dc/elements/1.1/"
-	NameSpaceDublinCoreMetadataInitiative        = "http://purl.org/dc/dcmitype/"
-	NameSpaceDublinCoreTerms                     = "http://purl.org/dc/terms/"
-	NameSpaceXML                                 = "http://www.w3.org/XML/1998/namespace"
-	NameSpaceXMLSchemaInstance                   = "http://www.w3.org/2001/XMLSchema-instance"
-	SourceRelationshipChart                      = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart"
-	SourceRelationshipChartsheet                 = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartsheet"
-	SourceRelationshipComments                   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
-	SourceRelationshipDialogsheet                = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/dialogsheet"
-	SourceRelationshipDrawingML                  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing"
-	SourceRelationshipDrawingVML                 = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing"
-	SourceRelationshipHyperLink                  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
-	SourceRelationshipImage                      = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
-	SourceRelationshipOfficeDocument             = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
-	SourceRelationshipPivotCache                 = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition"
-	SourceRelationshipPivotTable                 = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable"
-	SourceRelationshipSharedStrings              = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings"
-	SourceRelationshipTable                      = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table"
-	SourceRelationshipVBAProject                 = "http://schemas.microsoft.com/office/2006/relationships/vbaProject"
-	SourceRelationshipWorkSheet                  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
-	StrictNameSpaceSpreadSheet                   = "http://purl.oclc.org/ooxml/spreadsheetml/main"
-	StrictSourceRelationship                     = "http://purl.oclc.org/ooxml/officeDocument/relationships"
-	StrictSourceRelationshipChart                = "http://purl.oclc.org/ooxml/officeDocument/relationships/chart"
-	StrictSourceRelationshipComments             = "http://purl.oclc.org/ooxml/officeDocument/relationships/comments"
-	StrictSourceRelationshipImage                = "http://purl.oclc.org/ooxml/officeDocument/relationships/image"
-	StrictSourceRelationshipOfficeDocument       = "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument"
+	ContentTypeAddinMacro                         = "application/vnd.ms-excel.addin.macroEnabled.main+xml"
+	ContentTypeDrawing                            = "application/vnd.openxmlformats-officedocument.drawing+xml"
+	ContentTypeDrawingML                          = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml"
+	ContentTypeMacro                              = "application/vnd.ms-excel.sheet.macroEnabled.main+xml"
+	ContentTypeSheetML                            = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"
+	ContentTypeSpreadSheetMLChartsheet            = "application/vnd.openxmlformats-officedocument.spreadsheetml.chartsheet+xml"
+	ContentTypeSpreadSheetMLComments              = "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"
+	ContentTypeSpreadSheetMLPivotCacheDefinition  = "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml"
+	ContentTypeSpreadSheetMLPivotTable            = "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml"
+	ContentTypeSpreadSheetMLSharedStrings         = "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"
+	ContentTypeSpreadSheetMLTable                 = "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml"
+	ContentTypeSpreadSheetMLWorksheet             = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+	ContentTypeTemplate                           = "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml"
+	ContentTypeTemplateMacro                      = "application/vnd.ms-excel.template.macroEnabled.main+xml"
+	ContentTypeVBA                                = "application/vnd.ms-office.vbaProject"
+	ContentTypeVML                                = "application/vnd.openxmlformats-officedocument.vmlDrawing"
+	NameSpaceDrawingMLMain                        = "http://schemas.openxmlformats.org/drawingml/2006/main"
+	NameSpaceDublinCore                           = "http://purl.org/dc/elements/1.1/"
+	NameSpaceDublinCoreMetadataInitiative         = "http://purl.org/dc/dcmitype/"
+	NameSpaceDublinCoreTerms                      = "http://purl.org/dc/terms/"
+	NameSpaceExtendedProperties                   = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
+	NameSpaceXML                                  = "http://www.w3.org/XML/1998/namespace"
+	NameSpaceXMLSchemaInstance                    = "http://www.w3.org/2001/XMLSchema-instance"
+	SourceRelationshipChart                       = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart"
+	SourceRelationshipChartsheet                  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartsheet"
+	SourceRelationshipComments                    = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
+	SourceRelationshipDialogsheet                 = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/dialogsheet"
+	SourceRelationshipDrawingML                   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing"
+	SourceRelationshipDrawingVML                  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing"
+	SourceRelationshipExtendProperties            = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
+	SourceRelationshipHyperLink                   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
+	SourceRelationshipImage                       = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
+	SourceRelationshipOfficeDocument              = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+	SourceRelationshipPivotCache                  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition"
+	SourceRelationshipPivotTable                  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable"
+	SourceRelationshipSharedStrings               = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings"
+	SourceRelationshipTable                       = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table"
+	SourceRelationshipVBAProject                  = "http://schemas.microsoft.com/office/2006/relationships/vbaProject"
+	SourceRelationshipWorkSheet                   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+	StrictNameSpaceDocumentPropertiesVariantTypes = "http://purl.oclc.org/ooxml/officeDocument/docPropsVTypes"
+	StrictNameSpaceDrawingMLMain                  = "http://purl.oclc.org/ooxml/drawingml/main"
+	StrictNameSpaceExtendedProperties             = "http://purl.oclc.org/ooxml/officeDocument/extendedProperties"
+	StrictNameSpaceSpreadSheet                    = "http://purl.oclc.org/ooxml/spreadsheetml/main"
+	StrictSourceRelationship                      = "http://purl.oclc.org/ooxml/officeDocument/relationships"
+	StrictSourceRelationshipChart                 = "http://purl.oclc.org/ooxml/officeDocument/relationships/chart"
+	StrictSourceRelationshipComments              = "http://purl.oclc.org/ooxml/officeDocument/relationships/comments"
+	StrictSourceRelationshipExtendProperties      = "http://purl.oclc.org/ooxml/officeDocument/relationships/extendedProperties"
+	StrictSourceRelationshipImage                 = "http://purl.oclc.org/ooxml/officeDocument/relationships/image"
+	StrictSourceRelationshipOfficeDocument        = "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument"
 	// ExtURIConditionalFormattings is the extLst child element
 	// ([ISO/IEC29500-1:2016] section 18.2.10) of the worksheet element
 	// ([ISO/IEC29500-1:2016] section 18.3.1.99) is extended by the addition of
 	// new child ext elements ([ISO/IEC29500-1:2016] section 18.2.7)
-	ExtURIConditionalFormattings = "{78C0D931-6437-407D-A8EE-F0AAD7539E65}"
-	ExtURIDataValidations        = "{CCE6A557-97BC-4B89-ADB6-D9C93CAAB3DF}"
-	ExtURIDrawingBlip            = "{28A0092B-C50C-407E-A947-70E740481C1C}"
-	ExtURIIgnoredErrors          = "{01252117-D84E-4E92-8308-4BE1C098FCBB}"
-	ExtURIMacExcelMX             = "{64002731-A6B0-56B0-2670-7721B7C09600}"
-	ExtURIProtectedRanges        = "{FC87AEE6-9EDD-4A0A-B7FB-166176984837}"
-	ExtURISlicerCachesListX14    = "{BBE1A952-AA13-448e-AADC-164F8A28A991}"
-	ExtURISlicerListX14          = "{A8765BA9-456A-4DAB-B4F3-ACF838C121DE}"
-	ExtURISlicerListX15          = "{3A4CF648-6AED-40f4-86FF-DC5316D8AED3}"
-	ExtURISparklineGroups        = "{05C60535-1F16-4fd2-B633-F4F36F0B64E0}"
-	ExtURISVG                    = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}"
-	ExtURITimelineRefs           = "{7E03D99C-DC04-49d9-9315-930204A7B6E9}"
-	ExtURIWebExtensions          = "{F7C9EE02-42E1-4005-9D12-6889AFFD525C}"
+	ExtURIConditionalFormattingRuleID = "{B025F937-C7B1-47D3-B67F-A62EFF666E3E}"
+	ExtURIConditionalFormattings      = "{78C0D931-6437-407d-A8EE-F0AAD7539E65}"
+	ExtURIDataValidations             = "{CCE6A557-97BC-4B89-ADB6-D9C93CAAB3DF}"
+	ExtURIDrawingBlip                 = "{28A0092B-C50C-407E-A947-70E740481C1C}"
+	ExtURIIgnoredErrors               = "{01252117-D84E-4E92-8308-4BE1C098FCBB}"
+	ExtURIMacExcelMX                  = "{64002731-A6B0-56B0-2670-7721B7C09600}"
+	ExtURIProtectedRanges             = "{FC87AEE6-9EDD-4A0A-B7FB-166176984837}"
+	ExtURISlicerCachesListX14         = "{BBE1A952-AA13-448e-AADC-164F8A28A991}"
+	ExtURISlicerListX14               = "{A8765BA9-456A-4DAB-B4F3-ACF838C121DE}"
+	ExtURISlicerListX15               = "{3A4CF648-6AED-40f4-86FF-DC5316D8AED3}"
+	ExtURISparklineGroups             = "{05C60535-1F16-4fd2-B633-F4F36F0B64E0}"
+	ExtURISVG                         = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}"
+	ExtURITimelineRefs                = "{7E03D99C-DC04-49d9-9315-930204A7B6E9}"
+	ExtURIWebExtensions               = "{F7C9EE02-42E1-4005-9D12-6889AFFD525C}"
 )
+
+// extensionURIPriority is the priority of URI in the extension lists.
+var extensionURIPriority = []string{
+	ExtURIConditionalFormattings,
+	ExtURIDataValidations,
+	ExtURISparklineGroups,
+	ExtURISlicerListX14,
+	ExtURIProtectedRanges,
+	ExtURIIgnoredErrors,
+	ExtURIWebExtensions,
+	ExtURITimelineRefs,
+}
 
 // Excel specifications and limits
 const (
-	MaxCellStyles        = 64000
+	MaxCellStyles        = 65430
 	MaxColumns           = 16384
 	MaxColumnWidth       = 255
 	MaxFieldLength       = 255
@@ -174,9 +194,9 @@ var IndexedColorMapping = []string{
 
 // supportedImageTypes defined supported image types.
 var supportedImageTypes = map[string]string{
-	".emf": ".emf", ".emz": ".emz", ".gif": ".gif", ".jpeg": ".jpeg",
-	".jpg": ".jpeg", ".png": ".png", ".svg": ".svg", ".tif": ".tiff",
-	".tiff": ".tiff", ".wmf": ".wmf", ".wmz": ".wmz",
+	".bmp": ".bmp", ".emf": ".emf", ".emz": ".emz", ".gif": ".gif",
+	".jpeg": ".jpeg", ".jpg": ".jpeg", ".png": ".png", ".svg": ".svg",
+	".tif": ".tiff", ".tiff": ".tiff", ".wmf": ".wmf", ".wmz": ".wmz",
 }
 
 // supportedContentTypes defined supported file format types.
@@ -561,8 +581,16 @@ type xdrTxBody struct {
 	P      []*aP    `xml:"a:p"`
 }
 
+// Picture maps the format settings of the picture.
+type Picture struct {
+	Extension string
+	File      []byte
+	Format    *GraphicOptions
+}
+
 // GraphicOptions directly maps the format settings of the picture.
 type GraphicOptions struct {
+	AltText         string
 	PrintObject     *bool
 	Locked          *bool
 	LockAspectRatio bool
@@ -578,21 +606,14 @@ type GraphicOptions struct {
 
 // Shape directly maps the format settings of the shape.
 type Shape struct {
-	Macro     string
 	Type      string
+	Macro     string
 	Width     uint
 	Height    uint
 	Format    GraphicOptions
-	Color     ShapeColor
+	Fill      Fill
 	Line      ShapeLine
-	Paragraph []ShapeParagraph
-}
-
-// ShapeParagraph directly maps the format settings of the paragraph in
-// the shape.
-type ShapeParagraph struct {
-	Font Font
-	Text string
+	Paragraph []RichTextRun
 }
 
 // ShapeColor directly maps the color settings of the shape.
@@ -604,5 +625,6 @@ type ShapeColor struct {
 
 // ShapeLine directly maps the line settings of the shape.
 type ShapeLine struct {
+	Color string
 	Width *float64
 }
