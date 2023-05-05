@@ -280,16 +280,16 @@ type xlsxCols struct {
 // xlsxCol directly maps the col (Column Width & Formatting). Defines column
 // width and column formatting for one or more columns of the worksheet.
 type xlsxCol struct {
-	BestFit      bool    `xml:"bestFit,attr,omitempty"`
-	Collapsed    bool    `xml:"collapsed,attr,omitempty"`
-	CustomWidth  bool    `xml:"customWidth,attr,omitempty"`
-	Hidden       bool    `xml:"hidden,attr,omitempty"`
-	Max          int     `xml:"max,attr"`
-	Min          int     `xml:"min,attr"`
-	OutlineLevel uint8   `xml:"outlineLevel,attr,omitempty"`
-	Phonetic     bool    `xml:"phonetic,attr,omitempty"`
-	Style        int     `xml:"style,attr,omitempty"`
-	Width        float64 `xml:"width,attr,omitempty"`
+	BestFit      bool     `xml:"bestFit,attr,omitempty"`
+	Collapsed    bool     `xml:"collapsed,attr,omitempty"`
+	CustomWidth  bool     `xml:"customWidth,attr,omitempty"`
+	Hidden       bool     `xml:"hidden,attr,omitempty"`
+	Max          int      `xml:"max,attr"`
+	Min          int      `xml:"min,attr"`
+	OutlineLevel uint8    `xml:"outlineLevel,attr,omitempty"`
+	Phonetic     bool     `xml:"phonetic,attr,omitempty"`
+	Style        int      `xml:"style,attr,omitempty"`
+	Width        *float64 `xml:"width,attr"`
 }
 
 // xlsxDimension directly maps the dimension element in the namespace
@@ -316,19 +316,19 @@ type xlsxSheetData struct {
 // about an entire row of a worksheet, and contains all cell definitions for a
 // particular row in the worksheet.
 type xlsxRow struct {
-	C            []xlsxC `xml:"c"`
-	R            int     `xml:"r,attr,omitempty"`
-	Spans        string  `xml:"spans,attr,omitempty"`
-	S            int     `xml:"s,attr,omitempty"`
-	CustomFormat bool    `xml:"customFormat,attr,omitempty"`
-	Ht           float64 `xml:"ht,attr,omitempty"`
-	Hidden       bool    `xml:"hidden,attr,omitempty"`
-	CustomHeight bool    `xml:"customHeight,attr,omitempty"`
-	OutlineLevel uint8   `xml:"outlineLevel,attr,omitempty"`
-	Collapsed    bool    `xml:"collapsed,attr,omitempty"`
-	ThickTop     bool    `xml:"thickTop,attr,omitempty"`
-	ThickBot     bool    `xml:"thickBot,attr,omitempty"`
-	Ph           bool    `xml:"ph,attr,omitempty"`
+	C            []xlsxC  `xml:"c"`
+	R            int      `xml:"r,attr,omitempty"`
+	Spans        string   `xml:"spans,attr,omitempty"`
+	S            int      `xml:"s,attr,omitempty"`
+	CustomFormat bool     `xml:"customFormat,attr,omitempty"`
+	Ht           *float64 `xml:"ht,attr"`
+	Hidden       bool     `xml:"hidden,attr,omitempty"`
+	CustomHeight bool     `xml:"customHeight,attr,omitempty"`
+	OutlineLevel uint8    `xml:"outlineLevel,attr,omitempty"`
+	Collapsed    bool     `xml:"collapsed,attr,omitempty"`
+	ThickTop     bool     `xml:"thickTop,attr,omitempty"`
+	ThickBot     bool     `xml:"thickBot,attr,omitempty"`
+	Ph           bool     `xml:"ph,attr,omitempty"`
 }
 
 // xlsxSortState directly maps the sortState element. This collection
@@ -592,7 +592,7 @@ type xlsxColorScale struct {
 type xlsxDataBar struct {
 	MaxLength int          `xml:"maxLength,attr,omitempty"`
 	MinLength int          `xml:"minLength,attr,omitempty"`
-	ShowValue bool         `xml:"showValue,attr,omitempty"`
+	ShowValue *bool        `xml:"showValue,attr"`
 	Cfvo      []*xlsxCfvo  `xml:"cfvo"`
 	Color     []*xlsxColor `xml:"color"`
 }
@@ -601,7 +601,7 @@ type xlsxDataBar struct {
 type xlsxIconSet struct {
 	Cfvo      []*xlsxCfvo `xml:"cfvo"`
 	IconSet   string      `xml:"iconSet,attr,omitempty"`
-	ShowValue bool        `xml:"showValue,attr,omitempty"`
+	ShowValue *bool       `xml:"showValue,attr"`
 	Percent   bool        `xml:"percent,attr,omitempty"`
 	Reverse   bool        `xml:"reverse,attr,omitempty"`
 }
@@ -742,6 +742,86 @@ type decodeX14SparklineGroups struct {
 	Content string   `xml:",innerxml"`
 }
 
+// decodeX14ConditionalFormattingExt directly maps the ext
+// element.
+type decodeX14ConditionalFormattingExt struct {
+	XMLName xml.Name `xml:"ext"`
+	ID      string   `xml:"id"`
+}
+
+// decodeX14ConditionalFormattings directly maps the conditionalFormattings
+// element.
+type decodeX14ConditionalFormattings struct {
+	XMLName xml.Name `xml:"conditionalFormattings"`
+	XMLNSXM string   `xml:"xmlns:xm,attr"`
+	Content string   `xml:",innerxml"`
+}
+
+// decodeX14ConditionalFormatting directly maps the conditionalFormatting
+// element.
+type decodeX14ConditionalFormatting struct {
+	XMLName xml.Name           `xml:"conditionalFormatting"`
+	CfRule  []*decodeX14CfRule `xml:"cfRule"`
+}
+
+// decodeX14CfRule directly maps the cfRule element.
+type decodeX14CfRule struct {
+	XMLName xml.Name          `xml:"cfRule"`
+	Type    string            `xml:"type,attr,omitempty"`
+	ID      string            `xml:"id,attr,omitempty"`
+	DataBar *decodeX14DataBar `xml:"dataBar"`
+}
+
+// decodeX14DataBar directly maps the dataBar element.
+type decodeX14DataBar struct {
+	XMLName           xml.Name    `xml:"dataBar"`
+	MaxLength         int         `xml:"maxLength,attr"`
+	MinLength         int         `xml:"minLength,attr"`
+	Border            bool        `xml:"border,attr,omitempty"`
+	Gradient          bool        `xml:"gradient,attr"`
+	ShowValue         bool        `xml:"showValue,attr,omitempty"`
+	Direction         string      `xml:"direction,attr,omitempty"`
+	Cfvo              []*xlsxCfvo `xml:"cfvo"`
+	BorderColor       *xlsxColor  `xml:"borderColor"`
+	NegativeFillColor *xlsxColor  `xml:"negativeFillColor"`
+	AxisColor         *xlsxColor  `xml:"axisColor"`
+}
+
+// xlsxX14ConditionalFormattings directly maps the conditionalFormattings
+// element.
+type xlsxX14ConditionalFormattings struct {
+	XMLName xml.Name `xml:"x14:conditionalFormattings"`
+	Content string   `xml:",innerxml"`
+}
+
+// xlsxX14ConditionalFormatting directly maps the conditionalFormatting element.
+type xlsxX14ConditionalFormatting struct {
+	XMLName xml.Name         `xml:"x14:conditionalFormatting"`
+	XMLNSXM string           `xml:"xmlns:xm,attr"`
+	CfRule  []*xlsxX14CfRule `xml:"x14:cfRule"`
+}
+
+// xlsxX14CfRule directly maps the cfRule element.
+type xlsxX14CfRule struct {
+	Type    string         `xml:"type,attr,omitempty"`
+	ID      string         `xml:"id,attr,omitempty"`
+	DataBar *xlsx14DataBar `xml:"x14:dataBar"`
+}
+
+// xlsx14DataBar directly maps the dataBar element.
+type xlsx14DataBar struct {
+	MaxLength         int         `xml:"maxLength,attr"`
+	MinLength         int         `xml:"minLength,attr"`
+	Border            bool        `xml:"border,attr"`
+	Gradient          bool        `xml:"gradient,attr"`
+	ShowValue         bool        `xml:"showValue,attr,omitempty"`
+	Direction         string      `xml:"direction,attr,omitempty"`
+	Cfvo              []*xlsxCfvo `xml:"x14:cfvo"`
+	BorderColor       *xlsxColor  `xml:"x14:borderColor"`
+	NegativeFillColor *xlsxColor  `xml:"x14:negativeFillColor"`
+	AxisColor         *xlsxColor  `xml:"x14:axisColor"`
+}
+
 // xlsxX14SparklineGroups directly maps the sparklineGroups element.
 type xlsxX14SparklineGroups struct {
 	XMLName         xml.Name                 `xml:"x14:sparklineGroups"`
@@ -843,26 +923,30 @@ type Panes struct {
 
 // ConditionalFormatOptions directly maps the conditional format settings of the cells.
 type ConditionalFormatOptions struct {
-	Type         string
-	AboveAverage bool
-	Percent      bool
-	Format       int
-	Criteria     string
-	Value        string
-	Minimum      string
-	Maximum      string
-	MinType      string
-	MidType      string
-	MaxType      string
-	MinValue     string
-	MidValue     string
-	MaxValue     string
-	MinColor     string
-	MidColor     string
-	MaxColor     string
-	MinLength    string
-	MaxLength    string
-	BarColor     string
+	Type           string
+	AboveAverage   bool
+	Percent        bool
+	Format         int
+	Criteria       string
+	Value          string
+	MinType        string
+	MidType        string
+	MaxType        string
+	MinValue       string
+	MidValue       string
+	MaxValue       string
+	MinColor       string
+	MidColor       string
+	MaxColor       string
+	BarColor       string
+	BarBorderColor string
+	BarDirection   string
+	BarOnly        bool
+	BarSolid       bool
+	IconStyle      string
+	ReverseIcons   bool
+	IconsOnly      bool
+	StopIfTrue     bool
 }
 
 // SheetProtectionOptions directly maps the settings of worksheet protection.

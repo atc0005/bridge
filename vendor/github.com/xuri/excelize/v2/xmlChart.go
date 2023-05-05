@@ -333,6 +333,7 @@ type cCharts struct {
 	VaryColors   *attrValBool   `xml:"varyColors"`
 	Wireframe    *attrValBool   `xml:"wireframe"`
 	Ser          *[]cSer        `xml:"ser"`
+	SplitPos     *attrValInt    `xml:"splitPos"`
 	SerLines     *attrValString `xml:"serLines"`
 	DLbls        *cDLbls        `xml:"dLbls"`
 	Shape        *attrValString `xml:"shape"`
@@ -480,6 +481,7 @@ type cNumCache struct {
 // entire series or the entire chart. It contains child elements that specify
 // the specific formatting and positioning settings.
 type cDLbls struct {
+	NumFmt          *cNumFmt     `xml:"numFmt"`
 	ShowLegendKey   *attrValBool `xml:"showLegendKey"`
 	ShowVal         *attrValBool `xml:"showVal"`
 	ShowCatName     *attrValBool `xml:"showCatName"`
@@ -518,6 +520,12 @@ type cPageMargins struct {
 	T      float64 `xml:"t,attr"`
 }
 
+// ChartNumFmt directly maps the number format settings of the chart.
+type ChartNumFmt struct {
+	CustomNumFmt string
+	SourceLinked bool
+}
+
 // ChartAxis directly maps the format settings of the chart axis.
 type ChartAxis struct {
 	None           bool
@@ -530,6 +538,7 @@ type ChartAxis struct {
 	Minimum        *float64
 	Font           Font
 	LogBase        float64
+	NumFmt         ChartNumFmt
 }
 
 // ChartDimension directly maps the dimension of the chart.
@@ -540,17 +549,19 @@ type ChartDimension struct {
 
 // ChartPlotArea directly maps the format settings of the plot area.
 type ChartPlotArea struct {
-	ShowBubbleSize  bool
-	ShowCatName     bool
-	ShowLeaderLines bool
-	ShowPercent     bool
-	ShowSerName     bool
-	ShowVal         bool
+	SecondPlotValues int
+	ShowBubbleSize   bool
+	ShowCatName      bool
+	ShowLeaderLines  bool
+	ShowPercent      bool
+	ShowSerName      bool
+	ShowVal          bool
+	NumFmt           ChartNumFmt
 }
 
 // Chart directly maps the format settings of the chart.
 type Chart struct {
-	Type         string
+	Type         ChartType
 	Series       []ChartSeries
 	Format       GraphicOptions
 	Dimension    ChartDimension
@@ -579,7 +590,6 @@ type ChartMarker struct {
 
 // ChartLine directly maps the format settings of the chart line.
 type ChartLine struct {
-	Color  string
 	Smooth bool
 	Width  float64
 }
@@ -588,7 +598,9 @@ type ChartLine struct {
 type ChartSeries struct {
 	Name       string
 	Categories string
+	Sizes      string
 	Values     string
+	Fill       Fill
 	Line       ChartLine
 	Marker     ChartMarker
 }

@@ -29,6 +29,7 @@ import (
 	"sync"
 	"time"
 	"unicode"
+	"unicode/utf8"
 	"unsafe"
 
 	"github.com/xuri/efp"
@@ -197,8 +198,10 @@ var (
 // calcContext defines the formula execution context.
 type calcContext struct {
 	sync.Mutex
-	entry      string
-	iterations map[string]uint
+	entry             string
+	maxCalcIterations uint
+	iterations        map[string]uint
+	iterationsCache   map[string]formulaArg
 }
 
 // cellRef defines the structure of a cell reference.
@@ -767,20 +770,32 @@ type formulaFuncs struct {
 //	YIELDMAT
 //	Z.TEST
 //	ZTEST
-func (f *File) CalcCellValue(sheet, cell string) (result string, err error) {
-	var token formulaArg
-	token, err = f.calcCellValue(&calcContext{
-		entry:      fmt.Sprintf("%s!%s", sheet, cell),
-		iterations: make(map[string]uint),
-	}, sheet, cell)
+func (f *File) CalcCellValue(sheet, cell string, opts ...Options) (result string, err error) {
+	var (
+		rawCellValue = getOptions(opts...).RawCellValue
+		styleIdx     int
+		token        formulaArg
+	)
+	if token, err = f.calcCellValue(&calcContext{
+		entry:             fmt.Sprintf("%s!%s", sheet, cell),
+		maxCalcIterations: getOptions(opts...).MaxCalcIterations,
+		iterations:        make(map[string]uint),
+		iterationsCache:   make(map[string]formulaArg),
+	}, sheet, cell); err != nil {
+		result = token.String
+		return
+	}
+	if !rawCellValue {
+		styleIdx, _ = f.GetCellStyle(sheet, cell)
+	}
 	result = token.Value()
 	if isNum, precision, decimal := isNumeric(result); isNum {
 		if precision > 15 {
-			result = strings.ToUpper(strconv.FormatFloat(decimal, 'G', 15, 64))
+			result, err = f.formattedValue(styleIdx, strings.ToUpper(strconv.FormatFloat(decimal, 'G', 15, 64)), rawCellValue)
 			return
 		}
 		if !strings.HasPrefix(result, "0") {
-			result = strings.ToUpper(strconv.FormatFloat(decimal, 'f', -1, 64))
+			result, err = f.formattedValue(styleIdx, strings.ToUpper(strconv.FormatFloat(decimal, 'f', -1, 64)), rawCellValue)
 		}
 	}
 	return
@@ -988,8 +1003,8 @@ func (f *File) evalInfixExp(ctx *calcContext, sheet, cell string, tokens []efp.T
 				inArray = false
 				continue
 			}
-			if err = f.evalInfixExpFunc(ctx, sheet, cell, token, nextToken, opfStack, opdStack, opftStack, opfdStack, argsStack); err != nil {
-				return newEmptyFormulaArg(), err
+			if errArg := f.evalInfixExpFunc(ctx, sheet, cell, token, nextToken, opfStack, opdStack, opftStack, opfdStack, argsStack); errArg.Type == ArgError {
+				return errArg, errors.New(errArg.Error)
 			}
 		}
 	}
@@ -1007,9 +1022,9 @@ func (f *File) evalInfixExp(ctx *calcContext, sheet, cell string, tokens []efp.T
 }
 
 // evalInfixExpFunc evaluate formula function in the infix expression.
-func (f *File) evalInfixExpFunc(ctx *calcContext, sheet, cell string, token, nextToken efp.Token, opfStack, opdStack, opftStack, opfdStack, argsStack *Stack) error {
+func (f *File) evalInfixExpFunc(ctx *calcContext, sheet, cell string, token, nextToken efp.Token, opfStack, opdStack, opftStack, opfdStack, argsStack *Stack) formulaArg {
 	if !isFunctionStopToken(token) {
-		return nil
+		return newEmptyFormulaArg()
 	}
 	prepareEvalInfixExp(opfStack, opftStack, opfdStack, argsStack)
 	// call formula function to evaluate
@@ -1017,7 +1032,7 @@ func (f *File) evalInfixExpFunc(ctx *calcContext, sheet, cell string, token, nex
 		"_xlfn.", "", ".", "dot").Replace(opfStack.Peek().(efp.Token).TValue),
 		[]reflect.Value{reflect.ValueOf(argsStack.Peek().(*list.List))})
 	if arg.Type == ArgError && opfStack.Len() == 1 {
-		return errors.New(arg.Value())
+		return arg
 	}
 	argsStack.Pop()
 	opftStack.Pop() // remove current function separator
@@ -1036,7 +1051,7 @@ func (f *File) evalInfixExpFunc(ctx *calcContext, sheet, cell string, token, nex
 		}
 		opdStack.Push(newStringFormulaArg(val))
 	}
-	return nil
+	return newEmptyFormulaArg()
 }
 
 // prepareEvalInfixExp check the token and stack state for formula function
@@ -1521,11 +1536,16 @@ func (f *File) cellResolver(ctx *calcContext, sheet, cell string) (formulaArg, e
 	ref := fmt.Sprintf("%s!%s", sheet, cell)
 	if formula, _ := f.GetCellFormula(sheet, cell); len(formula) != 0 {
 		ctx.Lock()
-		if ctx.entry != ref && ctx.iterations[ref] <= f.options.MaxCalcIterations {
-			ctx.iterations[ref]++
+		if ctx.entry != ref {
+			if ctx.iterations[ref] <= f.options.MaxCalcIterations {
+				ctx.iterations[ref]++
+				ctx.Unlock()
+				arg, _ = f.calcCellValue(ctx, sheet, cell)
+				ctx.iterationsCache[ref] = arg
+				return arg, nil
+			}
 			ctx.Unlock()
-			arg, _ = f.calcCellValue(ctx, sheet, cell)
-			return arg, nil
+			return ctx.iterationsCache[ref], nil
 		}
 		ctx.Unlock()
 	}
@@ -1542,8 +1562,10 @@ func (f *File) cellResolver(ctx *calcContext, sheet, cell string) (formulaArg, e
 			return newEmptyFormulaArg(), err
 		}
 		return arg.ToNumber(), err
-	default:
+	case CellTypeInlineString, CellTypeSharedString:
 		return arg, err
+	default:
+		return newEmptyFormulaArg(), err
 	}
 }
 
@@ -7737,7 +7759,7 @@ func (fn *formulaFuncs) COUNTBLANK(argsList *list.List) formulaArg {
 	}
 	var count float64
 	for _, cell := range argsList.Front().Value.(formulaArg).ToList() {
-		if cell.Value() == "" {
+		if cell.Type == ArgEmpty {
 			count++
 		}
 	}
@@ -11591,7 +11613,7 @@ func (fn *formulaFuncs) IFNA(argsList *list.List) formulaArg {
 		return newErrorFormulaArg(formulaErrorVALUE, "IFNA requires 2 arguments")
 	}
 	arg := argsList.Front().Value.(formulaArg)
-	if arg.Type == ArgError && arg.Value() == formulaErrorNA {
+	if arg.Type == ArgError && arg.String == formulaErrorNA {
 		return argsList.Back().Value.(formulaArg)
 	}
 	return arg
@@ -13407,8 +13429,7 @@ func (fn *formulaFuncs) LEFTB(argsList *list.List) formulaArg {
 }
 
 // leftRight is an implementation of the formula functions LEFT, LEFTB, RIGHT,
-// RIGHTB. TODO: support DBCS include Japanese, Chinese (Simplified), Chinese
-// (Traditional), and Korean.
+// RIGHTB.
 func (fn *formulaFuncs) leftRight(name string, argsList *list.List) formulaArg {
 	if argsList.Len() < 1 {
 		return newErrorFormulaArg(formulaErrorVALUE, fmt.Sprintf("%s requires at least 1 argument", name))
@@ -13427,11 +13448,23 @@ func (fn *formulaFuncs) leftRight(name string, argsList *list.List) formulaArg {
 		}
 		numChars = int(numArg.Number)
 	}
-	if len(text) > numChars {
-		if name == "LEFT" || name == "LEFTB" {
-			return newStringFormulaArg(text[:numChars])
+	if name == "LEFTB" || name == "RIGHTB" {
+		if len(text) > numChars {
+			if name == "LEFTB" {
+				return newStringFormulaArg(text[:numChars])
+			}
+			// RIGHTB
+			return newStringFormulaArg(text[len(text)-numChars:])
 		}
-		return newStringFormulaArg(text[len(text)-numChars:])
+		return newStringFormulaArg(text)
+	}
+	// LEFT/RIGHT
+	if utf8.RuneCountInString(text) > numChars {
+		if name == "LEFT" {
+			return newStringFormulaArg(string([]rune(text)[:numChars]))
+		}
+		// RIGHT
+		return newStringFormulaArg(string([]rune(text)[utf8.RuneCountInString(text)-numChars:]))
 	}
 	return newStringFormulaArg(text)
 }
@@ -13444,7 +13477,7 @@ func (fn *formulaFuncs) LEN(argsList *list.List) formulaArg {
 	if argsList.Len() != 1 {
 		return newErrorFormulaArg(formulaErrorVALUE, "LEN requires 1 string argument")
 	}
-	return newStringFormulaArg(strconv.Itoa(len(argsList.Front().Value.(formulaArg).String)))
+	return newStringFormulaArg(strconv.Itoa(utf8.RuneCountInString(argsList.Front().Value.(formulaArg).String)))
 }
 
 // LENB returns the number of bytes used to represent the characters in a text
@@ -13453,14 +13486,20 @@ func (fn *formulaFuncs) LEN(argsList *list.List) formulaArg {
 // 1 byte per character. The syntax of the function is:
 //
 //	LENB(text)
-//
-// TODO: the languages that support DBCS include Japanese, Chinese
-// (Simplified), Chinese (Traditional), and Korean.
 func (fn *formulaFuncs) LENB(argsList *list.List) formulaArg {
 	if argsList.Len() != 1 {
 		return newErrorFormulaArg(formulaErrorVALUE, "LENB requires 1 string argument")
 	}
-	return newStringFormulaArg(strconv.Itoa(len(argsList.Front().Value.(formulaArg).String)))
+	bytes := 0
+	for _, r := range argsList.Front().Value.(formulaArg).Value() {
+		b := utf8.RuneLen(r)
+		if b == 1 {
+			bytes++
+		} else if b > 1 {
+			bytes += 2
+		}
+	}
+	return newStringFormulaArg(strconv.Itoa(bytes))
 }
 
 // LOWER converts all characters in a supplied text string to lower case. The
@@ -13491,9 +13530,7 @@ func (fn *formulaFuncs) MIDB(argsList *list.List) formulaArg {
 	return fn.mid("MIDB", argsList)
 }
 
-// mid is an implementation of the formula functions MID and MIDB. TODO:
-// support DBCS include Japanese, Chinese (Simplified), Chinese
-// (Traditional), and Korean.
+// mid is an implementation of the formula functions MID and MIDB.
 func (fn *formulaFuncs) mid(name string, argsList *list.List) formulaArg {
 	if argsList.Len() != 3 {
 		return newErrorFormulaArg(formulaErrorVALUE, fmt.Sprintf("%s requires 3 arguments", name))
@@ -13510,16 +13547,29 @@ func (fn *formulaFuncs) mid(name string, argsList *list.List) formulaArg {
 	if startNum < 0 {
 		return newErrorFormulaArg(formulaErrorVALUE, formulaErrorVALUE)
 	}
-	textLen := len(text)
+	if name == "MIDB" {
+		textLen := len(text)
+		if startNum > textLen {
+			return newStringFormulaArg("")
+		}
+		startNum--
+		endNum := startNum + int(numCharsArg.Number)
+		if endNum > textLen+1 {
+			return newStringFormulaArg(text[startNum:])
+		}
+		return newStringFormulaArg(text[startNum:endNum])
+	}
+	// MID
+	textLen := utf8.RuneCountInString(text)
 	if startNum > textLen {
 		return newStringFormulaArg("")
 	}
 	startNum--
 	endNum := startNum + int(numCharsArg.Number)
 	if endNum > textLen+1 {
-		return newStringFormulaArg(text[startNum:])
+		return newStringFormulaArg(string([]rune(text)[startNum:]))
 	}
-	return newStringFormulaArg(text[startNum:endNum])
+	return newStringFormulaArg(string([]rune(text)[startNum:endNum]))
 }
 
 // PROPER converts all characters in a supplied text string to proper case

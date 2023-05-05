@@ -464,6 +464,9 @@ func (f *File) getSheetMap() (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	if rels == nil {
+		return maps, nil
+	}
 	for _, v := range wb.Sheets.Sheet {
 		for _, rel := range rels.Relationships {
 			if rel.ID == v.ID {
@@ -497,8 +500,8 @@ func (f *File) getSheetXMLPath(sheet string) (string, bool) {
 }
 
 // SetSheetBackground provides a function to set background picture by given
-// worksheet name and file path. Supported image types: EMF, EMZ, GIF, JPEG,
-// JPG, PNG, SVG, TIF, TIFF, WMF, and WMZ.
+// worksheet name and file path. Supported image types: BMP, EMF, EMZ, GIF,
+// JPEG, JPG, PNG, SVG, TIF, TIFF, WMF, and WMZ.
 func (f *File) SetSheetBackground(sheet, picture string) error {
 	var err error
 	// Check picture exists first.
@@ -511,7 +514,7 @@ func (f *File) SetSheetBackground(sheet, picture string) error {
 
 // SetSheetBackgroundFromBytes provides a function to set background picture by
 // given worksheet name, extension name and image data. Supported image types:
-// EMF, EMZ, GIF, JPEG, JPG, PNG, SVG, TIF, TIFF, WMF, and WMZ.
+// BMP, EMF, EMZ, GIF, JPEG, JPG, PNG, SVG, TIF, TIFF, WMF, and WMZ.
 func (f *File) SetSheetBackgroundFromBytes(sheet, extension string, picture []byte) error {
 	if len(picture) == 0 {
 		return ErrParameterInvalid
@@ -522,7 +525,7 @@ func (f *File) SetSheetBackgroundFromBytes(sheet, extension string, picture []by
 // setSheetBackground provides a function to set background picture by given
 // worksheet name, file name extension and image data.
 func (f *File) setSheetBackground(sheet, extension string, file []byte) error {
-	imageType, ok := supportedImageTypes[extension]
+	imageType, ok := supportedImageTypes[strings.ToLower(extension)]
 	if !ok {
 		return ErrImgExt
 	}
@@ -1180,17 +1183,17 @@ func attrValToBool(name string, attrs []xml.Attr) (val bool, err error) {
 // that same page
 //
 // - No footer on the first page
-func (f *File) SetHeaderFooter(sheet string, settings *HeaderFooterOptions) error {
+func (f *File) SetHeaderFooter(sheet string, opts *HeaderFooterOptions) error {
 	ws, err := f.workSheetReader(sheet)
 	if err != nil {
 		return err
 	}
-	if settings == nil {
+	if opts == nil {
 		ws.HeaderFooter = nil
 		return err
 	}
 
-	v := reflect.ValueOf(*settings)
+	v := reflect.ValueOf(*opts)
 	// Check 6 string type fields: OddHeader, OddFooter, EvenHeader, EvenFooter,
 	// FirstFooter, FirstHeader
 	for i := 4; i < v.NumField()-1; i++ {
@@ -1199,16 +1202,16 @@ func (f *File) SetHeaderFooter(sheet string, settings *HeaderFooterOptions) erro
 		}
 	}
 	ws.HeaderFooter = &xlsxHeaderFooter{
-		AlignWithMargins: settings.AlignWithMargins,
-		DifferentFirst:   settings.DifferentFirst,
-		DifferentOddEven: settings.DifferentOddEven,
-		ScaleWithDoc:     settings.ScaleWithDoc,
-		OddHeader:        settings.OddHeader,
-		OddFooter:        settings.OddFooter,
-		EvenHeader:       settings.EvenHeader,
-		EvenFooter:       settings.EvenFooter,
-		FirstFooter:      settings.FirstFooter,
-		FirstHeader:      settings.FirstHeader,
+		AlignWithMargins: opts.AlignWithMargins,
+		DifferentFirst:   opts.DifferentFirst,
+		DifferentOddEven: opts.DifferentOddEven,
+		ScaleWithDoc:     opts.ScaleWithDoc,
+		OddHeader:        opts.OddHeader,
+		OddFooter:        opts.OddFooter,
+		EvenHeader:       opts.EvenHeader,
+		EvenFooter:       opts.EvenFooter,
+		FirstFooter:      opts.FirstFooter,
+		FirstHeader:      opts.FirstHeader,
 	}
 	return err
 }
@@ -1841,10 +1844,10 @@ func prepareSheetXML(ws *xlsxWorksheet, col int, row int) {
 	defer ws.Unlock()
 	rowCount := len(ws.SheetData.Row)
 	sizeHint := 0
-	var ht float64
+	var ht *float64
 	var customHeight bool
 	if ws.SheetFormatPr != nil && ws.SheetFormatPr.CustomHeight {
-		ht = ws.SheetFormatPr.DefaultRowHeight
+		ht = float64Ptr(ws.SheetFormatPr.DefaultRowHeight)
 		customHeight = true
 	}
 	if rowCount > 0 {
@@ -1879,4 +1882,53 @@ func makeContiguousColumns(ws *xlsxWorksheet, fromRow, toRow, colCount int) {
 		rowData := &ws.SheetData.Row[fromRow-1]
 		fillColumns(rowData, colCount, fromRow)
 	}
+}
+
+// SetSheetDimension provides the method to set or remove the used range of the
+// worksheet by a given range reference. It specifies the row and column bounds
+// of used cells in the worksheet. The range reference is set using the A1
+// reference style(e.g., "A1:D5"). Passing an empty range reference will remove
+// the used range of the worksheet.
+func (f *File) SetSheetDimension(sheet string, rangeRef string) error {
+	ws, err := f.workSheetReader(sheet)
+	if err != nil {
+		return err
+	}
+	// Remove the dimension element if an empty string is provided
+	if rangeRef == "" {
+		ws.Dimension = nil
+		return nil
+	}
+	parts := len(strings.Split(rangeRef, ":"))
+	if parts == 1 {
+		_, _, err = CellNameToCoordinates(rangeRef)
+		if err == nil {
+			ws.Dimension = &xlsxDimension{Ref: strings.ToUpper(rangeRef)}
+		}
+		return err
+	}
+	if parts != 2 {
+		return ErrParameterInvalid
+	}
+	coordinates, err := rangeRefToCoordinates(rangeRef)
+	if err != nil {
+		return err
+	}
+	_ = sortCoordinates(coordinates)
+	ref, err := f.coordinatesToRangeRef(coordinates)
+	ws.Dimension = &xlsxDimension{Ref: ref}
+	return err
+}
+
+// GetSheetDimension provides the method to get the used range of the worksheet.
+func (f *File) GetSheetDimension(sheet string) (string, error) {
+	var ref string
+	ws, err := f.workSheetReader(sheet)
+	if err != nil {
+		return ref, err
+	}
+	if ws.Dimension != nil {
+		ref = ws.Dimension.Ref
+	}
+	return ref, err
 }

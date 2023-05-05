@@ -18,6 +18,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -38,12 +39,8 @@ func NewFile() *File {
 	f.Pkg.Store(defaultXMLPathContentTypes, []byte(xml.Header+templateContentTypes))
 	f.SheetCount = 1
 	f.CalcChain, _ = f.calcChainReader()
-	f.Comments = make(map[string]*xlsxComments)
 	f.ContentTypes, _ = f.contentTypesReader()
-	f.Drawings = sync.Map{}
 	f.Styles, _ = f.stylesReader()
-	f.DecodeVMLDrawing = make(map[string]*decodeVmlDrawing)
-	f.VMLDrawing = make(map[string]*vmlDrawing)
 	f.WorkBook, _ = f.workbookReader()
 	f.Relationships = sync.Map{}
 	rels, _ := f.relsReader(defaultXMLPathWorkbookRels)
@@ -73,7 +70,7 @@ func (f *File) SaveAs(name string, opts ...Options) error {
 		return ErrMaxFilePathLength
 	}
 	f.Path = name
-	if _, ok := supportedContentTypes[filepath.Ext(f.Path)]; !ok {
+	if _, ok := supportedContentTypes[strings.ToLower(filepath.Ext(f.Path))]; !ok {
 		return ErrWorkbookFileFormat
 	}
 	file, err := os.OpenFile(filepath.Clean(name), os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
@@ -116,7 +113,7 @@ func (f *File) WriteTo(w io.Writer, opts ...Options) (int64, error) {
 		f.options = &opts[i]
 	}
 	if len(f.Path) != 0 {
-		contentType, ok := supportedContentTypes[filepath.Ext(f.Path)]
+		contentType, ok := supportedContentTypes[strings.ToLower(filepath.Ext(f.Path))]
 		if !ok {
 			return 0, ErrWorkbookFileFormat
 		}

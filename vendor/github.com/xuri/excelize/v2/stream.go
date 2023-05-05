@@ -47,23 +47,23 @@ type StreamWriter struct {
 // 16MB. For example, set data for worksheet of size 102400 rows x 50 columns
 // with numbers and style:
 //
-//	file := excelize.NewFile()
+//	f := excelize.NewFile()
 //	defer func() {
-//	    if err := file.Close(); err != nil {
+//	    if err := f.Close(); err != nil {
 //	        fmt.Println(err)
 //	    }
 //	}()
-//	streamWriter, err := file.NewStreamWriter("Sheet1")
+//	sw, err := f.NewStreamWriter("Sheet1")
 //	if err != nil {
 //	    fmt.Println(err)
 //	    return
 //	}
-//	styleID, err := file.NewStyle(&excelize.Style{Font: &excelize.Font{Color: "#777777"}})
+//	styleID, err := f.NewStyle(&excelize.Style{Font: &excelize.Font{Color: "777777"}})
 //	if err != nil {
 //	    fmt.Println(err)
 //	    return
 //	}
-//	if err := streamWriter.SetRow("A1",
+//	if err := sw.SetRow("A1",
 //	    []interface{}{
 //	        excelize.Cell{StyleID: styleID, Value: "Data"},
 //	        []excelize.RichTextRun{
@@ -80,30 +80,34 @@ type StreamWriter struct {
 //	    for colID := 0; colID < 50; colID++ {
 //	        row[colID] = rand.Intn(640000)
 //	    }
-//	    cell, _ := excelize.CoordinatesToCellName(1, rowID)
-//	    if err := streamWriter.SetRow(cell, row); err != nil {
+//	    cell, err := excelize.CoordinatesToCellName(1, rowID)
+//	    if err != nil {
 //	        fmt.Println(err)
-//	        return
+//	        break
+//	    }
+//	    if err := sw.SetRow(cell, row); err != nil {
+//	        fmt.Println(err)
+//	        break
 //	    }
 //	}
-//	if err := streamWriter.Flush(); err != nil {
+//	if err := sw.Flush(); err != nil {
 //	    fmt.Println(err)
 //	    return
 //	}
-//	if err := file.SaveAs("Book1.xlsx"); err != nil {
+//	if err := f.SaveAs("Book1.xlsx"); err != nil {
 //	    fmt.Println(err)
 //	}
 //
 // Set cell value and cell formula for a worksheet with stream writer:
 //
-//	err := streamWriter.SetRow("A1", []interface{}{
+//	err := sw.SetRow("A1", []interface{}{
 //	    excelize.Cell{Value: 1},
 //	    excelize.Cell{Value: 2},
 //	    excelize.Cell{Formula: "SUM(A1,B1)"}});
 //
 // Set cell value and rows style for a worksheet with stream writer:
 //
-//	err := streamWriter.SetRow("A1", []interface{}{
+//	err := sw.SetRow("A1", []interface{}{
 //	    excelize.Cell{Value: 1}},
 //	    excelize.RowOpts{StyleID: styleID, Height: 20, Hidden: false});
 func (f *File) NewStreamWriter(sheet string) (*StreamWriter, error) {
@@ -139,12 +143,13 @@ func (f *File) NewStreamWriter(sheet string) (*StreamWriter, error) {
 // AddTable creates an Excel table for the StreamWriter using the given
 // cell range and format set. For example, create a table of A1:D5:
 //
-//	err := sw.AddTable("A1:D5", nil)
+//	err := sw.AddTable(&excelize.Table{Range: "A1:D5"})
 //
 // Create a table of F2:H6 with format set:
 //
 //	disable := false
-//	err := sw.AddTable("F2:H6", &excelize.TableOptions{
+//	err := sw.AddTable(&excelize.Table{
+//	    Range:             "F2:H6",
 //	    Name:              "table",
 //	    StyleName:         "TableStyleMedium2",
 //	    ShowFirstColumn:   true,
@@ -160,9 +165,12 @@ func (f *File) NewStreamWriter(sheet string) (*StreamWriter, error) {
 // called after the rows are written but before Flush.
 //
 // See File.AddTable for details on the table format.
-func (sw *StreamWriter) AddTable(rangeRef string, opts *TableOptions) error {
-	options := parseTableOptions(opts)
-	coordinates, err := rangeRefToCoordinates(rangeRef)
+func (sw *StreamWriter) AddTable(table *Table) error {
+	options, err := parseTableOptions(table)
+	if err != nil {
+		return err
+	}
+	coordinates, err := rangeRefToCoordinates(options.Range)
 	if err != nil {
 		return err
 	}
@@ -199,7 +207,7 @@ func (sw *StreamWriter) AddTable(rangeRef string, opts *TableOptions) error {
 		name = "Table" + strconv.Itoa(tableID)
 	}
 
-	table := xlsxTable{
+	tbl := xlsxTable{
 		XMLNS:       NameSpaceSpreadSheet.Value,
 		ID:          tableID,
 		Name:        name,
@@ -234,7 +242,7 @@ func (sw *StreamWriter) AddTable(rangeRef string, opts *TableOptions) error {
 	if err = sw.file.addContentTypePart(tableID, "table"); err != nil {
 		return err
 	}
-	b, _ := xml.Marshal(table)
+	b, _ := xml.Marshal(tbl)
 	sw.file.saveFileList(tableXML, b)
 	return err
 }
@@ -428,7 +436,7 @@ func (sw *StreamWriter) SetRow(cell string, values []interface{}, opts ...RowOpt
 // the 'SetColWidth' function before the 'SetRow' function. For example set
 // the width column B:C as 20:
 //
-//	err := streamWriter.SetColWidth(2, 3, 20)
+//	err := sw.SetColWidth(2, 3, 20)
 func (sw *StreamWriter) SetColWidth(min, max int, width float64) error {
 	if sw.sheetWritten {
 		return ErrStreamSetColWidth
@@ -533,7 +541,7 @@ func (sw *StreamWriter) setCellValFunc(c *xlsxC, val interface{}) error {
 	case bool:
 		c.T, c.V = setCellBool(val)
 	case nil:
-		c.setCellValue("")
+		return err
 	case []RichTextRun:
 		c.T, c.IS = "inlineStr", &xlsxSI{}
 		c.IS.R, err = setRichText(val)
