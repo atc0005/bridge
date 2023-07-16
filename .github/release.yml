@@ -1,0 +1,26 @@
+# Copyright 2023 Adam Chalkley
+#
+# https://github.com/atc0005/bridge
+#
+# Licensed under the MIT License. See LICENSE file in the project root for
+# full license information.
+
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+  categories:
+    - title: Breaking Changes 🛠
+      labels:
+        - breaking
+    - title: Bug Fixes 🐛
+      labels:
+        - bug-fix
+    - title: Enhancements 🎉
+      labels:
+        - enhancement
+    - title: Other Changes
+      labels:
+        - "*"
