@@ -15,11 +15,9 @@ changelog:
     - title: Breaking Changes 🛠
       labels:
         - breaking
-    - title: New Features 🎉
+    - title: New Features or Enhancements 🎉
       labels:
         - new
-    - title: Enhancements 🎉
-      labels:
         - enhancement
     - title: Bug Fixes 🐛
       labels:
