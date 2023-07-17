@@ -26,6 +26,54 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.5.1] - 2022-07-17
+
+### Overview
+
+- Build & Release improvements
+- Bug fixes
+- Dependency updates
+- built using Go 1.19.11
+  - Statically linked
+  - Windows (x86, x64)
+  - Linux (x86, x64)
+
+### Added
+
+- (GH-275) Add initial automated release notes config
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.19.8` to `1.19.11`
+  - `atc0005/go-ci`
+    - `go-ci-oldstable-build-v0.10.4` to `go-ci-oldstable-build-v0.11.4`
+  - `xuri/excelize`
+    - `v2.7.0` to `v2.7.1`
+  - `xuri/nfp`
+    - `v0.0.0-20220409054826-5e722a1d9e22` to
+      `v0.0.0-20230503010013-3f38cdbb0b83`
+  - `xuri/efp`
+    - `v0.0.0-20220603152613-6918739fd470` to
+      `v0.0.0-20230422071738-01f4e37c47e9`
+  - `golang.org/x/crypto`
+    - `v0.8.0` to `v0.11.0`
+  - `golang.org/x/net`
+    - `v0.9.0` to `v0.12.0`
+  - `golang.org/x/text`
+    - `v0.9.0` to `v0.11.0`
+- (GH-261) Update vuln analysis GHAW to remove on.push hook
+- (GH-276) Releases: Add separate section for dependencies
+- (GH-277) Releases: Add 'New Features' section
+
+### Fixed
+
+- (GH-258) Disable depguard linter
+- (GH-265) Restore local CodeQL workflow
+- (GH-271) Remove plugin deploy logic from postinstall script
+- (GH-278) Releases: Update 'Bug Fixes' label
+
 ## [v0.5.0] - 2022-04-09
 
 ### Overview
@@ -620,7 +668,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.1...HEAD
+[v0.5.1]: https://github.com/atc0005/bridge/releases/tag/v0.5.1
 [v0.5.0]: https://github.com/atc0005/bridge/releases/tag/v0.5.0
 [v0.4.16]: https://github.com/atc0005/bridge/releases/tag/v0.4.16
 [v0.4.15]: https://github.com/atc0005/bridge/releases/tag/v0.4.15
