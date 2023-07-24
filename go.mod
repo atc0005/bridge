@@ -9,7 +9,7 @@ require (
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.3 // indirect
 	github.com/xuri/efp v0.0.0-20230422071738-01f4e37c47e9 // indirect
-	github.com/xuri/nfp v0.0.0-20230503010013-3f38cdbb0b83 // indirect
+	github.com/xuri/nfp v0.0.0-20230723160540-a7d120392641 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
