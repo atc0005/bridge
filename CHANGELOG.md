@@ -26,6 +26,35 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.5.2] - 2022-08-18
+
+### Added
+
+- (GH-283) Add initial automated release build workflow
+
+### Changed
+
+- Dependencies
+  - `Go`
+    - `1.19.11` to `1.20.7`
+  - `atc0005/go-ci`
+    - `go-ci-oldstable-build-v0.11.4` to `go-ci-oldstable-build-v0.13.4`
+  - `xuri/nfp`
+    - `v0.0.0-20230503010013-3f38cdbb0b83` to
+      `v0.0.0-20230802015359-2d5eeba905e9`
+  - `xuri/efp`
+    - `v0.0.0-20230422071738-01f4e37c47e9` to
+      `v0.0.0-20230802181842-ad255f2331ca`
+  - `golang.org/x/crypto`
+    - `v0.11.0` to `v0.12.0`
+  - `golang.org/x/net`
+    - `v0.12.0` to `v0.14.0`
+  - `golang.org/x/text`
+    - `v0.11.0` to `v0.12.0`
+- (GH-281) Release: Combine New Features and Enhancements
+- (GH-285) Update Dependabot config to monitor both branches
+- (GH-311) Update project to Go 1.20 series
+
 ## [v0.5.1] - 2022-07-17
 
 ### Overview
@@ -668,7 +697,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.2...HEAD
+[v0.5.2]: https://github.com/atc0005/bridge/releases/tag/v0.5.2
 [v0.5.1]: https://github.com/atc0005/bridge/releases/tag/v0.5.1
 [v0.5.0]: https://github.com/atc0005/bridge/releases/tag/v0.5.0
 [v0.4.16]: https://github.com/atc0005/bridge/releases/tag/v0.4.16
