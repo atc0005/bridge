@@ -74,7 +74,7 @@ type cTx struct {
 type cRich struct {
 	BodyPr   aBodyPr `xml:"a:bodyPr,omitempty"`
 	LstStyle string  `xml:"a:lstStyle,omitempty"`
-	P        aP      `xml:"a:p"`
+	P        []aP    `xml:"a:p"`
 }
 
 // aBodyPr (Body Properties) directly maps the a:bodyPr element. This element
@@ -351,6 +351,7 @@ type cAxs struct {
 	AxPos          *attrValString `xml:"axPos"`
 	MajorGridlines *cChartLines   `xml:"majorGridlines"`
 	MinorGridlines *cChartLines   `xml:"minorGridlines"`
+	Title          *cTitle        `xml:"title"`
 	NumFmt         *cNumFmt       `xml:"numFmt"`
 	MajorTickMark  *attrValString `xml:"majorTickMark"`
 	MinorTickMark  *attrValString `xml:"minorTickMark"`
@@ -534,11 +535,14 @@ type ChartAxis struct {
 	MajorUnit      float64
 	TickLabelSkip  int
 	ReverseOrder   bool
+	Secondary      bool
 	Maximum        *float64
 	Minimum        *float64
 	Font           Font
 	LogBase        float64
 	NumFmt         ChartNumFmt
+	Title          []RichTextRun
+	axID           int
 }
 
 // ChartDimension directly maps the dimension of the chart.
@@ -566,7 +570,7 @@ type Chart struct {
 	Format       GraphicOptions
 	Dimension    ChartDimension
 	Legend       ChartLegend
-	Title        ChartTitle
+	Title        []RichTextRun
 	VaryColors   *bool
 	XAxis        ChartAxis
 	YAxis        ChartAxis
@@ -603,9 +607,4 @@ type ChartSeries struct {
 	Fill       Fill
 	Line       ChartLine
 	Marker     ChartMarker
-}
-
-// ChartTitle directly maps the format settings of the chart title.
-type ChartTitle struct {
-	Name string
 }

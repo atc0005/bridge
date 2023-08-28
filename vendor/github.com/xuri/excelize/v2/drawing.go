@@ -63,65 +63,7 @@ func (f *File) addChart(opts *Chart, comboCharts []*Chart) {
 		Lang:           &attrValString{Val: stringPtr("en-US")},
 		RoundedCorners: &attrValBool{Val: boolPtr(false)},
 		Chart: cChart{
-			Title: &cTitle{
-				Tx: cTx{
-					Rich: &cRich{
-						P: aP{
-							PPr: &aPPr{
-								DefRPr: aRPr{
-									Kern:   1200,
-									Strike: "noStrike",
-									U:      "none",
-									Sz:     1400,
-									SolidFill: &aSolidFill{
-										SchemeClr: &aSchemeClr{
-											Val: "tx1",
-											LumMod: &attrValInt{
-												Val: intPtr(65000),
-											},
-											LumOff: &attrValInt{
-												Val: intPtr(35000),
-											},
-										},
-									},
-									Ea: &aEa{
-										Typeface: "+mn-ea",
-									},
-									Cs: &aCs{
-										Typeface: "+mn-cs",
-									},
-									Latin: &xlsxCTTextFont{
-										Typeface: "+mn-lt",
-									},
-								},
-							},
-							R: &aR{
-								RPr: aRPr{
-									Lang:    "en-US",
-									AltLang: "en-US",
-								},
-								T: opts.Title.Name,
-							},
-						},
-					},
-				},
-				TxPr: cTxPr{
-					P: aP{
-						PPr: &aPPr{
-							DefRPr: aRPr{
-								Kern:   1200,
-								U:      "none",
-								Sz:     14000,
-								Strike: "noStrike",
-							},
-						},
-						EndParaRPr: &aEndParaRPr{
-							Lang: "en-US",
-						},
-					},
-				},
-				Overlay: &attrValBool{Val: boolPtr(false)},
-			},
+			Title: f.drawPlotAreaTitles(opts.Title, ""),
 			View3D: &cView3D{
 				RotX:        &attrValInt{Val: intPtr(chartView3DRotX[opts.Type])},
 				RotY:        &attrValInt{Val: intPtr(chartView3DRotY[opts.Type])},
@@ -275,13 +217,10 @@ func (f *File) drawBaseChart(opts *Chart) *cPlotArea {
 		VaryColors: &attrValBool{
 			Val: opts.VaryColors,
 		},
-		Ser:   f.drawChartSeries(opts),
-		Shape: f.drawChartShape(opts),
-		DLbls: f.drawChartDLbls(opts),
-		AxID: []*attrValInt{
-			{Val: intPtr(754001152)},
-			{Val: intPtr(753999904)},
-		},
+		Ser:     f.drawChartSeries(opts),
+		Shape:   f.drawChartShape(opts),
+		DLbls:   f.drawChartDLbls(opts),
+		AxID:    f.genAxID(opts),
 		Overlap: &attrValInt{Val: intPtr(100)},
 	}
 	var ok bool
@@ -540,10 +479,7 @@ func (f *File) drawLineChart(opts *Chart) *cPlotArea {
 			},
 			Ser:   f.drawChartSeries(opts),
 			DLbls: f.drawChartDLbls(opts),
-			AxID: []*attrValInt{
-				{Val: intPtr(754001152)},
-				{Val: intPtr(753999904)},
-			},
+			AxID:  f.genAxID(opts),
 		},
 		CatAx: f.drawPlotAreaCatAx(opts),
 		ValAx: f.drawPlotAreaValAx(opts),
@@ -563,10 +499,7 @@ func (f *File) drawLine3DChart(opts *Chart) *cPlotArea {
 			},
 			Ser:   f.drawChartSeries(opts),
 			DLbls: f.drawChartDLbls(opts),
-			AxID: []*attrValInt{
-				{Val: intPtr(754001152)},
-				{Val: intPtr(753999904)},
-			},
+			AxID:  f.genAxID(opts),
 		},
 		CatAx: f.drawPlotAreaCatAx(opts),
 		ValAx: f.drawPlotAreaValAx(opts),
@@ -656,10 +589,7 @@ func (f *File) drawRadarChart(opts *Chart) *cPlotArea {
 			},
 			Ser:   f.drawChartSeries(opts),
 			DLbls: f.drawChartDLbls(opts),
-			AxID: []*attrValInt{
-				{Val: intPtr(754001152)},
-				{Val: intPtr(753999904)},
-			},
+			AxID:  f.genAxID(opts),
 		},
 		CatAx: f.drawPlotAreaCatAx(opts),
 		ValAx: f.drawPlotAreaValAx(opts),
@@ -679,10 +609,7 @@ func (f *File) drawScatterChart(opts *Chart) *cPlotArea {
 			},
 			Ser:   f.drawChartSeries(opts),
 			DLbls: f.drawChartDLbls(opts),
-			AxID: []*attrValInt{
-				{Val: intPtr(754001152)},
-				{Val: intPtr(753999904)},
-			},
+			AxID:  f.genAxID(opts),
 		},
 		CatAx: f.drawPlotAreaCatAx(opts),
 		ValAx: f.drawPlotAreaValAx(opts),
@@ -696,9 +623,9 @@ func (f *File) drawSurface3DChart(opts *Chart) *cPlotArea {
 		Surface3DChart: &cCharts{
 			Ser: f.drawChartSeries(opts),
 			AxID: []*attrValInt{
-				{Val: intPtr(754001152)},
-				{Val: intPtr(753999904)},
-				{Val: intPtr(832256642)},
+				{Val: intPtr(100000000)},
+				{Val: intPtr(100000001)},
+				{Val: intPtr(100000005)},
 			},
 		},
 		CatAx: f.drawPlotAreaCatAx(opts),
@@ -718,9 +645,9 @@ func (f *File) drawSurfaceChart(opts *Chart) *cPlotArea {
 		SurfaceChart: &cCharts{
 			Ser: f.drawChartSeries(opts),
 			AxID: []*attrValInt{
-				{Val: intPtr(754001152)},
-				{Val: intPtr(753999904)},
-				{Val: intPtr(832256642)},
+				{Val: intPtr(100000000)},
+				{Val: intPtr(100000001)},
+				{Val: intPtr(100000005)},
 			},
 		},
 		CatAx: f.drawPlotAreaCatAx(opts),
@@ -743,10 +670,7 @@ func (f *File) drawBubbleChart(opts *Chart) *cPlotArea {
 			},
 			Ser:   f.drawChartSeries(opts),
 			DLbls: f.drawChartDLbls(opts),
-			AxID: []*attrValInt{
-				{Val: intPtr(754001152)},
-				{Val: intPtr(753999904)},
-			},
+			AxID:  f.genAxID(opts),
 		},
 		ValAx: []*cAxs{f.drawPlotAreaCatAx(opts)[0], f.drawPlotAreaValAx(opts)[0]},
 	}
@@ -1048,7 +972,7 @@ func (f *File) drawPlotAreaCatAx(opts *Chart) []*cAxs {
 	}
 	axs := []*cAxs{
 		{
-			AxID: &attrValInt{Val: intPtr(754001152)},
+			AxID: &attrValInt{Val: intPtr(100000000)},
 			Scaling: &cScaling{
 				Orientation: &attrValString{Val: stringPtr(orientation[opts.XAxis.ReverseOrder])},
 				Max:         max,
@@ -1059,10 +983,11 @@ func (f *File) drawPlotAreaCatAx(opts *Chart) []*cAxs {
 			NumFmt:        &cNumFmt{FormatCode: "General"},
 			MajorTickMark: &attrValString{Val: stringPtr("none")},
 			MinorTickMark: &attrValString{Val: stringPtr("none")},
+			Title:         f.drawPlotAreaTitles(opts.XAxis.Title, ""),
 			TickLblPos:    &attrValString{Val: stringPtr("nextTo")},
 			SpPr:          f.drawPlotAreaSpPr(),
 			TxPr:          f.drawPlotAreaTxPr(&opts.YAxis),
-			CrossAx:       &attrValInt{Val: intPtr(753999904)},
+			CrossAx:       &attrValInt{Val: intPtr(100000001)},
 			Crosses:       &attrValString{Val: stringPtr("autoZero")},
 			Auto:          &attrValBool{Val: boolPtr(true)},
 			LblAlgn:       &attrValString{Val: stringPtr("ctr")},
@@ -1081,6 +1006,28 @@ func (f *File) drawPlotAreaCatAx(opts *Chart) []*cAxs {
 	}
 	if opts.XAxis.TickLabelSkip != 0 {
 		axs[0].TickLblSkip = &attrValInt{Val: intPtr(opts.XAxis.TickLabelSkip)}
+	}
+	if opts.order > 0 && opts.YAxis.Secondary {
+		axs = append(axs, &cAxs{
+			AxID: &attrValInt{Val: intPtr(opts.XAxis.axID)},
+			Scaling: &cScaling{
+				Orientation: &attrValString{Val: stringPtr(orientation[opts.XAxis.ReverseOrder])},
+				Max:         max,
+				Min:         min,
+			},
+			Delete:        &attrValBool{Val: boolPtr(true)},
+			AxPos:         &attrValString{Val: stringPtr("b")},
+			MajorTickMark: &attrValString{Val: stringPtr("none")},
+			MinorTickMark: &attrValString{Val: stringPtr("none")},
+			TickLblPos:    &attrValString{Val: stringPtr("nextTo")},
+			SpPr:          f.drawPlotAreaSpPr(),
+			TxPr:          f.drawPlotAreaTxPr(&opts.YAxis),
+			CrossAx:       &attrValInt{Val: intPtr(opts.YAxis.axID)},
+			Auto:          &attrValBool{Val: boolPtr(true)},
+			LblAlgn:       &attrValString{Val: stringPtr("ctr")},
+			LblOffset:     &attrValInt{Val: intPtr(100)},
+			NoMultiLvlLbl: &attrValBool{Val: boolPtr(false)},
+		})
 	}
 	return axs
 }
@@ -1101,7 +1048,7 @@ func (f *File) drawPlotAreaValAx(opts *Chart) []*cAxs {
 	}
 	axs := []*cAxs{
 		{
-			AxID: &attrValInt{Val: intPtr(753999904)},
+			AxID: &attrValInt{Val: intPtr(100000001)},
 			Scaling: &cScaling{
 				LogBase:     logBase,
 				Orientation: &attrValString{Val: stringPtr(orientation[opts.YAxis.ReverseOrder])},
@@ -1110,6 +1057,7 @@ func (f *File) drawPlotAreaValAx(opts *Chart) []*cAxs {
 			},
 			Delete: &attrValBool{Val: boolPtr(opts.YAxis.None)},
 			AxPos:  &attrValString{Val: stringPtr(valAxPos[opts.YAxis.ReverseOrder])},
+			Title:  f.drawPlotAreaTitles(opts.YAxis.Title, "horz"),
 			NumFmt: &cNumFmt{
 				FormatCode: chartValAxNumFmtFormatCode[opts.Type],
 			},
@@ -1118,7 +1066,7 @@ func (f *File) drawPlotAreaValAx(opts *Chart) []*cAxs {
 			TickLblPos:    &attrValString{Val: stringPtr("nextTo")},
 			SpPr:          f.drawPlotAreaSpPr(),
 			TxPr:          f.drawPlotAreaTxPr(&opts.XAxis),
-			CrossAx:       &attrValInt{Val: intPtr(754001152)},
+			CrossAx:       &attrValInt{Val: intPtr(100000000)},
 			Crosses:       &attrValString{Val: stringPtr("autoZero")},
 			CrossBetween:  &attrValString{Val: stringPtr(chartValAxCrossBetween[opts.Type])},
 		},
@@ -1138,6 +1086,26 @@ func (f *File) drawPlotAreaValAx(opts *Chart) []*cAxs {
 	if opts.YAxis.MajorUnit != 0 {
 		axs[0].MajorUnit = &attrValFloat{Val: float64Ptr(opts.YAxis.MajorUnit)}
 	}
+	if opts.order > 0 && opts.YAxis.Secondary {
+		axs = append(axs, &cAxs{
+			AxID: &attrValInt{Val: intPtr(opts.YAxis.axID)},
+			Scaling: &cScaling{
+				Orientation: &attrValString{Val: stringPtr(orientation[opts.YAxis.ReverseOrder])},
+				Max:         max,
+				Min:         min,
+			},
+			Delete:        &attrValBool{Val: boolPtr(false)},
+			AxPos:         &attrValString{Val: stringPtr("r")},
+			MajorTickMark: &attrValString{Val: stringPtr("none")},
+			MinorTickMark: &attrValString{Val: stringPtr("none")},
+			TickLblPos:    &attrValString{Val: stringPtr("nextTo")},
+			SpPr:          f.drawPlotAreaSpPr(),
+			TxPr:          f.drawPlotAreaTxPr(&opts.XAxis),
+			CrossAx:       &attrValInt{Val: intPtr(opts.XAxis.axID)},
+			Crosses:       &attrValString{Val: stringPtr("max")},
+			CrossBetween:  &attrValString{Val: stringPtr(chartValAxCrossBetween[opts.Type])},
+		})
+	}
 	return axs
 }
 
@@ -1153,7 +1121,7 @@ func (f *File) drawPlotAreaSerAx(opts *Chart) []*cAxs {
 	}
 	return []*cAxs{
 		{
-			AxID: &attrValInt{Val: intPtr(832256642)},
+			AxID: &attrValInt{Val: intPtr(100000005)},
 			Scaling: &cScaling{
 				Orientation: &attrValString{Val: stringPtr(orientation[opts.YAxis.ReverseOrder])},
 				Max:         max,
@@ -1164,9 +1132,38 @@ func (f *File) drawPlotAreaSerAx(opts *Chart) []*cAxs {
 			TickLblPos: &attrValString{Val: stringPtr("nextTo")},
 			SpPr:       f.drawPlotAreaSpPr(),
 			TxPr:       f.drawPlotAreaTxPr(nil),
-			CrossAx:    &attrValInt{Val: intPtr(753999904)},
+			CrossAx:    &attrValInt{Val: intPtr(100000001)},
 		},
 	}
+}
+
+// drawPlotAreaTitles provides a function to draw the c:title element.
+func (f *File) drawPlotAreaTitles(runs []RichTextRun, vert string) *cTitle {
+	if len(runs) == 0 {
+		return nil
+	}
+	title := &cTitle{Tx: cTx{Rich: &cRich{}}, Overlay: &attrValBool{Val: boolPtr(false)}}
+	for _, run := range runs {
+		r := &aR{T: run.Text}
+		if run.Font != nil {
+			r.RPr.B, r.RPr.I = run.Font.Bold, run.Font.Italic
+			if run.Font.Color != "" {
+				r.RPr.SolidFill = &aSolidFill{SrgbClr: &attrValString{Val: stringPtr(run.Font.Color)}}
+			}
+			if run.Font.Size > 0 {
+				r.RPr.Sz = run.Font.Size * 100
+			}
+		}
+		title.Tx.Rich.P = append(title.Tx.Rich.P, aP{
+			PPr:        &aPPr{DefRPr: aRPr{}},
+			R:          r,
+			EndParaRPr: &aEndParaRPr{Lang: "en-US", AltLang: "en-US"},
+		})
+	}
+	if vert == "horz" {
+		title.Tx.Rich.BodyPr = aBodyPr{Rot: -5400000, Vert: vert}
+	}
+	return title
 }
 
 // drawPlotAreaSpPr provides a function to draw the c:spPr element.
@@ -1285,8 +1282,8 @@ func (f *File) drawingParser(path string) (*xlsxWsDr, int, error) {
 	if drawing, ok := f.Drawings.Load(path); ok && drawing != nil {
 		wsDr = drawing.(*xlsxWsDr)
 	}
-	wsDr.Lock()
-	defer wsDr.Unlock()
+	wsDr.mu.Lock()
+	defer wsDr.mu.Unlock()
 	return wsDr, len(wsDr.OneCellAnchor) + len(wsDr.TwoCellAnchor) + 2, nil
 }
 
@@ -1297,12 +1294,9 @@ func (f *File) addDrawingChart(sheet, drawingXML, cell string, width, height, rI
 	if err != nil {
 		return err
 	}
-	colIdx := col - 1
-	rowIdx := row - 1
-
 	width = int(float64(width) * opts.ScaleX)
 	height = int(float64(height) * opts.ScaleY)
-	colStart, rowStart, colEnd, rowEnd, x2, y2 := f.positionObjectPixels(sheet, colIdx, rowIdx, opts.OffsetX, opts.OffsetY, width, height)
+	colStart, rowStart, colEnd, rowEnd, x2, y2 := f.positionObjectPixels(sheet, col, row, opts.OffsetX, opts.OffsetY, width, height)
 	content, cNvPrID, err := f.drawingParser(drawingXML)
 	if err != nil {
 		return err
@@ -1400,15 +1394,15 @@ func (f *File) deleteDrawing(col, row int, drawingXML, drawingType string) error
 	var (
 		err             error
 		wsDr            *xlsxWsDr
-		deTwoCellAnchor *decodeTwoCellAnchor
+		deTwoCellAnchor *decodeCellAnchor
 	)
 	xdrCellAnchorFuncs := map[string]func(anchor *xdrCellAnchor) bool{
 		"Chart": func(anchor *xdrCellAnchor) bool { return anchor.Pic == nil },
 		"Pic":   func(anchor *xdrCellAnchor) bool { return anchor.Pic != nil },
 	}
-	decodeTwoCellAnchorFuncs := map[string]func(anchor *decodeTwoCellAnchor) bool{
-		"Chart": func(anchor *decodeTwoCellAnchor) bool { return anchor.Pic == nil },
-		"Pic":   func(anchor *decodeTwoCellAnchor) bool { return anchor.Pic != nil },
+	decodeCellAnchorFuncs := map[string]func(anchor *decodeCellAnchor) bool{
+		"Chart": func(anchor *decodeCellAnchor) bool { return anchor.Pic == nil },
+		"Pic":   func(anchor *decodeCellAnchor) bool { return anchor.Pic != nil },
 	}
 	if wsDr, _, err = f.drawingParser(drawingXML); err != nil {
 		return err
@@ -1422,12 +1416,12 @@ func (f *File) deleteDrawing(col, row int, drawingXML, drawingType string) error
 		}
 	}
 	for idx := 0; idx < len(wsDr.TwoCellAnchor); idx++ {
-		deTwoCellAnchor = new(decodeTwoCellAnchor)
-		if err = f.xmlNewDecoder(strings.NewReader("<decodeTwoCellAnchor>" + wsDr.TwoCellAnchor[idx].GraphicFrame + "</decodeTwoCellAnchor>")).
+		deTwoCellAnchor = new(decodeCellAnchor)
+		if err = f.xmlNewDecoder(strings.NewReader("<decodeCellAnchor>" + wsDr.TwoCellAnchor[idx].GraphicFrame + "</decodeCellAnchor>")).
 			Decode(deTwoCellAnchor); err != nil && err != io.EOF {
 			return err
 		}
-		if err = nil; deTwoCellAnchor.From != nil && decodeTwoCellAnchorFuncs[drawingType](deTwoCellAnchor) {
+		if err = nil; deTwoCellAnchor.From != nil && decodeCellAnchorFuncs[drawingType](deTwoCellAnchor) {
 			if deTwoCellAnchor.From.Col == col && deTwoCellAnchor.From.Row == row {
 				wsDr.TwoCellAnchor = append(wsDr.TwoCellAnchor[:idx], wsDr.TwoCellAnchor[idx+1:]...)
 				idx--
@@ -1436,4 +1430,14 @@ func (f *File) deleteDrawing(col, row int, drawingXML, drawingType string) error
 	}
 	f.Drawings.Store(drawingXML, wsDr)
 	return err
+}
+
+// genAxID provides a function to generate ID for primary and secondary
+// horizontal or vertical axis.
+func (f *File) genAxID(opts *Chart) []*attrValInt {
+	opts.XAxis.axID, opts.YAxis.axID = 100000000, 100000001
+	if opts.order > 0 && opts.YAxis.Secondary {
+		opts.XAxis.axID, opts.YAxis.axID = 100000003, 100000004
+	}
+	return []*attrValInt{{Val: intPtr(opts.XAxis.axID)}, {Val: intPtr(opts.YAxis.axID)}}
 }

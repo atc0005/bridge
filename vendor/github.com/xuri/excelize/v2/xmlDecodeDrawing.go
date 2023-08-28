@@ -22,6 +22,7 @@ type decodeCellAnchor struct {
 	From       *decodeFrom       `xml:"from"`
 	To         *decodeTo         `xml:"to"`
 	Sp         *decodeSp         `xml:"sp"`
+	Pic        *decodePic        `xml:"pic"`
 	ClientData *decodeClientData `xml:"clientData"`
 	Content    string            `xml:",innerxml"`
 }
@@ -70,17 +71,6 @@ type decodeWsDr struct {
 	AlternateContent []*xlsxInnerXML     `xml:"http://schemas.openxmlformats.org/markup-compatibility/2006 AlternateContent"`
 	OneCellAnchor    []*decodeCellAnchor `xml:"oneCellAnchor,omitempty"`
 	TwoCellAnchor    []*decodeCellAnchor `xml:"twoCellAnchor,omitempty"`
-}
-
-// decodeTwoCellAnchor directly maps the oneCellAnchor (One Cell Anchor Shape
-// Size) and twoCellAnchor (Two Cell Anchor Shape Size). This element
-// specifies a two cell anchor placeholder for a group, a shape, or a drawing
-// element. It moves with cells and its extents are in EMU units.
-type decodeTwoCellAnchor struct {
-	From       *decodeFrom       `xml:"from"`
-	To         *decodeTo         `xml:"to"`
-	Pic        *decodePic        `xml:"pic"`
-	ClientData *decodeClientData `xml:"clientData"`
 }
 
 // decodeCNvPr directly maps the cNvPr (Non-Visual Drawing Properties). This
@@ -199,7 +189,7 @@ type decodeSpPr struct {
 // decodePic elements encompass the definition of pictures within the
 // DrawingML framework. While pictures are in many ways very similar to shapes
 // they have specific properties that are unique in order to optimize for
-// picture- specific scenarios.
+// picture-specific scenarios.
 type decodePic struct {
 	NvPicPr  decodeNvPicPr  `xml:"nvPicPr"`
 	BlipFill decodeBlipFill `xml:"blipFill"`

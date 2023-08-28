@@ -12,13 +12,22 @@
 package excelize
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+)
+
+var (
+	expressionFormat = regexp.MustCompile(`"(?:[^"]|"")*"|\S+`)
+	conditionFormat  = regexp.MustCompile(`(or|\|\|)`)
+	blankFormat      = regexp.MustCompile("blanks|nonblanks")
+	matchFormat      = regexp.MustCompile("[*?]")
 )
 
 // parseTableOptions provides a function to parse the format settings of the
@@ -31,7 +40,7 @@ func parseTableOptions(opts *Table) (*Table, error) {
 	if opts.ShowRowStripes == nil {
 		opts.ShowRowStripes = boolPtr(true)
 	}
-	if err = checkTableName(opts.Name); err != nil {
+	if err = checkDefinedName(opts.Name); err != nil {
 		return opts, err
 	}
 	return opts, err
@@ -75,6 +84,23 @@ func (f *File) AddTable(sheet string, table *Table) error {
 	if err != nil {
 		return err
 	}
+	var exist bool
+	f.Pkg.Range(func(k, v interface{}) bool {
+		if strings.Contains(k.(string), "xl/tables/table") {
+			var t xlsxTable
+			if err := f.xmlNewDecoder(bytes.NewReader(namespaceStrictToTransitional(v.([]byte)))).
+				Decode(&t); err != nil && err != io.EOF {
+				return true
+			}
+			if exist = t.Name == options.Name; exist {
+				return false
+			}
+		}
+		return true
+	})
+	if exist {
+		return ErrExistsTableName
+	}
 	// Coordinate conversion, convert C1:B3 to 2,0,1,2.
 	coordinates, err := rangeRefToCoordinates(options.Range)
 	if err != nil {
@@ -97,6 +123,91 @@ func (f *File) AddTable(sheet string, table *Table) error {
 		return err
 	}
 	return f.addContentTypePart(tableID, "table")
+}
+
+// GetTables provides the method to get all tables in a worksheet by given
+// worksheet name.
+func (f *File) GetTables(sheet string) ([]Table, error) {
+	var tables []Table
+	ws, err := f.workSheetReader(sheet)
+	if err != nil {
+		return tables, err
+	}
+	if ws.TableParts == nil {
+		return tables, err
+	}
+	for _, tbl := range ws.TableParts.TableParts {
+		if tbl != nil {
+			target := f.getSheetRelationshipsTargetByID(sheet, tbl.RID)
+			tableXML := strings.ReplaceAll(target, "..", "xl")
+			content, ok := f.Pkg.Load(tableXML)
+			if !ok {
+				continue
+			}
+			var t xlsxTable
+			if err := f.xmlNewDecoder(bytes.NewReader(namespaceStrictToTransitional(content.([]byte)))).
+				Decode(&t); err != nil && err != io.EOF {
+				return tables, err
+			}
+			table := Table{
+				rID:   tbl.RID,
+				Range: t.Ref,
+				Name:  t.Name,
+			}
+			if t.TableStyleInfo != nil {
+				table.StyleName = t.TableStyleInfo.Name
+				table.ShowColumnStripes = t.TableStyleInfo.ShowColumnStripes
+				table.ShowFirstColumn = t.TableStyleInfo.ShowFirstColumn
+				table.ShowLastColumn = t.TableStyleInfo.ShowLastColumn
+				table.ShowRowStripes = &t.TableStyleInfo.ShowRowStripes
+			}
+			tables = append(tables, table)
+		}
+	}
+	return tables, err
+}
+
+// DeleteTable provides the method to delete table by given table name.
+func (f *File) DeleteTable(name string) error {
+	if err := checkDefinedName(name); err != nil {
+		return err
+	}
+	for _, sheet := range f.GetSheetList() {
+		tables, err := f.GetTables(sheet)
+		if err != nil {
+			return err
+		}
+		for _, table := range tables {
+			if table.Name != name {
+				continue
+			}
+			ws, _ := f.workSheetReader(sheet)
+			for i, tbl := range ws.TableParts.TableParts {
+				if tbl.RID == table.rID {
+					ws.TableParts.TableParts = append(ws.TableParts.TableParts[:i], ws.TableParts.TableParts[i+1:]...)
+					f.deleteSheetRelationships(sheet, tbl.RID)
+					break
+				}
+			}
+			if ws.TableParts.Count = len(ws.TableParts.TableParts); ws.TableParts.Count == 0 {
+				ws.TableParts = nil
+			}
+			// Delete cell value in the table header
+			coordinates, err := rangeRefToCoordinates(table.Range)
+			if err != nil {
+				return err
+			}
+			_ = sortCoordinates(coordinates)
+			for col := coordinates[0]; col <= coordinates[2]; col++ {
+				for row := coordinates[1]; row < coordinates[1]+1; row++ {
+					cell, _ := CoordinatesToCellName(col, row)
+					err = f.SetCellValue(sheet, cell, nil)
+				}
+			}
+			return err
+		}
+	}
+	return newNoExistTableError(name)
 }
 
 // countTables provides a function to get table files count storage in the
@@ -163,13 +274,13 @@ func (f *File) setTableHeader(sheet string, showHeaderRow bool, x1, y1, x2 int) 
 	return tableColumns, nil
 }
 
-// checkSheetName check whether there are illegal characters in the table name.
-// Verify that the name:
+// checkDefinedName check whether there are illegal characters in the defined
+// name or table name. Verify that the name:
 // 1. Starts with a letter or underscore (_)
 // 2. Doesn't include a space or character that isn't allowed
-func checkTableName(name string) error {
+func checkDefinedName(name string) error {
 	if utf8.RuneCountInString(name) > MaxFieldLength {
-		return ErrTableNameLength
+		return ErrNameLength
 	}
 	for i, c := range name {
 		if string(c) == "_" {
@@ -181,7 +292,7 @@ func checkTableName(name string) error {
 		if i > 0 && unicode.IsDigit(c) {
 			continue
 		}
-		return newInvalidTableNameError(name)
+		return newInvalidNameError(name)
 	}
 	return nil
 }
@@ -294,7 +405,7 @@ func (f *File) addTable(sheet, tableXML string, x1, y1, x2, y2, i int, opts *Tab
 //	x == *b      // ends with b
 //	x != *b      // doesn't end with b
 //	x == *b*     // contains b
-//	x != *b*     // doesn't contains b
+//	x != *b*     // doesn't contain b
 //
 // You can also use '*' to match any character or number and '?' to match any
 // single character or number. No other regular expression quantifier is
@@ -381,8 +492,7 @@ func (f *File) autoFilter(sheet, ref string, columns, col int, opts []AutoFilter
 			return fmt.Errorf("incorrect index of column '%s'", opt.Column)
 		}
 		fc := &xlsxFilterColumn{ColID: offset}
-		re := regexp.MustCompile(`"(?:[^"]|"")*"|\S+`)
-		token := re.FindAllString(opt.Expression, -1)
+		token := expressionFormat.FindAllString(opt.Expression, -1)
 		if len(token) != 3 && len(token) != 7 {
 			return fmt.Errorf("incorrect number of tokens in criteria '%s'", opt.Expression)
 		}
@@ -405,22 +515,23 @@ func (f *File) writeAutoFilter(fc *xlsxFilterColumn, exp []int, tokens []string)
 		var filters []*xlsxFilter
 		filters = append(filters, &xlsxFilter{Val: tokens[0]})
 		fc.Filters = &xlsxFilters{Filter: filters}
-	} else if len(exp) == 3 && exp[0] == 2 && exp[1] == 1 && exp[2] == 2 {
+		return
+	}
+	if len(exp) == 3 && exp[0] == 2 && exp[1] == 1 && exp[2] == 2 {
 		// Double equality with "or" operator.
 		var filters []*xlsxFilter
 		for _, v := range tokens {
 			filters = append(filters, &xlsxFilter{Val: v})
 		}
 		fc.Filters = &xlsxFilters{Filter: filters}
-	} else {
-		// Non default custom filter.
-		expRel := map[int]int{0: 0, 1: 2}
-		andRel := map[int]bool{0: true, 1: false}
-		for k, v := range tokens {
-			f.writeCustomFilter(fc, exp[expRel[k]], v)
-			if k == 1 {
-				fc.CustomFilters.And = andRel[exp[k]]
-			}
+		return
+	}
+	// Non default custom filter.
+	expRel, andRel := map[int]int{0: 0, 1: 2}, map[int]bool{0: true, 1: false}
+	for k, v := range tokens {
+		f.writeCustomFilter(fc, exp[expRel[k]], v)
+		if k == 1 {
+			fc.CustomFilters.And = andRel[exp[k]]
 		}
 	}
 }
@@ -442,11 +553,11 @@ func (f *File) writeCustomFilter(fc *xlsxFilterColumn, operator int, val string)
 	}
 	if fc.CustomFilters != nil {
 		fc.CustomFilters.CustomFilter = append(fc.CustomFilters.CustomFilter, &customFilter)
-	} else {
-		var customFilters []*xlsxCustomFilter
-		customFilters = append(customFilters, &customFilter)
-		fc.CustomFilters = &xlsxCustomFilters{CustomFilter: customFilters}
+		return
 	}
+	var customFilters []*xlsxCustomFilter
+	customFilters = append(customFilters, &customFilter)
+	fc.CustomFilters = &xlsxCustomFilters{CustomFilter: customFilters}
 }
 
 // parseFilterExpression provides a function to converts the tokens of a
@@ -463,10 +574,8 @@ func (f *File) parseFilterExpression(expression string, tokens []string) ([]int,
 	if len(tokens) == 7 {
 		// The number of tokens will be either 3 (for 1 expression) or 7 (for 2
 		// expressions).
-		conditional := 0
-		c := tokens[3]
-		re, _ := regexp.Match(`(or|\|\|)`, []byte(c))
-		if re {
+		conditional, c := 0, tokens[3]
+		if conditionFormat.MatchString(c) {
 			conditional = 1
 		}
 		expression1, token1, err := f.parseFilterTokens(expression, tokens[:3])
@@ -477,17 +586,13 @@ func (f *File) parseFilterExpression(expression string, tokens []string) ([]int,
 		if err != nil {
 			return expressions, t, err
 		}
-		expressions = []int{expression1[0], conditional, expression2[0]}
-		t = []string{token1, token2}
-	} else {
-		exp, token, err := f.parseFilterTokens(expression, tokens)
-		if err != nil {
-			return expressions, t, err
-		}
-		expressions = exp
-		t = []string{token}
+		return []int{expression1[0], conditional, expression2[0]}, []string{token1, token2}, nil
 	}
-	return expressions, t, nil
+	exp, token, err := f.parseFilterTokens(expression, tokens)
+	if err != nil {
+		return expressions, t, err
+	}
+	return exp, []string{token}, nil
 }
 
 // parseFilterTokens provides a function to parse the 3 tokens of a filter
@@ -510,11 +615,11 @@ func (f *File) parseFilterTokens(expression string, tokens []string) ([]int, str
 	operator, ok := operators[strings.ToLower(tokens[1])]
 	if !ok {
 		// Convert the operator from a number to a descriptive string.
-		return []int{}, "", fmt.Errorf("unknown operator: %s", tokens[1])
+		return []int{}, "", newUnknownFilterTokenError(tokens[1])
 	}
 	token := tokens[2]
 	// Special handling for Blanks/NonBlanks.
-	re, _ := regexp.Match("blanks|nonblanks", []byte(strings.ToLower(token)))
+	re := blankFormat.MatchString(strings.ToLower(token))
 	if re {
 		// Only allow Equals or NotEqual in this context.
 		if operator != 2 && operator != 5 {
@@ -539,8 +644,7 @@ func (f *File) parseFilterTokens(expression string, tokens []string) ([]int, str
 	}
 	// If the string token contains an Excel match character then change the
 	// operator type to indicate a non "simple" equality.
-	re, _ = regexp.Match("[*?]", []byte(token))
-	if operator == 2 && re {
+	if re = matchFormat.MatchString(token); operator == 2 && re {
 		operator = 22
 	}
 	return []int{operator}, token, nil
