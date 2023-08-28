@@ -53,7 +53,7 @@ func (f *File) ReadZipReader(r *zip.Reader) (map[string][]byte, int, error) {
 				continue
 			}
 		}
-		if strings.HasPrefix(fileName, "xl/worksheets/sheet") {
+		if strings.HasPrefix(strings.ToLower(fileName), "xl/worksheets/sheet") {
 			worksheets++
 			if fileSize > f.options.UnzipXMLSizeLimit && !v.FileInfo().IsDir() {
 				if tempFile, err := f.unzipToTemp(v); err == nil {
@@ -429,6 +429,30 @@ func float64Ptr(f float64) *float64 { return &f }
 
 // stringPtr returns a pointer to a string with the given value.
 func stringPtr(s string) *string { return &s }
+
+// Value extracts string data type text from a attribute value.
+func (attr *attrValString) Value() string {
+	if attr != nil && attr.Val != nil {
+		return *attr.Val
+	}
+	return ""
+}
+
+// Value extracts boolean data type value from a attribute value.
+func (attr *attrValBool) Value() bool {
+	if attr != nil && attr.Val != nil {
+		return *attr.Val
+	}
+	return false
+}
+
+// Value extracts float64 data type numeric from a attribute value.
+func (attr *attrValFloat) Value() float64 {
+	if attr != nil && attr.Val != nil {
+		return *attr.Val
+	}
+	return 0
+}
 
 // MarshalXML convert the boolean data type to literal values 0 or 1 on
 // serialization.

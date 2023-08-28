@@ -79,7 +79,7 @@ type Rows struct {
 	curRowOpts, seekRowOpts RowOpts
 }
 
-// Next will return true if find the next row element.
+// Next will return true if it finds the next row element.
 func (rows *Rows) Next() bool {
 	rows.seekRow++
 	if rows.curRow >= rows.seekRow {
@@ -267,12 +267,12 @@ func (f *File) Rows(sheet string) (*Rows, error) {
 	if !ok {
 		return nil, ErrSheetNotExist{sheet}
 	}
-	if ws, ok := f.Sheet.Load(name); ok && ws != nil {
-		worksheet := ws.(*xlsxWorksheet)
-		worksheet.Lock()
-		defer worksheet.Unlock()
+	if worksheet, ok := f.Sheet.Load(name); ok && worksheet != nil {
+		ws := worksheet.(*xlsxWorksheet)
+		ws.mu.Lock()
+		defer ws.mu.Unlock()
 		// Flush data
-		output, _ := xml.Marshal(worksheet)
+		output, _ := xml.Marshal(ws)
 		f.saveFileList(name, f.replaceNameSpaceBytes(name, output))
 	}
 	var err error
@@ -297,7 +297,9 @@ func (f *File) getFromStringItem(index int) string {
 	}
 	needClose, decoder, tempFile, err := f.xmlDecoder(defaultXMLPathSharedStrings)
 	if needClose && err == nil {
-		defer tempFile.Close()
+		defer func() {
+			err = tempFile.Close()
+		}()
 	}
 	f.sharedStringItem = [][]uint{}
 	f.sharedStringTemp, _ = os.CreateTemp(os.TempDir(), "excelize-")
@@ -360,7 +362,7 @@ func (f *File) SetRowHeight(sheet string, row int, height float64) error {
 		return err
 	}
 
-	prepareSheetXML(ws, 0, row)
+	ws.prepareSheetXML(0, row)
 
 	rowIdx := row - 1
 	ws.SheetData.Row[rowIdx].Ht = float64Ptr(height)
@@ -372,13 +374,16 @@ func (f *File) SetRowHeight(sheet string, row int, height float64) error {
 // name and row number.
 func (f *File) getRowHeight(sheet string, row int) int {
 	ws, _ := f.workSheetReader(sheet)
-	ws.Lock()
-	defer ws.Unlock()
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
 	for i := range ws.SheetData.Row {
 		v := &ws.SheetData.Row[i]
 		if v.R == row && v.Ht != nil {
 			return int(convertRowHeightToPixels(*v.Ht))
 		}
+	}
+	if ws.SheetFormatPr != nil && ws.SheetFormatPr.DefaultRowHeight > 0 {
+		return int(convertRowHeightToPixels(ws.SheetFormatPr.DefaultRowHeight))
 	}
 	// Optimization for when the row heights haven't changed.
 	return int(defaultRowHeightPixels)
@@ -390,7 +395,7 @@ func (f *File) getRowHeight(sheet string, row int) int {
 //	height, err := f.GetRowHeight("Sheet1", 1)
 func (f *File) GetRowHeight(sheet string, row int) (float64, error) {
 	if row < 1 {
-		return defaultRowHeightPixels, newInvalidRowNumberError(row)
+		return defaultRowHeight, newInvalidRowNumberError(row)
 	}
 	ht := defaultRowHeight
 	ws, err := f.workSheetReader(sheet)
@@ -416,8 +421,8 @@ func (f *File) GetRowHeight(sheet string, row int) (float64, error) {
 // after deserialization of xl/sharedStrings.xml.
 func (f *File) sharedStringsReader() (*xlsxSST, error) {
 	var err error
-	f.Lock()
-	defer f.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	relPath := f.getWorkbookRelsPath()
 	if f.SharedStrings == nil {
 		var sharedStrings xlsxSST
@@ -470,7 +475,7 @@ func (f *File) SetRowVisible(sheet string, row int, visible bool) error {
 	if err != nil {
 		return err
 	}
-	prepareSheetXML(ws, 0, row)
+	ws.prepareSheetXML(0, row)
 	ws.SheetData.Row[row-1].Hidden = !visible
 	return nil
 }
@@ -511,7 +516,7 @@ func (f *File) SetRowOutlineLevel(sheet string, row int, level uint8) error {
 	if err != nil {
 		return err
 	}
-	prepareSheetXML(ws, 0, row)
+	ws.prepareSheetXML(0, row)
 	ws.SheetData.Row[row-1].OutlineLevel = level
 	return nil
 }
@@ -657,7 +662,7 @@ func (f *File) DuplicateRowTo(sheet string, row, row2 int) error {
 	}
 
 	rowCopy.C = append(make([]xlsxC, 0, len(rowCopy.C)), rowCopy.C...)
-	f.adjustSingleRowDimensions(&rowCopy, row2)
+	f.adjustSingleRowDimensions(&rowCopy, row2, row2-row, true)
 
 	if idx2 != -1 {
 		ws.SheetData.Row[idx2] = rowCopy
@@ -724,7 +729,7 @@ func (f *File) duplicateMergeCells(sheet string, ws *xlsxWorksheet, row, row2 in
 //
 // Notice: this method could be very slow for large spreadsheets (more than
 // 3000 rows one sheet).
-func checkRow(ws *xlsxWorksheet) error {
+func (ws *xlsxWorksheet) checkRow() error {
 	for rowIdx := range ws.SheetData.Row {
 		rowData := &ws.SheetData.Row[rowIdx]
 
@@ -814,8 +819,8 @@ func (f *File) SetRowStyle(sheet string, start, end, styleID int) error {
 	if err != nil {
 		return err
 	}
-	s.Lock()
-	defer s.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if styleID < 0 || s.CellXfs == nil || len(s.CellXfs.Xf) <= styleID {
 		return newInvalidStyleID(styleID)
 	}
@@ -823,7 +828,7 @@ func (f *File) SetRowStyle(sheet string, start, end, styleID int) error {
 	if err != nil {
 		return err
 	}
-	prepareSheetXML(ws, 0, end)
+	ws.prepareSheetXML(0, end)
 	for row := start - 1; row < end; row++ {
 		ws.SheetData.Row[row].S = styleID
 		ws.SheetData.Row[row].CustomFormat = true
@@ -840,10 +845,8 @@ func (f *File) SetRowStyle(sheet string, start, end, styleID int) error {
 // cell from user's units to pixels. If the height hasn't been set by the user
 // we use the default value. If the row is hidden it has a value of zero.
 func convertRowHeightToPixels(height float64) float64 {
-	var pixels float64
 	if height == 0 {
-		return pixels
+		return 0
 	}
-	pixels = math.Ceil(4.0 / 3.0 * height)
-	return pixels
+	return math.Ceil(4.0 / 3.4 * height)
 }

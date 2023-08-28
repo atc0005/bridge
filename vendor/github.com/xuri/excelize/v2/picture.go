@@ -110,41 +110,46 @@ func parseGraphicOptions(opts *GraphicOptions) *GraphicOptions {
 //	    }
 //	}
 //
-// The optional parameter "AutoFit" specifies if you make image size auto-fits the
-// cell, the default value of that is 'false'.
+// The optional parameter "AltText" is used to add alternative text to a graph
+// object.
 //
-// The optional parameter "Hyperlink" specifies the hyperlink of the image.
+// The optional parameter "PrintObject" indicates whether the graph object is
+// printed when the worksheet is printed, the default value of that is 'true'.
+//
+// The optional parameter "Locked" indicates whether lock the graph object.
+// Locking an object has no effect unless the sheet is protected.
+//
+// The optional parameter "LockAspectRatio" indicates whether lock aspect ratio
+// for the graph object, the default value of that is 'false'.
+//
+// The optional parameter "AutoFit" specifies if you make graph object size
+// auto-fits the cell, the default value of that is 'false'.
+//
+// The optional parameter "OffsetX" specifies the horizontal offset of the graph
+// object with the cell, the default value of that is 0.
+//
+// The optional parameter "OffsetY" specifies the vertical offset of the graph
+// object with the cell, the default value of that is 0.
+//
+// The optional parameter "ScaleX" specifies the horizontal scale of graph
+// object, the default value of that is 1.0 which presents 100%.
+//
+// The optional parameter "ScaleY" specifies the vertical scale of graph object,
+// the default value of that is 1.0 which presents 100%.
+//
+// The optional parameter "Hyperlink" specifies the hyperlink of the graph
+// object.
 //
 // The optional parameter "HyperlinkType" defines two types of
 // hyperlink "External" for website or "Location" for moving to one of the
 // cells in this workbook. When the "HyperlinkType" is "Location",
 // coordinates need to start with "#".
 //
-// The optional parameter "Positioning" defines two types of the position of an
-// image in an Excel spreadsheet, "oneCell" (Move but don't size with
-// cells) or "absolute" (Don't move or size with cells). If you don't set this
-// parameter, the default positioning is move and size with cells.
-//
-// The optional parameter "PrintObject" indicates whether the image is printed
-// when the worksheet is printed, the default value of that is 'true'.
-//
-// The optional parameter "LockAspectRatio" indicates whether lock aspect
-// ratio for the image, the default value of that is 'false'.
-//
-// The optional parameter "Locked" indicates whether lock the image. Locking
-// an object has no effect unless the sheet is protected.
-//
-// The optional parameter "OffsetX" specifies the horizontal offset of the
-// image with the cell, the default value of that is 0.
-//
-// The optional parameter "ScaleX" specifies the horizontal scale of images,
-// the default value of that is 1.0 which presents 100%.
-//
-// The optional parameter "OffsetY" specifies the vertical offset of the
-// image with the cell, the default value of that is 0.
-//
-// The optional parameter "ScaleY" specifies the vertical scale of images,
-// the default value of that is 1.0 which presents 100%.
+// The optional parameter "Positioning" defines 3 types of the position of a
+// graph object in a spreadsheet: "oneCell" (Move but don't size with
+// cells), "twoCell" (Move and size with cells), and "absolute" (Don't move or
+// size with cells). If you don't set this parameter, the default positioning
+// is to move and size with cells.
 func (f *File) AddPicture(sheet, cell, name string, opts *GraphicOptions) error {
 	var err error
 	// Check picture exists first.
@@ -211,12 +216,15 @@ func (f *File) AddPictureFromBytes(sheet, cell string, pic *Picture) error {
 	if err != nil {
 		return err
 	}
-	// Read sheet data.
+	// Read sheet data
+	f.mu.Lock()
 	ws, err := f.workSheetReader(sheet)
 	if err != nil {
+		f.mu.Unlock()
 		return err
 	}
-	ws.Lock()
+	f.mu.Unlock()
+	ws.mu.Lock()
 	// Add first picture for given sheet, create xl/drawings/ and xl/drawings/_rels/ folder.
 	drawingID := f.countDrawings() + 1
 	drawingXML := "xl/drawings/drawing" + strconv.Itoa(drawingID) + ".xml"
@@ -231,7 +239,7 @@ func (f *File) AddPictureFromBytes(sheet, cell string, pic *Picture) error {
 		}
 		drawingHyperlinkRID = f.addRels(drawingRels, SourceRelationshipHyperLink, options.Hyperlink, hyperlinkType)
 	}
-	ws.Unlock()
+	ws.mu.Unlock()
 	err = f.addDrawingPicture(sheet, drawingXML, cell, ext, drawingRID, drawingHyperlinkRID, img, options)
 	if err != nil {
 		return err
@@ -256,8 +264,8 @@ func (f *File) deleteSheetRelationships(sheet, rID string) {
 	if sheetRels == nil {
 		sheetRels = &xlsxRelationships{}
 	}
-	sheetRels.Lock()
-	defer sheetRels.Unlock()
+	sheetRels.mu.Lock()
+	defer sheetRels.mu.Unlock()
 	for k, v := range sheetRels.Relationships {
 		if v.ID == rID {
 			sheetRels.Relationships = append(sheetRels.Relationships[:k], sheetRels.Relationships[k+1:]...)
@@ -300,23 +308,20 @@ func (f *File) addSheetPicture(sheet string, rID int) error {
 // countDrawings provides a function to get drawing files count storage in the
 // folder xl/drawings.
 func (f *File) countDrawings() int {
-	var c1, c2 int
+	drawings := map[string]struct{}{}
 	f.Pkg.Range(func(k, v interface{}) bool {
 		if strings.Contains(k.(string), "xl/drawings/drawing") {
-			c1++
+			drawings[k.(string)] = struct{}{}
 		}
 		return true
 	})
 	f.Drawings.Range(func(rel, value interface{}) bool {
 		if strings.Contains(rel.(string), "xl/drawings/drawing") {
-			c2++
+			drawings[rel.(string)] = struct{}{}
 		}
 		return true
 	})
-	if c1 < c2 {
-		return c2
-	}
-	return c1
+	return len(drawings)
 }
 
 // addDrawingPicture provides a function to add picture by given sheet,
@@ -327,18 +332,18 @@ func (f *File) addDrawingPicture(sheet, drawingXML, cell, ext string, rID, hyper
 	if err != nil {
 		return err
 	}
+	if opts.Positioning != "" && inStrSlice(supportedPositioning, opts.Positioning, true) == -1 {
+		return ErrParameterInvalid
+	}
 	width, height := img.Width, img.Height
 	if opts.AutoFit {
-		width, height, col, row, err = f.drawingResize(sheet, cell, float64(width), float64(height), opts)
-		if err != nil {
+		if width, height, col, row, err = f.drawingResize(sheet, cell, float64(width), float64(height), opts); err != nil {
 			return err
 		}
 	} else {
 		width = int(float64(width) * opts.ScaleX)
 		height = int(float64(height) * opts.ScaleY)
 	}
-	col--
-	row--
 	colStart, rowStart, colEnd, rowEnd, x2, y2 := f.positionObjectPixels(sheet, col, row, opts.OffsetX, opts.OffsetY, width, height)
 	content, cNvPrID, err := f.drawingParser(drawingXML)
 	if err != nil {
@@ -391,8 +396,8 @@ func (f *File) addDrawingPicture(sheet, drawingXML, cell, ext string, rID, hyper
 		FLocksWithSheet:  *opts.Locked,
 		FPrintsWithSheet: *opts.PrintObject,
 	}
-	content.Lock()
-	defer content.Unlock()
+	content.mu.Lock()
+	defer content.mu.Unlock()
 	content.TwoCellAnchor = append(content.TwoCellAnchor, &twoCellAnchor)
 	f.Drawings.Store(drawingXML, content)
 	return err
@@ -447,8 +452,8 @@ func (f *File) setContentTypePartImageExtensions() error {
 	if err != nil {
 		return err
 	}
-	content.Lock()
-	defer content.Unlock()
+	content.mu.Lock()
+	defer content.mu.Unlock()
 	for _, file := range content.Defaults {
 		delete(imageTypes, file.Extension)
 	}
@@ -469,8 +474,8 @@ func (f *File) setContentTypePartVMLExtensions() error {
 	if err != nil {
 		return err
 	}
-	content.Lock()
-	defer content.Unlock()
+	content.mu.Lock()
+	defer content.mu.Unlock()
 	for _, v := range content.Defaults {
 		if v.Extension == "vml" {
 			vml = true
@@ -522,8 +527,8 @@ func (f *File) addContentTypePart(index int, contentType string) error {
 	if err != nil {
 		return err
 	}
-	content.Lock()
-	defer content.Unlock()
+	content.mu.Lock()
+	defer content.mu.Unlock()
 	for _, v := range content.Overrides {
 		if v.PartName == partNames[contentType] {
 			return err
@@ -549,8 +554,8 @@ func (f *File) getSheetRelationshipsTargetByID(sheet, rID string) string {
 	if sheetRels == nil {
 		sheetRels = &xlsxRelationships{}
 	}
-	sheetRels.Lock()
-	defer sheetRels.Unlock()
+	sheetRels.mu.Lock()
+	defer sheetRels.mu.Unlock()
 	for _, v := range sheetRels.Relationships {
 		if v.ID == rID {
 			return v.Target
@@ -591,10 +596,13 @@ func (f *File) GetPictures(sheet, cell string) ([]Picture, error) {
 	}
 	col--
 	row--
+	f.mu.Lock()
 	ws, err := f.workSheetReader(sheet)
 	if err != nil {
+		f.mu.Unlock()
 		return nil, err
 	}
+	f.mu.Unlock()
 	if ws.Drawing == nil {
 		return nil, err
 	}
@@ -631,45 +639,48 @@ func (f *File) DeletePicture(sheet, cell string) error {
 // embed in spreadsheet by given coordinates and drawing relationships.
 func (f *File) getPicture(row, col int, drawingXML, drawingRelationships string) (pics []Picture, err error) {
 	var (
-		wsDr            *xlsxWsDr
-		ok              bool
-		deWsDr          *decodeWsDr
-		drawRel         *xlsxRelationship
-		deTwoCellAnchor *decodeTwoCellAnchor
+		ok           bool
+		deWsDr       *decodeWsDr
+		deCellAnchor *decodeCellAnchor
+		drawRel      *xlsxRelationship
+		wsDr         *xlsxWsDr
 	)
 
 	if wsDr, _, err = f.drawingParser(drawingXML); err != nil {
 		return
 	}
-	if pics = f.getPicturesFromWsDr(row, col, drawingRelationships, wsDr); len(pics) > 0 {
-		return
-	}
+	pics = f.getPicturesFromWsDr(row, col, drawingRelationships, wsDr)
 	deWsDr = new(decodeWsDr)
 	if err = f.xmlNewDecoder(bytes.NewReader(namespaceStrictToTransitional(f.readXML(drawingXML)))).
 		Decode(deWsDr); err != nil && err != io.EOF {
 		return
 	}
 	err = nil
-	for _, anchor := range deWsDr.TwoCellAnchor {
-		deTwoCellAnchor = new(decodeTwoCellAnchor)
-		if err = f.xmlNewDecoder(strings.NewReader("<decodeTwoCellAnchor>" + anchor.Content + "</decodeTwoCellAnchor>")).
-			Decode(deTwoCellAnchor); err != nil && err != io.EOF {
+	extractAnchor := func(anchor *decodeCellAnchor) {
+		deCellAnchor = new(decodeCellAnchor)
+		if err := f.xmlNewDecoder(strings.NewReader("<decodeCellAnchor>" + anchor.Content + "</decodeCellAnchor>")).
+			Decode(deCellAnchor); err != nil && err != io.EOF {
 			return
 		}
-		if err = nil; deTwoCellAnchor.From != nil && deTwoCellAnchor.Pic != nil {
-			if deTwoCellAnchor.From.Col == col && deTwoCellAnchor.From.Row == row {
-				drawRel = f.getDrawingRelationships(drawingRelationships, deTwoCellAnchor.Pic.BlipFill.Blip.Embed)
+		if err = nil; deCellAnchor.From != nil && deCellAnchor.Pic != nil {
+			if deCellAnchor.From.Col == col && deCellAnchor.From.Row == row {
+				drawRel = f.getDrawingRelationships(drawingRelationships, deCellAnchor.Pic.BlipFill.Blip.Embed)
 				if _, ok = supportedImageTypes[strings.ToLower(filepath.Ext(drawRel.Target))]; ok {
 					pic := Picture{Extension: filepath.Ext(drawRel.Target), Format: &GraphicOptions{}}
 					if buffer, _ := f.Pkg.Load(strings.ReplaceAll(drawRel.Target, "..", "xl")); buffer != nil {
 						pic.File = buffer.([]byte)
-						pic.Format.AltText = deTwoCellAnchor.Pic.NvPicPr.CNvPr.Descr
+						pic.Format.AltText = deCellAnchor.Pic.NvPicPr.CNvPr.Descr
 						pics = append(pics, pic)
 					}
-					return
 				}
 			}
 		}
+	}
+	for _, anchor := range deWsDr.TwoCellAnchor {
+		extractAnchor(anchor)
+	}
+	for _, anchor := range deWsDr.OneCellAnchor {
+		extractAnchor(anchor)
 	}
 	return
 }
@@ -683,8 +694,8 @@ func (f *File) getPicturesFromWsDr(row, col int, drawingRelationships string, ws
 		anchor  *xdrCellAnchor
 		drawRel *xlsxRelationship
 	)
-	wsDr.Lock()
-	defer wsDr.Unlock()
+	wsDr.mu.Lock()
+	defer wsDr.mu.Unlock()
 	for _, anchor = range wsDr.TwoCellAnchor {
 		if anchor.From != nil && anchor.Pic != nil {
 			if anchor.From.Col == col && anchor.From.Row == row {
@@ -710,8 +721,8 @@ func (f *File) getPicturesFromWsDr(row, col int, drawingRelationships string, ws
 // relationship ID.
 func (f *File) getDrawingRelationships(rels, rID string) *xlsxRelationship {
 	if drawingRels, _ := f.relsReader(rels); drawingRels != nil {
-		drawingRels.Lock()
-		defer drawingRels.Unlock()
+		drawingRels.mu.Lock()
+		defer drawingRels.mu.Unlock()
 		for _, v := range drawingRels.Relationships {
 			if v.ID == rID {
 				return &v

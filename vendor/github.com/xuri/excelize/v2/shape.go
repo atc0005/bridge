@@ -22,6 +22,9 @@ func parseShapeOptions(opts *Shape) (*Shape, error) {
 	if opts == nil {
 		return nil, ErrParameterInvalid
 	}
+	if opts.Type == "" {
+		return nil, ErrParameterInvalid
+	}
 	if opts.Width == 0 {
 		opts.Width = defaultShapeSize
 	}
@@ -47,13 +50,13 @@ func parseShapeOptions(opts *Shape) (*Shape, error) {
 }
 
 // AddShape provides the method to add shape in a sheet by given worksheet
-// index, shape format set (such as offset, scale, aspect ratio setting and
-// print settings) and properties set. For example, add text box (rect shape)
-// in Sheet1:
+// name and shape format set (such as offset, scale, aspect ratio setting and
+// print settings). For example, add text box (rect shape) in Sheet1:
 //
 //	lineWidth := 1.2
-//	err := f.AddShape("Sheet1", "G6",
+//	err := f.AddShape("Sheet1",
 //	    &excelize.Shape{
+//	        Cell: "G6",
 //	        Type: "rect",
 //	        Line: excelize.ShapeLine{Color: "4286F4", Width: &lineWidth},
 //	        Fill: excelize.Fill{Color: []string{"8EB9FF"}, Pattern: 1},
@@ -285,12 +288,12 @@ func parseShapeOptions(opts *Shape) (*Shape, error) {
 //	wavy
 //	wavyHeavy
 //	wavyDbl
-func (f *File) AddShape(sheet, cell string, opts *Shape) error {
+func (f *File) AddShape(sheet string, opts *Shape) error {
 	options, err := parseShapeOptions(opts)
 	if err != nil {
 		return err
 	}
-	// Read sheet data.
+	// Read sheet data
 	ws, err := f.workSheetReader(sheet)
 	if err != nil {
 		return err
@@ -313,7 +316,7 @@ func (f *File) AddShape(sheet, cell string, opts *Shape) error {
 		f.addSheetDrawing(sheet, rID)
 		f.addSheetNameSpace(sheet, SourceRelationship)
 	}
-	if err = f.addDrawingShape(sheet, drawingXML, cell, options); err != nil {
+	if err = f.addDrawingShape(sheet, drawingXML, opts.Cell, options); err != nil {
 		return err
 	}
 	return f.addContentTypePart(drawingID, "drawings")
@@ -326,13 +329,10 @@ func (f *File) addDrawingShape(sheet, drawingXML, cell string, opts *Shape) erro
 	if err != nil {
 		return err
 	}
-	colIdx := fromCol - 1
-	rowIdx := fromRow - 1
-
 	width := int(float64(opts.Width) * opts.Format.ScaleX)
 	height := int(float64(opts.Height) * opts.Format.ScaleY)
 
-	colStart, rowStart, colEnd, rowEnd, x2, y2 := f.positionObjectPixels(sheet, colIdx, rowIdx, opts.Format.OffsetX, opts.Format.OffsetY,
+	colStart, rowStart, colEnd, rowEnd, x2, y2 := f.positionObjectPixels(sheet, fromCol, fromRow, opts.Format.OffsetX, opts.Format.OffsetY,
 		width, height)
 	content, cNvPrID, err := f.drawingParser(drawingXML)
 	if err != nil {

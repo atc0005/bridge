@@ -23,771 +23,6 @@ import (
 	"strings"
 )
 
-// Excel styles can reference number formats that are built-in, all of which
-// have an id less than 164. Note that this number format code list is under
-// English localization.
-var builtInNumFmt = map[int]string{
-	0:  "general",
-	1:  "0",
-	2:  "0.00",
-	3:  "#,##0",
-	4:  "#,##0.00",
-	9:  "0%",
-	10: "0.00%",
-	11: "0.00e+00",
-	12: "# ?/?",
-	13: "# ??/??",
-	14: "mm-dd-yy",
-	15: "d-mmm-yy",
-	16: "d-mmm",
-	17: "mmm-yy",
-	18: "h:mm am/pm",
-	19: "h:mm:ss am/pm",
-	20: "hh:mm",
-	21: "hh:mm:ss",
-	22: "m/d/yy hh:mm",
-	37: "#,##0 ;(#,##0)",
-	38: "#,##0 ;[red](#,##0)",
-	39: "#,##0.00;(#,##0.00)",
-	40: "#,##0.00;[red](#,##0.00)",
-	41: `_(* #,##0_);_(* \(#,##0\);_(* "-"_);_(@_)`,
-	42: `_("$"* #,##0_);_("$"* \(#,##0\);_("$"* "-"_);_(@_)`,
-	43: `_(* #,##0.00_);_(* \(#,##0.00\);_(* "-"??_);_(@_)`,
-	44: `_("$"* #,##0.00_);_("$"* \(#,##0.00\);_("$"* "-"??_);_(@_)`,
-	45: "mm:ss",
-	46: "[h]:mm:ss",
-	47: "mmss.0",
-	48: "##0.0e+0",
-	49: "@",
-}
-
-// langNumFmt defined number format code (with unicode values provided for
-// language glyphs where they occur) in different language.
-var langNumFmt = map[string]map[int]string{
-	"zh-tw": {
-		27: "[$-404]e/m/d",
-		28: `[$-404]e"年"m"月"d"日"`,
-		29: `[$-404]e"年"m"月"d"日"`,
-		30: "m/d/yy",
-		31: `yyyy"年"m"月"d"日"`,
-		32: `hh"時"mm"分"`,
-		33: `hh"時"mm"分"ss"秒"`,
-		34: `上午/下午 hh"時"mm"分"`,
-		35: `上午/下午 hh"時"mm"分"ss"秒"`,
-		36: "[$-404]e/m/d",
-		50: "[$-404]e/m/d",
-		51: `[$-404]e"年"m"月"d"日"`,
-		52: `上午/下午 hh"時"mm"分"`,
-		53: `上午/下午 hh"時"mm"分"ss"秒"`,
-		54: `[$-404]e"年"m"月"d"日"`,
-		55: `上午/下午 hh"時"mm"分"`,
-		56: `上午/下午 hh"時"mm"分"ss"秒"`,
-		57: "[$-404]e/m/d",
-		58: `[$-404]e"年"m"月"d"日"`,
-	},
-	"zh-cn": {
-		27: `yyyy"年"m"月"`,
-		28: `m"月"d"日"`,
-		29: `m"月"d"日"`,
-		30: "m-d-yy",
-		31: `yyyy"年"m"月"d"日"`,
-		32: `h"时"mm"分"`,
-		33: `h"时"mm"分"ss"秒"`,
-		34: `上午/下午 h"时"mm"分"`,
-		35: `上午/下午 h"时"mm"分"ss"秒"`,
-		36: `yyyy"年"m"月"`,
-		50: `yyyy"年"m"月"`,
-		51: `m"月"d"日"`,
-		52: `yyyy"年"m"月"`,
-		53: `m"月"d"日"`,
-		54: `m"月"d"日"`,
-		55: `上午/下午 h"时"mm"分"`,
-		56: `上午/下午 h"时"mm"分"ss"秒"`,
-		57: `yyyy"年"m"月"`,
-		58: `m"月"d"日"`,
-	},
-	"zh-tw_unicode": {
-		27: "[$-404]e/m/d",
-		28: `[$-404]e"5E74"m"6708"d"65E5"`,
-		29: `[$-404]e"5E74"m"6708"d"65E5"`,
-		30: "m/d/yy",
-		31: `yyyy"5E74"m"6708"d"65E5"`,
-		32: `hh"6642"mm"5206"`,
-		33: `hh"6642"mm"5206"ss"79D2"`,
-		34: `4E0A5348/4E0B5348hh"6642"mm"5206"`,
-		35: `4E0A5348/4E0B5348hh"6642"mm"5206"ss"79D2"`,
-		36: "[$-404]e/m/d",
-		50: "[$-404]e/m/d",
-		51: `[$-404]e"5E74"m"6708"d"65E5"`,
-		52: `4E0A5348/4E0B5348hh"6642"mm"5206"`,
-		53: `4E0A5348/4E0B5348hh"6642"mm"5206"ss"79D2"`,
-		54: `[$-404]e"5E74"m"6708"d"65E5"`,
-		55: `4E0A5348/4E0B5348hh"6642"mm"5206"`,
-		56: `4E0A5348/4E0B5348hh"6642"mm"5206"ss"79D2"`,
-		57: "[$-404]e/m/d",
-		58: `[$-404]e"5E74"m"6708"d"65E5"`,
-	},
-	"zh-cn_unicode": {
-		27: `yyyy"5E74"m"6708"`,
-		28: `m"6708"d"65E5"`,
-		29: `m"6708"d"65E5"`,
-		30: "m-d-yy",
-		31: `yyyy"5E74"m"6708"d"65E5"`,
-		32: `h"65F6"mm"5206"`,
-		33: `h"65F6"mm"5206"ss"79D2"`,
-		34: `4E0A5348/4E0B5348h"65F6"mm"5206"`,
-		35: `4E0A5348/4E0B5348h"65F6"mm"5206"ss"79D2"`,
-		36: `yyyy"5E74"m"6708"`,
-		50: `yyyy"5E74"m"6708"`,
-		51: `m"6708"d"65E5"`,
-		52: `yyyy"5E74"m"6708"`,
-		53: `m"6708"d"65E5"`,
-		54: `m"6708"d"65E5"`,
-		55: `4E0A5348/4E0B5348h"65F6"mm"5206"`,
-		56: `4E0A5348/4E0B5348h"65F6"mm"5206"ss"79D2"`,
-		57: `yyyy"5E74"m"6708"`,
-		58: `m"6708"d"65E5"`,
-	},
-	"ja-jp": {
-		27: "[$-411]ge.m.d",
-		28: `[$-411]ggge"年"m"月"d"日"`,
-		29: `[$-411]ggge"年"m"月"d"日"`,
-		30: "m/d/yy",
-		31: `yyyy"年"m"月"d"日"`,
-		32: `h"時"mm"分"`,
-		33: `h"時"mm"分"ss"秒"`,
-		34: `yyyy"年"m"月"`,
-		35: `m"月"d"日"`,
-		36: "[$-411]ge.m.d",
-		50: "[$-411]ge.m.d",
-		51: `[$-411]ggge"年"m"月"d"日"`,
-		52: `yyyy"年"m"月"`,
-		53: `m"月"d"日"`,
-		54: `[$-411]ggge"年"m"月"d"日"`,
-		55: `yyyy"年"m"月"`,
-		56: `m"月"d"日"`,
-		57: "[$-411]ge.m.d",
-		58: `[$-411]ggge"年"m"月"d"日"`,
-	},
-	"ko-kr": {
-		27: `yyyy"年" mm"月" dd"日"`,
-		28: "mm-dd",
-		29: "mm-dd",
-		30: "mm-dd-yy",
-		31: `yyyy"년" mm"월" dd"일"`,
-		32: `h"시" mm"분"`,
-		33: `h"시" mm"분" ss"초"`,
-		34: `yyyy-mm-dd`,
-		35: `yyyy-mm-dd`,
-		36: `yyyy"年" mm"月" dd"日"`,
-		50: `yyyy"年" mm"月" dd"日"`,
-		51: "mm-dd",
-		52: "yyyy-mm-dd",
-		53: "yyyy-mm-dd",
-		54: "mm-dd",
-		55: "yyyy-mm-dd",
-		56: "yyyy-mm-dd",
-		57: `yyyy"年" mm"月" dd"日"`,
-		58: "mm-dd",
-	},
-	"ja-jp_unicode": {
-		27: "[$-411]ge.m.d",
-		28: `[$-411]ggge"5E74"m"6708"d"65E5"`,
-		29: `[$-411]ggge"5E74"m"6708"d"65E5"`,
-		30: "m/d/yy",
-		31: `yyyy"5E74"m"6708"d"65E5"`,
-		32: `h"6642"mm"5206"`,
-		33: `h"6642"mm"5206"ss"79D2"`,
-		34: `yyyy"5E74"m"6708"`,
-		35: `m"6708"d"65E5"`,
-		36: "[$-411]ge.m.d",
-		50: "[$-411]ge.m.d",
-		51: `[$-411]ggge"5E74"m"6708"d"65E5"`,
-		52: `yyyy"5E74"m"6708"`,
-		53: `m"6708"d"65E5"`,
-		54: `[$-411]ggge"5E74"m"6708"d"65E5"`,
-		55: `yyyy"5E74"m"6708"`,
-		56: `m"6708"d"65E5"`,
-		57: "[$-411]ge.m.d",
-		58: `[$-411]ggge"5E74"m"6708"d"65E5"`,
-	},
-	"ko-kr_unicode": {
-		27: `yyyy"5E74" mm"6708" dd"65E5"`,
-		28: "mm-dd",
-		29: "mm-dd",
-		30: "mm-dd-yy",
-		31: `yyyy"B144" mm"C6D4" dd"C77C"`,
-		32: `h"C2DC" mm"BD84"`,
-		33: `h"C2DC" mm"BD84" ss"CD08"`,
-		34: "yyyy-mm-dd",
-		35: "yyyy-mm-dd",
-		36: `yyyy"5E74" mm"6708" dd"65E5"`,
-		50: `yyyy"5E74" mm"6708" dd"65E5"`,
-		51: "mm-dd",
-		52: "yyyy-mm-dd",
-		53: "yyyy-mm-dd",
-		54: "mm-dd",
-		55: "yyyy-mm-dd",
-		56: "yyyy-mm-dd",
-		57: `yyyy"5E74" mm"6708" dd"65E5"`,
-		58: "mm-dd",
-	},
-	"th-th": {
-		59: "t0",
-		60: "t0.00",
-		61: "t#,##0",
-		62: "t#,##0.00",
-		67: "t0%",
-		68: "t0.00%",
-		69: "t# ?/?",
-		70: "t# ??/??",
-		71: "ว/ด/ปปปป",
-		72: "ว-ดดด-ปป",
-		73: "ว-ดดด",
-		74: "ดดด-ปป",
-		75: "ช:นน",
-		76: "ช:นน:ทท",
-		77: "ว/ด/ปปปป ช:นน",
-		78: "นน:ทท",
-		79: "[ช]:นน:ทท",
-		80: "นน:ทท.0",
-		81: "d/m/bb",
-	},
-	"th-th_unicode": {
-		59: "t0",
-		60: "t0.00",
-		61: "t#,##0",
-		62: "t#,##0.00",
-		67: "t0%",
-		68: "t0.00%",
-		69: "t# ?/?",
-		70: "t# ??/??",
-		71: "0E27/0E14/0E1B0E1B0E1B0E1B",
-		72: "0E27-0E140E140E14-0E1B0E1B",
-		73: "0E27-0E140E140E14",
-		74: "0E140E140E14-0E1B0E1B",
-		75: "0E0A:0E190E19",
-		76: "0E0A:0E190E19:0E170E17",
-		77: "0E27/0E14/0E1B0E1B0E1B0E1B 0E0A:0E190E19",
-		78: "0E190E19:0E170E17",
-		79: "[0E0A]:0E190E19:0E170E17",
-		80: "0E190E19:0E170E17.0",
-		81: "d/m/bb",
-	},
-}
-
-// currencyNumFmt defined the currency number format map.
-var currencyNumFmt = map[int]string{
-	164: `"¥"#,##0.00`,
-	165: "[$$-409]#,##0.00",
-	166: "[$$-45C]#,##0.00",
-	167: "[$$-1004]#,##0.00",
-	168: "[$$-404]#,##0.00",
-	169: "[$$-C09]#,##0.00",
-	170: "[$$-2809]#,##0.00",
-	171: "[$$-1009]#,##0.00",
-	172: "[$$-2009]#,##0.00",
-	173: "[$$-1409]#,##0.00",
-	174: "[$$-4809]#,##0.00",
-	175: "[$$-2C09]#,##0.00",
-	176: "[$$-2409]#,##0.00",
-	177: "[$$-1000]#,##0.00",
-	178: `#,##0.00\ [$$-C0C]`,
-	179: "[$$-475]#,##0.00",
-	180: "[$$-83E]#,##0.00",
-	181: `[$$-86B]\ #,##0.00`,
-	182: `[$$-340A]\ #,##0.00`,
-	183: "[$$-240A]#,##0.00",
-	184: `[$$-300A]\ #,##0.00`,
-	185: "[$$-440A]#,##0.00",
-	186: "[$$-80A]#,##0.00",
-	187: "[$$-500A]#,##0.00",
-	188: "[$$-540A]#,##0.00",
-	189: `[$$-380A]\ #,##0.00`,
-	190: "[$£-809]#,##0.00",
-	191: "[$£-491]#,##0.00",
-	192: "[$£-452]#,##0.00",
-	193: "[$¥-804]#,##0.00",
-	194: "[$¥-411]#,##0.00",
-	195: "[$¥-478]#,##0.00",
-	196: "[$¥-451]#,##0.00",
-	197: "[$¥-480]#,##0.00",
-	198: "#,##0.00\\ [$\u058F-42B]",
-	199: "[$\u060B-463]#,##0.00",
-	200: "[$\u060B-48C]#,##0.00",
-	201: "[$\u09F3-845]\\ #,##0.00",
-	202: "#,##0.00[$\u17DB-453]",
-	203: "[$\u20A1-140A]#,##0.00",
-	204: "[$\u20A6-468]\\ #,##0.00",
-	205: "[$\u20A6-470]\\ #,##0.00",
-	206: "[$\u20A9-412]#,##0.00",
-	207: "[$\u20AA-40D]\\ #,##0.00",
-	208: "#,##0.00\\ [$\u20AB-42A]",
-	209: "#,##0.00\\ [$\u20AC-42D]",
-	210: "#,##0.00\\ [$\u20AC-47E]",
-	211: "#,##0.00\\ [$\u20AC-403]",
-	212: "#,##0.00\\ [$\u20AC-483]",
-	213: "[$\u20AC-813]\\ #,##0.00",
-	214: "[$\u20AC-413]\\ #,##0.00",
-	215: "[$\u20AC-1809]#,##0.00",
-	216: "#,##0.00\\ [$\u20AC-425]",
-	217: "[$\u20AC-2]\\ #,##0.00",
-	218: "#,##0.00\\ [$\u20AC-1]",
-	219: "#,##0.00\\ [$\u20AC-40B]",
-	220: "#,##0.00\\ [$\u20AC-80C]",
-	221: "#,##0.00\\ [$\u20AC-40C]",
-	222: "#,##0.00\\ [$\u20AC-140C]",
-	223: "#,##0.00\\ [$\u20AC-180C]",
-	224: "[$\u20AC-200C]#,##0.00",
-	225: "#,##0.00\\ [$\u20AC-456]",
-	226: "#,##0.00\\ [$\u20AC-C07]",
-	227: "#,##0.00\\ [$\u20AC-407]",
-	228: "#,##0.00\\ [$\u20AC-1007]",
-	229: "#,##0.00\\ [$\u20AC-408]",
-	230: "#,##0.00\\ [$\u20AC-243B]",
-	231: "[$\u20AC-83C]#,##0.00",
-	232: "[$\u20AC-410]\\ #,##0.00",
-	233: "[$\u20AC-476]#,##0.00",
-	234: "#,##0.00\\ [$\u20AC-2C1A]",
-	235: "[$\u20AC-426]\\ #,##0.00",
-	236: "#,##0.00\\ [$\u20AC-427]",
-	237: "#,##0.00\\ [$\u20AC-82E]",
-	238: "#,##0.00\\ [$\u20AC-46E]",
-	239: "[$\u20AC-43A]#,##0.00",
-	240: "#,##0.00\\ [$\u20AC-C3B]",
-	241: "#,##0.00\\ [$\u20AC-482]",
-	242: "#,##0.00\\ [$\u20AC-816]",
-	243: "#,##0.00\\ [$\u20AC-301A]",
-	244: "#,##0.00\\ [$\u20AC-203B]",
-	245: "#,##0.00\\ [$\u20AC-41B]",
-	246: "#,##0.00\\ [$\u20AC-424]",
-	247: "#,##0.00\\ [$\u20AC-C0A]",
-	248: "#,##0.00\\ [$\u20AC-81D]",
-	249: "#,##0.00\\ [$\u20AC-484]",
-	250: "#,##0.00\\ [$\u20AC-42E]",
-	251: "[$\u20AC-462]\\ #,##0.00",
-	252: "#,##0.00\\ [$₭-454]",
-	253: "#,##0.00\\ [$₮-450]",
-	254: "[$\u20AE-C50]#,##0.00",
-	255: "[$\u20B1-3409]#,##0.00",
-	256: "[$\u20B1-464]#,##0.00",
-	257: "#,##0.00[$\u20B4-422]",
-	258: "[$\u20B8-43F]#,##0.00",
-	259: "[$\u20B9-460]#,##0.00",
-	260: "[$\u20B9-4009]\\ #,##0.00",
-	261: "[$\u20B9-447]\\ #,##0.00",
-	262: "[$\u20B9-439]\\ #,##0.00",
-	263: "[$\u20B9-44B]\\ #,##0.00",
-	264: "[$\u20B9-860]#,##0.00",
-	265: "[$\u20B9-457]\\ #,##0.00",
-	266: "[$\u20B9-458]#,##0.00",
-	267: "[$\u20B9-44E]\\ #,##0.00",
-	268: "[$\u20B9-861]#,##0.00",
-	269: "[$\u20B9-448]\\ #,##0.00",
-	270: "[$\u20B9-446]\\ #,##0.00",
-	271: "[$\u20B9-44F]\\ #,##0.00",
-	272: "[$\u20B9-459]#,##0.00",
-	273: "[$\u20B9-449]\\ #,##0.00",
-	274: "[$\u20B9-820]#,##0.00",
-	275: "#,##0.00\\ [$\u20BA-41F]",
-	276: "#,##0.00\\ [$\u20BC-42C]",
-	277: "#,##0.00\\ [$\u20BC-82C]",
-	278: "#,##0.00\\ [$\u20BD-419]",
-	279: "#,##0.00[$\u20BD-485]",
-	280: "#,##0.00\\ [$\u20BE-437]",
-	281: "[$B/.-180A]\\ #,##0.00",
-	282: "[$Br-472]#,##0.00",
-	283: "[$Br-477]#,##0.00",
-	284: "#,##0.00[$Br-473]",
-	285: "[$Bs-46B]\\ #,##0.00",
-	286: "[$Bs-400A]\\ #,##0.00",
-	287: "[$Bs.-200A]\\ #,##0.00",
-	288: "[$BWP-832]\\ #,##0.00",
-	289: "[$C$-4C0A]#,##0.00",
-	290: "[$CA$-85D]#,##0.00",
-	291: "[$CA$-47C]#,##0.00",
-	292: "[$CA$-45D]#,##0.00",
-	293: "[$CFA-340C]#,##0.00",
-	294: "[$CFA-280C]#,##0.00",
-	295: "#,##0.00\\ [$CFA-867]",
-	296: "#,##0.00\\ [$CFA-488]",
-	297: "#,##0.00\\ [$CHF-100C]",
-	298: "[$CHF-1407]\\ #,##0.00",
-	299: "[$CHF-807]\\ #,##0.00",
-	300: "[$CHF-810]\\ #,##0.00",
-	301: "[$CHF-417]\\ #,##0.00",
-	302: "[$CLP-47A]\\ #,##0.00",
-	303: "[$CN¥-850]#,##0.00",
-	304: "#,##0.00\\ [$DZD-85F]",
-	305: "[$FCFA-2C0C]#,##0.00",
-	306: "#,##0.00\\ [$Ft-40E]",
-	307: "[$G-3C0C]#,##0.00",
-	308: "[$Gs.-3C0A]\\ #,##0.00",
-	309: "[$GTQ-486]#,##0.00",
-	310: "[$HK$-C04]#,##0.00",
-	311: "[$HK$-3C09]#,##0.00",
-	312: "#,##0.00\\ [$HRK-41A]",
-	313: "[$IDR-3809]#,##0.00",
-	314: "[$IQD-492]#,##0.00",
-	315: "#,##0.00\\ [$ISK-40F]",
-	316: "[$K-455]#,##0.00",
-	317: "#,##0.00\\ [$K\u010D-405]",
-	318: "#,##0.00\\ [$KM-141A]",
-	319: "#,##0.00\\ [$KM-101A]",
-	320: "#,##0.00\\ [$KM-181A]",
-	321: "[$kr-438]\\ #,##0.00",
-	322: "[$kr-43B]\\ #,##0.00",
-	323: "#,##0.00\\ [$kr-83B]",
-	324: "[$kr-414]\\ #,##0.00",
-	325: "[$kr-814]\\ #,##0.00",
-	326: "#,##0.00\\ [$kr-41D]",
-	327: "[$kr.-406]\\ #,##0.00",
-	328: "[$kr.-46F]\\ #,##0.00",
-	329: "[$Ksh-441]#,##0.00",
-	330: "[$L-818]#,##0.00",
-	331: "[$L-819]#,##0.00",
-	332: "[$L-480A]\\ #,##0.00",
-	333: "#,##0.00\\ [$Lek\u00EB-41C]",
-	334: "[$MAD-45F]#,##0.00",
-	335: "[$MAD-380C]#,##0.00",
-	336: "#,##0.00\\ [$MAD-105F]",
-	337: "[$MOP$-1404]#,##0.00",
-	338: "#,##0.00\\ [$MVR-465]_-",
-	339: "#,##0.00[$Nfk-873]",
-	340: "[$NGN-466]#,##0.00",
-	341: "[$NGN-467]#,##0.00",
-	342: "[$NGN-469]#,##0.00",
-	343: "[$NGN-471]#,##0.00",
-	344: "[$NOK-103B]\\ #,##0.00",
-	345: "[$NOK-183B]\\ #,##0.00",
-	346: "[$NZ$-481]#,##0.00",
-	347: "[$PKR-859]\\ #,##0.00",
-	348: "[$PYG-474]#,##0.00",
-	349: "[$Q-100A]#,##0.00",
-	350: "[$R-436]\\ #,##0.00",
-	351: "[$R-1C09]\\ #,##0.00",
-	352: "[$R-435]\\ #,##0.00",
-	353: "[$R$-416]\\ #,##0.00",
-	354: "[$RD$-1C0A]#,##0.00",
-	355: "#,##0.00\\ [$RF-487]",
-	356: "[$RM-4409]#,##0.00",
-	357: "[$RM-43E]#,##0.00",
-	358: "#,##0.00\\ [$RON-418]",
-	359: "[$Rp-421]#,##0.00",
-	360: "[$Rs-420]#,##0.00_-",
-	361: "[$Rs.-849]\\ #,##0.00",
-	362: "#,##0.00\\ [$RSD-81A]",
-	363: "#,##0.00\\ [$RSD-C1A]",
-	364: "#,##0.00\\ [$RUB-46D]",
-	365: "#,##0.00\\ [$RUB-444]",
-	366: "[$S/.-C6B]\\ #,##0.00",
-	367: "[$S/.-280A]\\ #,##0.00",
-	368: "#,##0.00\\ [$SEK-143B]",
-	369: "#,##0.00\\ [$SEK-1C3B]",
-	370: "#,##0.00\\ [$so\u02BBm-443]",
-	371: "#,##0.00\\ [$so\u02BBm-843]",
-	372: "#,##0.00\\ [$SYP-45A]",
-	373: "[$THB-41E]#,##0.00",
-	374: "#,##0.00[$TMT-442]",
-	375: "[$US$-3009]#,##0.00",
-	376: "[$ZAR-46C]\\ #,##0.00",
-	377: "[$ZAR-430]#,##0.00",
-	378: "[$ZAR-431]#,##0.00",
-	379: "[$ZAR-432]\\ #,##0.00",
-	380: "[$ZAR-433]#,##0.00",
-	381: "[$ZAR-434]\\ #,##0.00",
-	382: "#,##0.00\\ [$z\u0142-415]",
-	383: "#,##0.00\\ [$\u0434\u0435\u043D-42F]",
-	384: "#,##0.00\\ [$КМ-201A]",
-	385: "#,##0.00\\ [$КМ-1C1A]",
-	386: "#,##0.00\\ [$\u043B\u0432.-402]",
-	387: "#,##0.00\\ [$р.-423]",
-	388: "#,##0.00\\ [$\u0441\u043E\u043C-440]",
-	389: "#,##0.00\\ [$\u0441\u043E\u043C-428]",
-	390: "[$\u062C.\u0645.-C01]\\ #,##0.00_-",
-	391: "[$\u062F.\u0623.-2C01]\\ #,##0.00_-",
-	392: "[$\u062F.\u0625.-3801]\\ #,##0.00_-",
-	393: "[$\u062F.\u0628.-3C01]\\ #,##0.00_-",
-	394: "[$\u062F.\u062A.-1C01]\\ #,##0.00_-",
-	395: "[$\u062F.\u062C.-1401]\\ #,##0.00_-",
-	396: "[$\u062F.\u0639.-801]\\ #,##0.00_-",
-	397: "[$\u062F.\u0643.-3401]\\ #,##0.00_-",
-	398: "[$\u062F.\u0644.-1001]#,##0.00_-",
-	399: "[$\u062F.\u0645.-1801]\\ #,##0.00_-",
-	400: "[$\u0631-846]\\ #,##0.00",
-	401: "[$\u0631.\u0633.-401]\\ #,##0.00_-",
-	402: "[$\u0631.\u0639.-2001]\\ #,##0.00_-",
-	403: "[$\u0631.\u0642.-4001]\\ #,##0.00_-",
-	404: "[$\u0631.\u064A.-2401]\\ #,##0.00_-",
-	405: "[$\u0631\u06CC\u0627\u0644-429]#,##0.00_-",
-	406: "[$\u0644.\u0633.-2801]\\ #,##0.00_-",
-	407: "[$\u0644.\u0644.-3001]\\ #,##0.00_-",
-	408: "[$\u1265\u122D-45E]#,##0.00",
-	409: "[$\u0930\u0942-461]#,##0.00",
-	410: "[$\u0DBB\u0DD4.-45B]\\ #,##0.00",
-	411: "[$ADP]\\ #,##0.00",
-	412: "[$AED]\\ #,##0.00",
-	413: "[$AFA]\\ #,##0.00",
-	414: "[$AFN]\\ #,##0.00",
-	415: "[$ALL]\\ #,##0.00",
-	416: "[$AMD]\\ #,##0.00",
-	417: "[$ANG]\\ #,##0.00",
-	418: "[$AOA]\\ #,##0.00",
-	419: "[$ARS]\\ #,##0.00",
-	420: "[$ATS]\\ #,##0.00",
-	421: "[$AUD]\\ #,##0.00",
-	422: "[$AWG]\\ #,##0.00",
-	423: "[$AZM]\\ #,##0.00",
-	424: "[$AZN]\\ #,##0.00",
-	425: "[$BAM]\\ #,##0.00",
-	426: "[$BBD]\\ #,##0.00",
-	427: "[$BDT]\\ #,##0.00",
-	428: "[$BEF]\\ #,##0.00",
-	429: "[$BGL]\\ #,##0.00",
-	430: "[$BGN]\\ #,##0.00",
-	431: "[$BHD]\\ #,##0.00",
-	432: "[$BIF]\\ #,##0.00",
-	433: "[$BMD]\\ #,##0.00",
-	434: "[$BND]\\ #,##0.00",
-	435: "[$BOB]\\ #,##0.00",
-	436: "[$BOV]\\ #,##0.00",
-	437: "[$BRL]\\ #,##0.00",
-	438: "[$BSD]\\ #,##0.00",
-	439: "[$BTN]\\ #,##0.00",
-	440: "[$BWP]\\ #,##0.00",
-	441: "[$BYR]\\ #,##0.00",
-	442: "[$BZD]\\ #,##0.00",
-	443: "[$CAD]\\ #,##0.00",
-	444: "[$CDF]\\ #,##0.00",
-	445: "[$CHE]\\ #,##0.00",
-	446: "[$CHF]\\ #,##0.00",
-	447: "[$CHW]\\ #,##0.00",
-	448: "[$CLF]\\ #,##0.00",
-	449: "[$CLP]\\ #,##0.00",
-	450: "[$CNY]\\ #,##0.00",
-	451: "[$COP]\\ #,##0.00",
-	452: "[$COU]\\ #,##0.00",
-	453: "[$CRC]\\ #,##0.00",
-	454: "[$CSD]\\ #,##0.00",
-	455: "[$CUC]\\ #,##0.00",
-	456: "[$CVE]\\ #,##0.00",
-	457: "[$CYP]\\ #,##0.00",
-	458: "[$CZK]\\ #,##0.00",
-	459: "[$DEM]\\ #,##0.00",
-	460: "[$DJF]\\ #,##0.00",
-	461: "[$DKK]\\ #,##0.00",
-	462: "[$DOP]\\ #,##0.00",
-	463: "[$DZD]\\ #,##0.00",
-	464: "[$ECS]\\ #,##0.00",
-	465: "[$ECV]\\ #,##0.00",
-	466: "[$EEK]\\ #,##0.00",
-	467: "[$EGP]\\ #,##0.00",
-	468: "[$ERN]\\ #,##0.00",
-	469: "[$ESP]\\ #,##0.00",
-	470: "[$ETB]\\ #,##0.00",
-	471: "[$EUR]\\ #,##0.00",
-	472: "[$FIM]\\ #,##0.00",
-	473: "[$FJD]\\ #,##0.00",
-	474: "[$FKP]\\ #,##0.00",
-	475: "[$FRF]\\ #,##0.00",
-	476: "[$GBP]\\ #,##0.00",
-	477: "[$GEL]\\ #,##0.00",
-	478: "[$GHC]\\ #,##0.00",
-	479: "[$GHS]\\ #,##0.00",
-	480: "[$GIP]\\ #,##0.00",
-	481: "[$GMD]\\ #,##0.00",
-	482: "[$GNF]\\ #,##0.00",
-	483: "[$GRD]\\ #,##0.00",
-	484: "[$GTQ]\\ #,##0.00",
-	485: "[$GYD]\\ #,##0.00",
-	486: "[$HKD]\\ #,##0.00",
-	487: "[$HNL]\\ #,##0.00",
-	488: "[$HRK]\\ #,##0.00",
-	489: "[$HTG]\\ #,##0.00",
-	490: "[$HUF]\\ #,##0.00",
-	491: "[$IDR]\\ #,##0.00",
-	492: "[$IEP]\\ #,##0.00",
-	493: "[$ILS]\\ #,##0.00",
-	494: "[$INR]\\ #,##0.00",
-	495: "[$IQD]\\ #,##0.00",
-	496: "[$IRR]\\ #,##0.00",
-	497: "[$ISK]\\ #,##0.00",
-	498: "[$ITL]\\ #,##0.00",
-	499: "[$JMD]\\ #,##0.00",
-	500: "[$JOD]\\ #,##0.00",
-	501: "[$JPY]\\ #,##0.00",
-	502: "[$KAF]\\ #,##0.00",
-	503: "[$KES]\\ #,##0.00",
-	504: "[$KGS]\\ #,##0.00",
-	505: "[$KHR]\\ #,##0.00",
-	506: "[$KMF]\\ #,##0.00",
-	507: "[$KPW]\\ #,##0.00",
-	508: "[$KRW]\\ #,##0.00",
-	509: "[$KWD]\\ #,##0.00",
-	510: "[$KYD]\\ #,##0.00",
-	511: "[$KZT]\\ #,##0.00",
-	512: "[$LAK]\\ #,##0.00",
-	513: "[$LBP]\\ #,##0.00",
-	514: "[$LKR]\\ #,##0.00",
-	515: "[$LRD]\\ #,##0.00",
-	516: "[$LSL]\\ #,##0.00",
-	517: "[$LTL]\\ #,##0.00",
-	518: "[$LUF]\\ #,##0.00",
-	519: "[$LVL]\\ #,##0.00",
-	520: "[$LYD]\\ #,##0.00",
-	521: "[$MAD]\\ #,##0.00",
-	522: "[$MDL]\\ #,##0.00",
-	523: "[$MGA]\\ #,##0.00",
-	524: "[$MGF]\\ #,##0.00",
-	525: "[$MKD]\\ #,##0.00",
-	526: "[$MMK]\\ #,##0.00",
-	527: "[$MNT]\\ #,##0.00",
-	528: "[$MOP]\\ #,##0.00",
-	529: "[$MRO]\\ #,##0.00",
-	530: "[$MTL]\\ #,##0.00",
-	531: "[$MUR]\\ #,##0.00",
-	532: "[$MVR]\\ #,##0.00",
-	533: "[$MWK]\\ #,##0.00",
-	534: "[$MXN]\\ #,##0.00",
-	535: "[$MXV]\\ #,##0.00",
-	536: "[$MYR]\\ #,##0.00",
-	537: "[$MZM]\\ #,##0.00",
-	538: "[$MZN]\\ #,##0.00",
-	539: "[$NAD]\\ #,##0.00",
-	540: "[$NGN]\\ #,##0.00",
-	541: "[$NIO]\\ #,##0.00",
-	542: "[$NLG]\\ #,##0.00",
-	543: "[$NOK]\\ #,##0.00",
-	544: "[$NPR]\\ #,##0.00",
-	545: "[$NTD]\\ #,##0.00",
-	546: "[$NZD]\\ #,##0.00",
-	547: "[$OMR]\\ #,##0.00",
-	548: "[$PAB]\\ #,##0.00",
-	549: "[$PEN]\\ #,##0.00",
-	550: "[$PGK]\\ #,##0.00",
-	551: "[$PHP]\\ #,##0.00",
-	552: "[$PKR]\\ #,##0.00",
-	553: "[$PLN]\\ #,##0.00",
-	554: "[$PTE]\\ #,##0.00",
-	555: "[$PYG]\\ #,##0.00",
-	556: "[$QAR]\\ #,##0.00",
-	557: "[$ROL]\\ #,##0.00",
-	558: "[$RON]\\ #,##0.00",
-	559: "[$RSD]\\ #,##0.00",
-	560: "[$RUB]\\ #,##0.00",
-	561: "[$RUR]\\ #,##0.00",
-	562: "[$RWF]\\ #,##0.00",
-	563: "[$SAR]\\ #,##0.00",
-	564: "[$SBD]\\ #,##0.00",
-	565: "[$SCR]\\ #,##0.00",
-	566: "[$SDD]\\ #,##0.00",
-	567: "[$SDG]\\ #,##0.00",
-	568: "[$SDP]\\ #,##0.00",
-	569: "[$SEK]\\ #,##0.00",
-	570: "[$SGD]\\ #,##0.00",
-	571: "[$SHP]\\ #,##0.00",
-	572: "[$SIT]\\ #,##0.00",
-	573: "[$SKK]\\ #,##0.00",
-	574: "[$SLL]\\ #,##0.00",
-	575: "[$SOS]\\ #,##0.00",
-	576: "[$SPL]\\ #,##0.00",
-	577: "[$SRD]\\ #,##0.00",
-	578: "[$SRG]\\ #,##0.00",
-	579: "[$STD]\\ #,##0.00",
-	580: "[$SVC]\\ #,##0.00",
-	581: "[$SYP]\\ #,##0.00",
-	582: "[$SZL]\\ #,##0.00",
-	583: "[$THB]\\ #,##0.00",
-	584: "[$TJR]\\ #,##0.00",
-	585: "[$TJS]\\ #,##0.00",
-	586: "[$TMM]\\ #,##0.00",
-	587: "[$TMT]\\ #,##0.00",
-	588: "[$TND]\\ #,##0.00",
-	589: "[$TOP]\\ #,##0.00",
-	590: "[$TRL]\\ #,##0.00",
-	591: "[$TRY]\\ #,##0.00",
-	592: "[$TTD]\\ #,##0.00",
-	593: "[$TWD]\\ #,##0.00",
-	594: "[$TZS]\\ #,##0.00",
-	595: "[$UAH]\\ #,##0.00",
-	596: "[$UGX]\\ #,##0.00",
-	597: "[$USD]\\ #,##0.00",
-	598: "[$USN]\\ #,##0.00",
-	599: "[$USS]\\ #,##0.00",
-	600: "[$UYI]\\ #,##0.00",
-	601: "[$UYU]\\ #,##0.00",
-	602: "[$UZS]\\ #,##0.00",
-	603: "[$VEB]\\ #,##0.00",
-	604: "[$VEF]\\ #,##0.00",
-	605: "[$VND]\\ #,##0.00",
-	606: "[$VUV]\\ #,##0.00",
-	607: "[$WST]\\ #,##0.00",
-	608: "[$XAF]\\ #,##0.00",
-	609: "[$XAG]\\ #,##0.00",
-	610: "[$XAU]\\ #,##0.00",
-	611: "[$XB5]\\ #,##0.00",
-	612: "[$XBA]\\ #,##0.00",
-	613: "[$XBB]\\ #,##0.00",
-	614: "[$XBC]\\ #,##0.00",
-	615: "[$XBD]\\ #,##0.00",
-	616: "[$XCD]\\ #,##0.00",
-	617: "[$XDR]\\ #,##0.00",
-	618: "[$XFO]\\ #,##0.00",
-	619: "[$XFU]\\ #,##0.00",
-	620: "[$XOF]\\ #,##0.00",
-	621: "[$XPD]\\ #,##0.00",
-	622: "[$XPF]\\ #,##0.00",
-	623: "[$XPT]\\ #,##0.00",
-	624: "[$XTS]\\ #,##0.00",
-	625: "[$XXX]\\ #,##0.00",
-	626: "[$YER]\\ #,##0.00",
-	627: "[$YUM]\\ #,##0.00",
-	628: "[$ZAR]\\ #,##0.00",
-	629: "[$ZMK]\\ #,##0.00",
-	630: "[$ZMW]\\ #,##0.00",
-	631: "[$ZWD]\\ #,##0.00",
-	632: "[$ZWL]\\ #,##0.00",
-	633: "[$ZWN]\\ #,##0.00",
-	634: "[$ZWR]\\ #,##0.00",
-}
-
-// builtInNumFmtFunc defined the format conversion functions map. Partial format
-// code doesn't support currently and will return original string.
-var builtInNumFmtFunc = map[int]func(v, format string, date1904 bool) string{
-	0:  format,
-	1:  formatToInt,
-	2:  formatToFloat,
-	3:  formatToIntSeparator,
-	4:  formatToFloat,
-	9:  formatToC,
-	10: formatToD,
-	11: formatToE,
-	12: format, // Doesn't support currently
-	13: format, // Doesn't support currently
-	14: format,
-	15: format,
-	16: format,
-	17: format,
-	18: format,
-	19: format,
-	20: format,
-	21: format,
-	22: format,
-	37: formatToA,
-	38: formatToA,
-	39: formatToB,
-	40: formatToB,
-	41: format, // Doesn't support currently
-	42: format, // Doesn't support currently
-	43: format, // Doesn't support currently
-	44: format, // Doesn't support currently
-	45: format,
-	46: format,
-	47: format,
-	48: formatToE,
-	49: format,
-}
-
 // validType defined the list of valid validation types.
 var validType = map[string]string{
 	"cell":          "cellIs",
@@ -869,172 +104,6 @@ var operatorType = map[string]string{
 	"greaterThanOrEqual": "greater than or equal to",
 }
 
-// printCommaSep format number with thousands separator.
-func printCommaSep(text string) string {
-	var (
-		target strings.Builder
-		subStr = strings.Split(text, ".")
-		length = len(subStr[0])
-	)
-	for i := 0; i < length; i++ {
-		if i > 0 && (length-i)%3 == 0 {
-			target.WriteString(",")
-		}
-		target.WriteString(string(text[i]))
-	}
-	if len(subStr) == 2 {
-		target.WriteString(".")
-		target.WriteString(subStr[1])
-	}
-	return target.String()
-}
-
-// formatToInt provides a function to convert original string to integer
-// format as string type by given built-in number formats code and cell
-// string.
-func formatToInt(v, format string, date1904 bool) string {
-	if strings.Contains(v, "_") {
-		return v
-	}
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return v
-	}
-	return strconv.FormatFloat(math.Round(f), 'f', -1, 64)
-}
-
-// formatToFloat provides a function to convert original string to float
-// format as string type by given built-in number formats code and cell
-// string.
-func formatToFloat(v, format string, date1904 bool) string {
-	if strings.Contains(v, "_") {
-		return v
-	}
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return v
-	}
-	source := strconv.FormatFloat(f, 'f', -1, 64)
-	if !strings.Contains(source, ".") {
-		return source + ".00"
-	}
-	return fmt.Sprintf("%.2f", f)
-}
-
-// formatToIntSeparator provides a function to convert original string to
-// integer format as string type by given built-in number formats code and cell
-// string.
-func formatToIntSeparator(v, format string, date1904 bool) string {
-	if strings.Contains(v, "_") {
-		return v
-	}
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return v
-	}
-	return printCommaSep(strconv.FormatFloat(math.Round(f), 'f', -1, 64))
-}
-
-// formatToA provides a function to convert original string to special format
-// as string type by given built-in number formats code and cell string.
-func formatToA(v, format string, date1904 bool) string {
-	if strings.Contains(v, "_") {
-		return v
-	}
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return v
-	}
-	var target strings.Builder
-	if f < 0 {
-		target.WriteString("(")
-	}
-	target.WriteString(printCommaSep(strconv.FormatFloat(math.Abs(math.Round(f)), 'f', -1, 64)))
-	if f < 0 {
-		target.WriteString(")")
-	} else {
-		target.WriteString(" ")
-	}
-	return target.String()
-}
-
-// formatToB provides a function to convert original string to special format
-// as string type by given built-in number formats code and cell string.
-func formatToB(v, format string, date1904 bool) string {
-	if strings.Contains(v, "_") {
-		return v
-	}
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return v
-	}
-	var target strings.Builder
-	if f < 0 {
-		target.WriteString("(")
-	}
-	source := strconv.FormatFloat(math.Abs(f), 'f', -1, 64)
-	var text string
-	if !strings.Contains(source, ".") {
-		text = printCommaSep(source + ".00")
-	} else {
-		text = printCommaSep(fmt.Sprintf("%.2f", math.Abs(f)))
-	}
-	target.WriteString(text)
-	if f < 0 {
-		target.WriteString(")")
-	} else {
-		target.WriteString(" ")
-	}
-	return target.String()
-}
-
-// formatToC provides a function to convert original string to special format
-// as string type by given built-in number formats code and cell string.
-func formatToC(v, format string, date1904 bool) string {
-	if strings.Contains(v, "_") {
-		return v
-	}
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return v
-	}
-	source := strconv.FormatFloat(f, 'f', -1, 64)
-	if !strings.Contains(source, ".") {
-		return source + "00%"
-	}
-	return fmt.Sprintf("%.f%%", f*100)
-}
-
-// formatToD provides a function to convert original string to special format
-// as string type by given built-in number formats code and cell string.
-func formatToD(v, format string, date1904 bool) string {
-	if strings.Contains(v, "_") {
-		return v
-	}
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return v
-	}
-	source := strconv.FormatFloat(f, 'f', -1, 64)
-	if !strings.Contains(source, ".") {
-		return source + "00.00%"
-	}
-	return fmt.Sprintf("%.2f%%", f*100)
-}
-
-// formatToE provides a function to convert original string to special format
-// as string type by given built-in number formats code and cell string.
-func formatToE(v, format string, date1904 bool) string {
-	if strings.Contains(v, "_") {
-		return v
-	}
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return v
-	}
-	return fmt.Sprintf("%.2E", f)
-}
-
 // stylesReader provides a function to get the pointer to the structure after
 // deserialization of xl/styles.xml.
 func (f *File) stylesReader() (*xlsxStyleSheet, error) {
@@ -1093,9 +162,11 @@ func parseFormatStyleSet(style *Style) (*Style, error) {
 	return style, err
 }
 
-// NewStyle provides a function to create the style for cells by given style
-// options. This function is concurrency safe. Note that the 'Font.Color' field
-// uses an RGB color represented in 'RRGGBB' hexadecimal notation.
+// NewStyle provides a function to create the style for cells by a given style
+// options, and returns style index. The same style index can not be used
+// across different workbook. This function is concurrency safe. Note that
+// the 'Font.Color' field uses an RGB color represented in 'RRGGBB' hexadecimal
+// notation.
 //
 // The following table shows the border types used in 'Border.Type' supported by
 // excelize:
@@ -1167,6 +238,18 @@ func parseFormatStyleSet(style *Style) (*Style, error) {
 //	 8     | darkUp          | 18    | gray0625
 //	 9     | darkGrid        |       |
 //
+// The 'Alignment.Indent' is an integer value, where an increment of 1
+// represents 3 spaces. Indicates the number of spaces (of the normal style
+// font) of indentation for text in a cell. The number of spaces to indent is
+// calculated as following:
+//
+//	Number of spaces to indent = indent value * 3
+//
+// For example, an indent value of 1 means that the text begins 3 space widths
+// (of the normal style font) from the edge of the cell. Note: The width of one
+// space character is defined by the font. Only left, right, and distributed
+// horizontal alignments are supported.
+//
 // The following table shows the type of cells' horizontal alignment used
 // in 'Alignment.Horizontal':
 //
@@ -1189,6 +272,24 @@ func parseFormatStyleSet(style *Style) (*Style, error) {
 //	 center
 //	 justify
 //	 distributed
+//
+// The 'Alignment.ReadingOrder' is an uint64 value indicating whether the
+// reading order of the cell is left-to-right, right-to-left, or context
+// dependent. the valid value of this field was:
+//
+//	 Value | Description
+//	-------+----------------------------------------------------
+//	 0     | Context Dependent - reading order is determined by scanning the
+//	       | text for the first non-whitespace character: if it is a strong
+//	       | right-to-left character, the reading order is right-to-left;
+//	       | otherwise, the reading order left-to-right.
+//	 1     | Left-to-Right: reading order is left-to-right in the cell, as in
+//	       | English.
+//	 2     | Right-to-Left: reading order is right-to-left in the cell, as in
+//	       | Hebrew.
+//
+// The 'Alignment.RelativeIndent' is an integer value to indicate the additional
+// number of spaces of indentation to adjust for text in a cell.
 //
 // The following table shows the type of font underline style used in
 // 'Font.Underline':
@@ -1289,56 +390,6 @@ func parseFormatStyleSet(style *Style) (*Style, error) {
 //	 57    | yyyy"年"m"月
 //	 58    | m"月"d"日"
 //
-// Number format code with unicode values provided for language glyphs where
-// they occur in zh-tw language:
-//
-//	 Index | Symbol
-//	-------+-------------------------------------------
-//	 27    | [$-404]e/m/
-//	 28    | [$-404]e"5E74"m"6708"d"65E5
-//	 29    | [$-404]e"5E74"m"6708"d"65E5
-//	 30    | m/d/y
-//	 31    | yyyy"5E74"m"6708"d"65E5
-//	 32    | hh"6642"mm"5206
-//	 33    | hh"6642"mm"5206"ss"79D2
-//	 34    | 4E0A5348/4E0B5348hh"6642"mm"5206
-//	 35    | 4E0A5348/4E0B5348hh"6642"mm"5206"ss"79D2
-//	 36    | [$-404]e/m/
-//	 50    | [$-404]e/m/
-//	 51    | [$-404]e"5E74"m"6708"d"65E5
-//	 52    | 4E0A5348/4E0B5348hh"6642"mm"5206
-//	 53    | 4E0A5348/4E0B5348hh"6642"mm"5206"ss"79D2
-//	 54    | [$-404]e"5E74"m"6708"d"65E5
-//	 55    | 4E0A5348/4E0B5348hh"6642"mm"5206
-//	 56    | 4E0A5348/4E0B5348hh"6642"mm"5206"ss"79D2
-//	 57    | [$-404]e/m/
-//	 58    | [$-404]e"5E74"m"6708"d"65E5"
-//
-// Number format code with unicode values provided for language glyphs where
-// they occur in zh-cn language:
-//
-//	 Index | Symbol
-//	-------+-------------------------------------------
-//	 27    | yyyy"5E74"m"6708
-//	 28    | m"6708"d"65E5
-//	 29    | m"6708"d"65E5
-//	 30    | m-d-y
-//	 31    | yyyy"5E74"m"6708"d"65E5
-//	 32    | h"65F6"mm"5206
-//	 33    | h"65F6"mm"5206"ss"79D2
-//	 34    | 4E0A5348/4E0B5348h"65F6"mm"5206
-//	 35    | 4E0A5348/4E0B5348h"65F6"mm"5206"ss"79D2
-//	 36    | yyyy"5E74"m"6708
-//	 50    | yyyy"5E74"m"6708
-//	 51    | m"6708"d"65E5
-//	 52    | yyyy"5E74"m"6708
-//	 53    | m"6708"d"65E5
-//	 54    | m"6708"d"65E5
-//	 55    | 4E0A5348/4E0B5348h"65F6"mm"5206
-//	 56    | 4E0A5348/4E0B5348h"65F6"mm"5206"ss"79D2
-//	 57    | yyyy"5E74"m"6708
-//	 58    | m"6708"d"65E5"
-//
 // Number format code in ja-jp language:
 //
 //	 Index | Symbol
@@ -1387,56 +438,6 @@ func parseFormatStyleSet(style *Style) (*Style, error) {
 //	 57    | yyyy"年" mm"月" dd"日
 //	 58    | mm-dd
 //
-// Number format code with unicode values provided for language glyphs where
-// they occur in ja-jp language:
-//
-//	 Index | Symbol
-//	-------+-------------------------------------------
-//	 27    | [$-411]ge.m.d
-//	 28    | [$-411]ggge"5E74"m"6708"d"65E5
-//	 29    | [$-411]ggge"5E74"m"6708"d"65E5
-//	 30    | m/d/y
-//	 31    | yyyy"5E74"m"6708"d"65E5
-//	 32    | h"6642"mm"5206
-//	 33    | h"6642"mm"5206"ss"79D2
-//	 34    | yyyy"5E74"m"6708
-//	 35    | m"6708"d"65E5
-//	 36    | [$-411]ge.m.d
-//	 50    | [$-411]ge.m.d
-//	 51    | [$-411]ggge"5E74"m"6708"d"65E5
-//	 52    | yyyy"5E74"m"6708
-//	 53    | m"6708"d"65E5
-//	 54    | [$-411]ggge"5E74"m"6708"d"65E5
-//	 55    | yyyy"5E74"m"6708
-//	 56    | m"6708"d"65E5
-//	 57    | [$-411]ge.m.d
-//	 58    | [$-411]ggge"5E74"m"6708"d"65E5"
-//
-// Number format code with unicode values provided for language glyphs where
-// they occur in ko-kr language:
-//
-//	 Index | Symbol
-//	-------+-------------------------------------------
-//	 27    | yyyy"5E74" mm"6708" dd"65E5
-//	 28    | mm-d
-//	 29    | mm-d
-//	 30    | mm-dd-y
-//	 31    | yyyy"B144" mm"C6D4" dd"C77C
-//	 32    | h"C2DC" mm"BD84
-//	 33    | h"C2DC" mm"BD84" ss"CD08
-//	 34    | yyyy-mm-d
-//	 35    | yyyy-mm-d
-//	 36    | yyyy"5E74" mm"6708" dd"65E5
-//	 50    | yyyy"5E74" mm"6708" dd"65E5
-//	 51    | mm-d
-//	 52    | yyyy-mm-d
-//	 53    | yyyy-mm-d
-//	 54    | mm-d
-//	 55    | yyyy-mm-d
-//	 56    | yyyy-mm-d
-//	 57    | yyyy"5E74" mm"6708" dd"65E5
-//	 58    | mm-dd
-//
 // Number format code in th-th language:
 //
 //	 Index | Symbol
@@ -1459,31 +460,6 @@ func parseFormatStyleSet(style *Style) (*Style, error) {
 //	 78    | นน:ท
 //	 79    | [ช]:นน:ท
 //	 80    | นน:ทท.
-//	 81    | d/m/bb
-//
-// Number format code with unicode values provided for language glyphs where
-// they occur in th-th language:
-//
-//	 Index | Symbol
-//	-------+-------------------------------------------
-//	 59    | t
-//	 60    | t0.0
-//	 61    | t#,##
-//	 62    | t#,##0.0
-//	 67    | t0
-//	 68    | t0.00
-//	 69    | t# ?/
-//	 70    | t# ??/?
-//	 71    | 0E27/0E14/0E1B0E1B0E1B0E1
-//	 72    | 0E27-0E140E140E14-0E1B0E1
-//	 73    | 0E27-0E140E140E1
-//	 74    | 0E140E140E14-0E1B0E1
-//	 75    | 0E0A:0E190E1
-//	 76    | 0E0A:0E190E19:0E170E1
-//	 77    | 0E27/0E14/0E1B0E1B0E1B0E1B 0E0A:0E190E1
-//	 78    | 0E190E19:0E170E1
-//	 79    | [0E0A]:0E190E19:0E170E1
-//	 80    | 0E190E19:0E170E17.
 //	 81    | d/m/bb
 //
 // Excelize built-in currency formats are shown in the following table, only
@@ -2001,15 +977,18 @@ func (f *File) NewStyle(style *Style) (int, error) {
 	if err != nil {
 		return cellXfsID, err
 	}
-	if fs.DecimalPlaces == 0 {
-		fs.DecimalPlaces = 2
+	if fs.DecimalPlaces != nil && (*fs.DecimalPlaces < 0 || *fs.DecimalPlaces > 30) {
+		fs.DecimalPlaces = intPtr(2)
 	}
+	f.mu.Lock()
 	s, err := f.stylesReader()
 	if err != nil {
+		f.mu.Unlock()
 		return cellXfsID, err
 	}
-	s.Lock()
-	defer s.Unlock()
+	f.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	// check given style already exist.
 	if cellXfsID, err = f.getStyleID(s, fs); err != nil || cellXfsID != -1 {
 		return cellXfsID, err
@@ -2053,12 +1032,310 @@ func (f *File) NewStyle(style *Style) (int, error) {
 	return setCellXfs(s, fontID, numFmtID, fillID, borderID, applyAlignment, applyProtection, alignment, protection)
 }
 
+var (
+	// styleBorders list all types of the cell border style.
+	styleBorders = []string{
+		"none",
+		"thin",
+		"medium",
+		"dashed",
+		"dotted",
+		"thick",
+		"double",
+		"hair",
+		"mediumDashed",
+		"dashDot",
+		"mediumDashDot",
+		"dashDotDot",
+		"mediumDashDotDot",
+		"slantDashDot",
+	}
+	// styleBorderTypes list all types of the cell border.
+	styleBorderTypes = []string{
+		"left", "right", "top", "bottom", "diagonalUp", "diagonalDown",
+	}
+	// styleFillPatterns list all types of the cell fill style.
+	styleFillPatterns = []string{
+		"none",
+		"solid",
+		"mediumGray",
+		"darkGray",
+		"lightGray",
+		"darkHorizontal",
+		"darkVertical",
+		"darkDown",
+		"darkUp",
+		"darkGrid",
+		"darkTrellis",
+		"lightHorizontal",
+		"lightVertical",
+		"lightDown",
+		"lightUp",
+		"lightGrid",
+		"lightTrellis",
+		"gray125",
+		"gray0625",
+	}
+	// styleFillVariants list all preset variants of the fill style.
+	styleFillVariants = []xlsxGradientFill{
+		{Degree: 90, Stop: []*xlsxGradientFillStop{{}, {Position: 1}}},
+		{Degree: 270, Stop: []*xlsxGradientFillStop{{}, {Position: 1}}},
+		{Degree: 90, Stop: []*xlsxGradientFillStop{{}, {Position: 0.5}, {Position: 1}}},
+		{Stop: []*xlsxGradientFillStop{{}, {Position: 1}}},
+		{Degree: 180, Stop: []*xlsxGradientFillStop{{}, {Position: 1}}},
+		{Stop: []*xlsxGradientFillStop{{}, {Position: 0.5}, {Position: 1}}},
+		{Degree: 45, Stop: []*xlsxGradientFillStop{{}, {Position: 1}}},
+		{Degree: 255, Stop: []*xlsxGradientFillStop{{}, {Position: 1}}},
+		{Degree: 45, Stop: []*xlsxGradientFillStop{{}, {Position: 0.5}, {Position: 1}}},
+		{Degree: 135, Stop: []*xlsxGradientFillStop{{}, {Position: 1}}},
+		{Degree: 315, Stop: []*xlsxGradientFillStop{{}, {Position: 1}}},
+		{Degree: 135, Stop: []*xlsxGradientFillStop{{}, {Position: 0.5}, {Position: 1}}},
+		{Stop: []*xlsxGradientFillStop{{}, {Position: 1}}, Type: "path"},
+		{Stop: []*xlsxGradientFillStop{{}, {Position: 1}}, Type: "path", Left: 1, Right: 1},
+		{Stop: []*xlsxGradientFillStop{{}, {Position: 1}}, Type: "path", Bottom: 1, Top: 1},
+		{Stop: []*xlsxGradientFillStop{{}, {Position: 1}}, Type: "path", Bottom: 1, Left: 1, Right: 1, Top: 1},
+		{Stop: []*xlsxGradientFillStop{{}, {Position: 1}}, Type: "path", Bottom: 0.5, Left: 0.5, Right: 0.5, Top: 0.5},
+	}
+)
+
+// getThemeColor provides a function to convert theme color or index color to
+// RGB color.
+func (f *File) getThemeColor(clr *xlsxColor) string {
+	var RGB string
+	if clr == nil || f.Theme == nil {
+		return RGB
+	}
+	if clrScheme := f.Theme.ThemeElements.ClrScheme; clr.Theme != nil {
+		if val, ok := map[int]*string{
+			0: &clrScheme.Lt1.SysClr.LastClr,
+			1: &clrScheme.Dk1.SysClr.LastClr,
+			2: clrScheme.Lt2.SrgbClr.Val,
+			3: clrScheme.Dk2.SrgbClr.Val,
+			4: clrScheme.Accent1.SrgbClr.Val,
+			5: clrScheme.Accent2.SrgbClr.Val,
+			6: clrScheme.Accent3.SrgbClr.Val,
+			7: clrScheme.Accent4.SrgbClr.Val,
+			8: clrScheme.Accent5.SrgbClr.Val,
+			9: clrScheme.Accent6.SrgbClr.Val,
+		}[*clr.Theme]; ok && val != nil {
+			return strings.TrimPrefix(ThemeColor(*val, clr.Tint), "FF")
+		}
+	}
+	if len(clr.RGB) == 6 {
+		return clr.RGB
+	}
+	if len(clr.RGB) == 8 {
+		return strings.TrimPrefix(clr.RGB, "FF")
+	}
+	if f.Styles.Colors != nil && clr.Indexed < len(f.Styles.Colors.IndexedColors.RgbColor) {
+		return strings.TrimPrefix(ThemeColor(strings.TrimPrefix(f.Styles.Colors.IndexedColors.RgbColor[clr.Indexed].RGB, "FF"), clr.Tint), "FF")
+	}
+	if clr.Indexed < len(IndexedColorMapping) {
+		return strings.TrimPrefix(ThemeColor(IndexedColorMapping[clr.Indexed], clr.Tint), "FF")
+	}
+	return RGB
+}
+
+// extractBorders provides a function to extract borders styles settings by
+// given border styles definition.
+func (f *File) extractBorders(xf xlsxXf, s *xlsxStyleSheet, style *Style) {
+	if xf.ApplyBorder != nil && *xf.ApplyBorder &&
+		xf.BorderID != nil && s.Borders != nil &&
+		*xf.BorderID < len(s.Borders.Border) {
+		if bdr := s.Borders.Border[*xf.BorderID]; bdr != nil {
+
+			var borders []Border
+			extractBorder := func(lineType string, line xlsxLine) {
+				if line.Style != "" {
+					borders = append(borders, Border{
+						Type:  lineType,
+						Color: f.getThemeColor(line.Color),
+						Style: inStrSlice(styleBorders, line.Style, false),
+					})
+				}
+			}
+			for i, line := range []xlsxLine{
+				bdr.Left, bdr.Right, bdr.Top, bdr.Bottom, bdr.Diagonal, bdr.Diagonal,
+			} {
+				if i < 4 {
+					extractBorder(styleBorderTypes[i], line)
+				}
+				if i == 4 && bdr.DiagonalUp {
+					extractBorder(styleBorderTypes[i], line)
+				}
+				if i == 5 && bdr.DiagonalDown {
+					extractBorder(styleBorderTypes[i], line)
+				}
+			}
+			style.Border = borders
+		}
+	}
+}
+
+// extractFills provides a function to extract fill styles settings by
+// given fill styles definition.
+func (f *File) extractFills(xf xlsxXf, s *xlsxStyleSheet, style *Style) {
+	if fl := s.Fills.Fill[*xf.FillID]; fl != nil {
+		var fill Fill
+		if fl.GradientFill != nil {
+			fill.Type = "gradient"
+			for shading, variants := range styleFillVariants {
+				if fl.GradientFill.Bottom == variants.Bottom &&
+					fl.GradientFill.Degree == variants.Degree &&
+					fl.GradientFill.Left == variants.Left &&
+					fl.GradientFill.Right == variants.Right &&
+					fl.GradientFill.Top == variants.Top &&
+					fl.GradientFill.Type == variants.Type {
+					fill.Shading = shading
+					break
+				}
+			}
+			for _, stop := range fl.GradientFill.Stop {
+				fill.Color = append(fill.Color, f.getThemeColor(&stop.Color))
+			}
+		}
+		if fl.PatternFill != nil {
+			fill.Type = "pattern"
+			fill.Pattern = inStrSlice(styleFillPatterns, fl.PatternFill.PatternType, false)
+			if fl.PatternFill.FgColor != nil {
+				fill.Color = []string{f.getThemeColor(fl.PatternFill.FgColor)}
+			}
+		}
+		style.Fill = fill
+	}
+}
+
+// extractFont provides a function to extract font styles settings by given
+// font styles definition.
+func (f *File) extractFont(xf xlsxXf, s *xlsxStyleSheet, style *Style) {
+	if xf.ApplyFont != nil && *xf.ApplyFont &&
+		xf.FontID != nil && s.Fonts != nil &&
+		*xf.FontID < len(s.Fonts.Font) {
+		if fnt := s.Fonts.Font[*xf.FontID]; fnt != nil {
+			var font Font
+			if fnt.B != nil {
+				font.Bold = fnt.B.Value()
+			}
+			if fnt.I != nil {
+				font.Italic = fnt.I.Value()
+			}
+			if fnt.U != nil {
+				font.Underline = fnt.U.Value()
+			}
+			if fnt.Name != nil {
+				font.Family = fnt.Name.Value()
+			}
+			if fnt.Sz != nil {
+				font.Size = fnt.Sz.Value()
+			}
+			if fnt.Strike != nil {
+				font.Strike = fnt.Strike.Value()
+			}
+			if fnt.Color != nil {
+				font.Color = strings.TrimPrefix(fnt.Color.RGB, "FF")
+				font.ColorIndexed = fnt.Color.Indexed
+				font.ColorTheme = fnt.Color.Theme
+				font.ColorTint = fnt.Color.Tint
+			}
+			style.Font = &font
+		}
+	}
+}
+
+// extractNumFmt provides a function to extract number format by given styles
+// definition.
+func (f *File) extractNumFmt(xf xlsxXf, s *xlsxStyleSheet, style *Style) {
+	if xf.NumFmtID != nil {
+		numFmtID := *xf.NumFmtID
+		if _, ok := builtInNumFmt[numFmtID]; ok || isLangNumFmt(numFmtID) {
+			style.NumFmt = numFmtID
+			return
+		}
+		if s.NumFmts != nil {
+			for _, numFmt := range s.NumFmts.NumFmt {
+				style.CustomNumFmt = &numFmt.FormatCode
+				if strings.Contains(numFmt.FormatCode, ";[Red]") {
+					style.NegRed = true
+				}
+				for numFmtID, fmtCode := range currencyNumFmt {
+					if style.NegRed {
+						fmtCode += ";[Red]" + fmtCode
+					}
+					if numFmt.FormatCode == fmtCode {
+						style.NumFmt = numFmtID
+					}
+				}
+			}
+		}
+	}
+}
+
+// extractAlignment provides a function to extract alignment format by
+// given style definition.
+func (f *File) extractAlignment(xf xlsxXf, s *xlsxStyleSheet, style *Style) {
+	if xf.ApplyAlignment != nil && *xf.ApplyAlignment && xf.Alignment != nil {
+		style.Alignment = &Alignment{
+			Horizontal:      xf.Alignment.Horizontal,
+			Indent:          xf.Alignment.Indent,
+			JustifyLastLine: xf.Alignment.JustifyLastLine,
+			ReadingOrder:    xf.Alignment.ReadingOrder,
+			RelativeIndent:  xf.Alignment.RelativeIndent,
+			ShrinkToFit:     xf.Alignment.ShrinkToFit,
+			TextRotation:    xf.Alignment.TextRotation,
+			Vertical:        xf.Alignment.Vertical,
+			WrapText:        xf.Alignment.WrapText,
+		}
+	}
+}
+
+// extractProtection provides a function to extract protection settings by
+// given format definition.
+func (f *File) extractProtection(xf xlsxXf, s *xlsxStyleSheet, style *Style) {
+	if xf.ApplyProtection != nil && *xf.ApplyProtection && xf.Protection != nil {
+		style.Protection = &Protection{}
+		if xf.Protection.Hidden != nil {
+			style.Protection.Hidden = *xf.Protection.Hidden
+		}
+		if xf.Protection.Locked != nil {
+			style.Protection.Locked = *xf.Protection.Locked
+		}
+	}
+}
+
+// GetStyle provides a function to get style definition by given style index.
+func (f *File) GetStyle(idx int) (*Style, error) {
+	var style *Style
+	f.mu.Lock()
+	s, err := f.stylesReader()
+	if err != nil {
+		return style, err
+	}
+	f.mu.Unlock()
+	if idx < 0 || s.CellXfs == nil || len(s.CellXfs.Xf) <= idx {
+		return style, newInvalidStyleID(idx)
+	}
+	style = &Style{}
+	xf := s.CellXfs.Xf[idx]
+	if xf.ApplyFill != nil && *xf.ApplyFill &&
+		xf.FillID != nil && s.Fills != nil &&
+		*xf.FillID < len(s.Fills.Fill) {
+		f.extractFills(xf, s, style)
+	}
+	f.extractBorders(xf, s, style)
+	f.extractFont(xf, s, style)
+	f.extractAlignment(xf, s, style)
+	f.extractProtection(xf, s, style)
+	f.extractNumFmt(xf, s, style)
+	return style, nil
+}
+
+// getXfIDFuncs provides a function to get xfID by given style.
 var getXfIDFuncs = map[string]func(int, xlsxXf, *Style) bool{
 	"numFmt": func(numFmtID int, xf xlsxXf, style *Style) bool {
 		if style.CustomNumFmt == nil && numFmtID == -1 {
 			return xf.NumFmtID != nil && *xf.NumFmtID == 0
 		}
-		if style.NegRed || style.Lang != "" || style.DecimalPlaces != 2 {
+		if style.NegRed || (style.DecimalPlaces != nil && *style.DecimalPlaces != 2) {
 			return false
 		}
 		return xf.NumFmtID != nil && *xf.NumFmtID == numFmtID
@@ -2131,15 +1408,21 @@ func (f *File) getStyleID(ss *xlsxStyleSheet, style *Style) (int, error) {
 // format by given style format. The parameters are the same with the NewStyle
 // function.
 func (f *File) NewConditionalStyle(style *Style) (int, error) {
+	f.mu.Lock()
 	s, err := f.stylesReader()
 	if err != nil {
+		f.mu.Unlock()
 		return 0, err
 	}
+	f.mu.Unlock()
 	fs, err := parseFormatStyleSet(style)
 	if err != nil {
 		return 0, err
 	}
-	dxf := dxf{
+	if fs.DecimalPlaces != nil && (*fs.DecimalPlaces < 0 || *fs.DecimalPlaces > 30) {
+		fs.DecimalPlaces = intPtr(2)
+	}
+	dxf := xlsxDxf{
 		Fill: newFills(fs, false),
 	}
 	if fs.Alignment != nil {
@@ -2151,15 +1434,53 @@ func (f *File) NewConditionalStyle(style *Style) (int, error) {
 	if fs.Font != nil {
 		dxf.Font, _ = f.newFont(fs)
 	}
-	dxfStr, _ := xml.Marshal(dxf)
+	if fs.Protection != nil {
+		dxf.Protection = newProtection(fs)
+	}
+	dxf.NumFmt = newDxfNumFmt(s, style, &dxf)
 	if s.Dxfs == nil {
 		s.Dxfs = &xlsxDxfs{}
 	}
 	s.Dxfs.Count++
-	s.Dxfs.Dxfs = append(s.Dxfs.Dxfs, &xlsxDxf{
-		Dxf: string(dxfStr[5 : len(dxfStr)-6]),
-	})
+	s.Dxfs.Dxfs = append(s.Dxfs.Dxfs, &dxf)
 	return s.Dxfs.Count - 1, nil
+}
+
+// newDxfNumFmt provides a function to create number format for conditional
+// format styles.
+func newDxfNumFmt(styleSheet *xlsxStyleSheet, style *Style, dxf *xlsxDxf) *xlsxNumFmt {
+	dp, numFmtID := "0", 164 // Default custom number format code from 164.
+	if style.DecimalPlaces != nil && *style.DecimalPlaces > 0 {
+		dp += "."
+		for i := 0; i < *style.DecimalPlaces; i++ {
+			dp += "0"
+		}
+	}
+	if style.CustomNumFmt != nil {
+		if styleSheet.Dxfs != nil {
+			for _, d := range styleSheet.Dxfs.Dxfs {
+				if d != nil && d.NumFmt != nil && d.NumFmt.NumFmtID > numFmtID {
+					numFmtID = d.NumFmt.NumFmtID
+				}
+			}
+		}
+		return &xlsxNumFmt{NumFmtID: numFmtID + 1, FormatCode: *style.CustomNumFmt}
+	}
+	numFmtCode, ok := builtInNumFmt[style.NumFmt]
+	if style.NumFmt > 0 && ok {
+		return &xlsxNumFmt{NumFmtID: style.NumFmt, FormatCode: numFmtCode}
+	}
+	fc, currency := currencyNumFmt[style.NumFmt]
+	if !currency {
+		return nil
+	}
+	if style.DecimalPlaces != nil {
+		fc = strings.ReplaceAll(fc, "0.00", dp)
+	}
+	if style.NegRed {
+		fc = fc + ";[Red]" + fc
+	}
+	return &xlsxNumFmt{NumFmtID: numFmtID, FormatCode: fc}
 }
 
 // GetDefaultFont provides the default font name currently set in the
@@ -2179,7 +1500,9 @@ func (f *File) SetDefaultFont(fontName string) error {
 		return err
 	}
 	font.Name.Val = stringPtr(fontName)
+	f.mu.Lock()
 	s, _ := f.stylesReader()
+	f.mu.Unlock()
 	s.Fonts.Font[0] = font
 	custom := true
 	s.CellStyles.CellStyle[0].CustomBuiltIn = &custom
@@ -2188,6 +1511,8 @@ func (f *File) SetDefaultFont(fontName string) error {
 
 // readDefaultFont provides an un-marshalled font value.
 func (f *File) readDefaultFont() (*xlsxFont, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	s, err := f.stylesReader()
 	if err != nil {
 		return nil, err
@@ -2284,11 +1609,9 @@ func getNumFmtID(styleSheet *xlsxStyleSheet, style *Style) (numFmtID int) {
 	if _, ok := builtInNumFmt[style.NumFmt]; ok {
 		return style.NumFmt
 	}
-	for lang, numFmt := range langNumFmt {
-		if _, ok := numFmt[style.NumFmt]; ok && lang == style.Lang {
-			numFmtID = style.NumFmt
-			return
-		}
+	if (27 <= style.NumFmt && style.NumFmt <= 36) || (50 <= style.NumFmt && style.NumFmt <= 81) {
+		numFmtID = style.NumFmt
+		return
 	}
 	if fmtCode, ok := currencyNumFmt[style.NumFmt]; ok {
 		numFmtID = style.NumFmt
@@ -2307,13 +1630,12 @@ func getNumFmtID(styleSheet *xlsxStyleSheet, style *Style) (numFmtID int) {
 // newNumFmt provides a function to check if number format code in the range
 // of built-in values.
 func newNumFmt(styleSheet *xlsxStyleSheet, style *Style) int {
-	dp := "0."
-	numFmtID := 164 // Default custom number format code from 164.
-	if style.DecimalPlaces < 0 || style.DecimalPlaces > 30 {
-		style.DecimalPlaces = 2
-	}
-	for i := 0; i < style.DecimalPlaces; i++ {
-		dp += "0"
+	dp, numFmtID := "0", 164 // Default custom number format code from 164.
+	if style.DecimalPlaces != nil && *style.DecimalPlaces > 0 {
+		dp += "."
+		for i := 0; i < *style.DecimalPlaces; i++ {
+			dp += "0"
+		}
 	}
 	if style.CustomNumFmt != nil {
 		if customNumFmtID := getCustomNumFmtID(styleSheet, style); customNumFmtID != -1 {
@@ -2321,35 +1643,26 @@ func newNumFmt(styleSheet *xlsxStyleSheet, style *Style) int {
 		}
 		return setCustomNumFmt(styleSheet, style)
 	}
-	_, ok := builtInNumFmt[style.NumFmt]
-	if !ok {
+	if _, ok := builtInNumFmt[style.NumFmt]; !ok {
 		fc, currency := currencyNumFmt[style.NumFmt]
 		if !currency {
-			return setLangNumFmt(styleSheet, style)
+			return setLangNumFmt(style)
 		}
-		fc = strings.ReplaceAll(fc, "0.00", dp)
+		if style.DecimalPlaces != nil {
+			fc = strings.ReplaceAll(fc, "0.00", dp)
+		}
 		if style.NegRed {
 			fc = fc + ";[Red]" + fc
 		}
-		if styleSheet.NumFmts != nil {
-			numFmtID = styleSheet.NumFmts.NumFmt[len(styleSheet.NumFmts.NumFmt)-1].NumFmtID + 1
-			nf := xlsxNumFmt{
-				FormatCode: fc,
-				NumFmtID:   numFmtID,
-			}
-			styleSheet.NumFmts.NumFmt = append(styleSheet.NumFmts.NumFmt, &nf)
-			styleSheet.NumFmts.Count++
+		if styleSheet.NumFmts == nil {
+			styleSheet.NumFmts = &xlsxNumFmts{NumFmt: []*xlsxNumFmt{}}
 		} else {
-			nf := xlsxNumFmt{
-				FormatCode: fc,
-				NumFmtID:   numFmtID,
-			}
-			numFmts := xlsxNumFmts{
-				NumFmt: []*xlsxNumFmt{&nf},
-				Count:  1,
-			}
-			styleSheet.NumFmts = &numFmts
+			numFmtID = styleSheet.NumFmts.NumFmt[len(styleSheet.NumFmts.NumFmt)-1].NumFmtID + 1
 		}
+		styleSheet.NumFmts.NumFmt = append(styleSheet.NumFmts.NumFmt, &xlsxNumFmt{
+			FormatCode: fc, NumFmtID: numFmtID,
+		})
+		styleSheet.NumFmts.Count++
 		return numFmtID
 	}
 	return style.NumFmt
@@ -2390,31 +1703,18 @@ func getCustomNumFmtID(styleSheet *xlsxStyleSheet, style *Style) (customNumFmtID
 	return
 }
 
+// isLangNumFmt provides a function to returns if a given number format ID is a
+// built-in language glyphs number format code.
+func isLangNumFmt(ID int) bool {
+	return (27 <= ID && ID <= 36) || (50 <= ID && ID <= 62) || (67 <= ID && ID <= 81)
+}
+
 // setLangNumFmt provides a function to set number format code with language.
-func setLangNumFmt(styleSheet *xlsxStyleSheet, style *Style) int {
-	numFmts, ok := langNumFmt[style.Lang]
-	if !ok {
-		return 0
+func setLangNumFmt(style *Style) int {
+	if isLangNumFmt(style.NumFmt) {
+		return style.NumFmt
 	}
-	var fc string
-	fc, ok = numFmts[style.NumFmt]
-	if !ok {
-		return 0
-	}
-	nf := xlsxNumFmt{FormatCode: fc}
-	if styleSheet.NumFmts != nil {
-		nf.NumFmtID = styleSheet.NumFmts.NumFmt[len(styleSheet.NumFmts.NumFmt)-1].NumFmtID + 1
-		styleSheet.NumFmts.NumFmt = append(styleSheet.NumFmts.NumFmt, &nf)
-		styleSheet.NumFmts.Count++
-	} else {
-		nf.NumFmtID = style.NumFmt
-		numFmts := xlsxNumFmts{
-			NumFmt: []*xlsxNumFmt{&nf},
-			Count:  1,
-		}
-		styleSheet.NumFmts = &numFmts
-	}
-	return nf.NumFmtID
+	return 0
 }
 
 // getFillID provides a function to get fill ID. If given fill is not
@@ -2620,7 +1920,7 @@ func newBorders(style *Style) *xlsxBorder {
 	return &border
 }
 
-// setCellXfs provides a function to set describes all of the formatting for a
+// setCellXfs provides a function to set describes all the formatting for a
 // cell.
 func setCellXfs(style *xlsxStyleSheet, fontID, numFmtID, fillID, borderID int, applyAlignment, applyProtection bool, alignment *xlsxAlignment, protection *xlsxProtection) (int, error) {
 	var xf xlsxXf
@@ -2669,10 +1969,10 @@ func (f *File) GetCellStyle(sheet, cell string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	prepareSheetXML(ws, col, row)
-	ws.Lock()
-	defer ws.Unlock()
-	return f.prepareCellStyle(ws, col, row, ws.SheetData.Row[row-1].C[col-1].S), err
+	ws.prepareSheetXML(col, row)
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
+	return ws.prepareCellStyle(col, row, ws.SheetData.Row[row-1].C[col-1].S), err
 }
 
 // SetCellStyle provides a function to add style attribute for cells by given
@@ -2803,22 +2103,25 @@ func (f *File) SetCellStyle(sheet, hCell, vCell string, styleID int) error {
 
 	vColIdx := vCol - 1
 	vRowIdx := vRow - 1
-
+	f.mu.Lock()
 	ws, err := f.workSheetReader(sheet)
 	if err != nil {
+		f.mu.Unlock()
 		return err
 	}
-	prepareSheetXML(ws, vCol, vRow)
-	makeContiguousColumns(ws, hRow, vRow, vCol)
-	ws.Lock()
-	defer ws.Unlock()
-
 	s, err := f.stylesReader()
 	if err != nil {
+		f.mu.Unlock()
 		return err
 	}
-	s.Lock()
-	defer s.Unlock()
+	f.mu.Unlock()
+
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
+
+	ws.prepareSheetXML(vCol, vRow)
+	ws.makeContiguousColumns(hRow, vRow, vCol)
+
 	if styleID < 0 || s.CellXfs == nil || len(s.CellXfs.Xf) <= styleID {
 		return newInvalidStyleID(styleID)
 	}
@@ -3483,7 +2786,7 @@ func extractCondFmtDataBar(c *xlsxCfRule, extLst *xlsxExtLst) ConditionalFormatO
 			if ext.URI == ExtURIConditionalFormattings {
 				decodeCondFmts := new(decodeX14ConditionalFormattings)
 				if err := xml.Unmarshal([]byte(ext.Content), &decodeCondFmts); err == nil {
-					condFmts := []decodeX14ConditionalFormatting{}
+					var condFmts []decodeX14ConditionalFormatting
 					if err = xml.Unmarshal([]byte(decodeCondFmts.Content), &condFmts); err == nil {
 						extractDataBarRule(condFmts)
 					}
