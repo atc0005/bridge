@@ -64,8 +64,8 @@ func (f *File) MergeCell(sheet, hCell, vCell string) error {
 	if err != nil {
 		return err
 	}
-	ws.Lock()
-	defer ws.Unlock()
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
 	ref := hCell + ":" + vCell
 	if ws.MergeCells != nil {
 		ws.MergeCells.Cells = append(ws.MergeCells.Cells, &xlsxMergeCell{Ref: ref, rect: rect})
@@ -87,8 +87,8 @@ func (f *File) UnmergeCell(sheet, hCell, vCell string) error {
 	if err != nil {
 		return err
 	}
-	ws.Lock()
-	defer ws.Unlock()
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
 	rect1, err := rangeRefToCoordinates(hCell + ":" + vCell)
 	if err != nil {
 		return err
@@ -289,5 +289,9 @@ func (m *MergeCell) GetStartAxis() string {
 // GetEndAxis returns the bottom right cell reference of merged range, for
 // example: "D4".
 func (m *MergeCell) GetEndAxis() string {
-	return strings.Split((*m)[0], ":")[1]
+	coordinates := strings.Split((*m)[0], ":")
+	if len(coordinates) == 2 {
+		return coordinates[1]
+	}
+	return coordinates[0]
 }

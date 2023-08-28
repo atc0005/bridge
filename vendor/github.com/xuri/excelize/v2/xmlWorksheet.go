@@ -19,7 +19,7 @@ import (
 // xlsxWorksheet directly maps the worksheet element in the namespace
 // http://schemas.openxmlformats.org/spreadsheetml/2006/main.
 type xlsxWorksheet struct {
-	sync.Mutex
+	mu                     sync.Mutex
 	XMLName                xml.Name                     `xml:"http://schemas.openxmlformats.org/spreadsheetml/2006/main worksheet"`
 	SheetPr                *xlsxSheetPr                 `xml:"sheetPr"`
 	Dimension              *xlsxDimension               `xml:"dimension"`
@@ -241,7 +241,7 @@ type xlsxSheetPr struct {
 	CodeName                          string           `xml:"codeName,attr,omitempty"`
 	FilterMode                        bool             `xml:"filterMode,attr,omitempty"`
 	EnableFormatConditionsCalculation *bool            `xml:"enableFormatConditionsCalculation,attr"`
-	TabColor                          *xlsxTabColor    `xml:"tabColor"`
+	TabColor                          *xlsxColor       `xml:"tabColor"`
 	OutlinePr                         *xlsxOutlinePr   `xml:"outlinePr"`
 	PageSetUpPr                       *xlsxPageSetUpPr `xml:"pageSetUpPr"`
 }
@@ -259,15 +259,6 @@ type xlsxOutlinePr struct {
 type xlsxPageSetUpPr struct {
 	AutoPageBreaks bool `xml:"autoPageBreaks,attr,omitempty"`
 	FitToPage      bool `xml:"fitToPage,attr,omitempty"`
-}
-
-// xlsxTabColor represents background color of the sheet tab.
-type xlsxTabColor struct {
-	Auto    bool    `xml:"auto,attr,omitempty"`
-	Indexed int     `xml:"indexed,attr,omitempty"`
-	RGB     string  `xml:"rgb,attr,omitempty"`
-	Theme   int     `xml:"theme,attr,omitempty"`
-	Tint    float64 `xml:"tint,attr,omitempty"`
 }
 
 // xlsxCols defines column width and column formatting for one or more columns
@@ -436,7 +427,7 @@ type xlsxDataValidations struct {
 	DataValidation []*DataValidation `xml:"dataValidation"`
 }
 
-// DataValidation directly maps the a single item of data validation defined
+// DataValidation directly maps the single item of data validation defined
 // on a range of the worksheet.
 type DataValidation struct {
 	AllowBlank       bool    `xml:"allowBlank,attr"`
@@ -850,14 +841,14 @@ type xlsxX14SparklineGroup struct {
 	MinAxisType         string            `xml:"minAxisType,attr,omitempty"`
 	MaxAxisType         string            `xml:"maxAxisType,attr,omitempty"`
 	RightToLeft         bool              `xml:"rightToLeft,attr,omitempty"`
-	ColorSeries         *xlsxTabColor     `xml:"x14:colorSeries"`
-	ColorNegative       *xlsxTabColor     `xml:"x14:colorNegative"`
+	ColorSeries         *xlsxColor        `xml:"x14:colorSeries"`
+	ColorNegative       *xlsxColor        `xml:"x14:colorNegative"`
 	ColorAxis           *xlsxColor        `xml:"x14:colorAxis"`
-	ColorMarkers        *xlsxTabColor     `xml:"x14:colorMarkers"`
-	ColorFirst          *xlsxTabColor     `xml:"x14:colorFirst"`
-	ColorLast           *xlsxTabColor     `xml:"x14:colorLast"`
-	ColorHigh           *xlsxTabColor     `xml:"x14:colorHigh"`
-	ColorLow            *xlsxTabColor     `xml:"x14:colorLow"`
+	ColorMarkers        *xlsxColor        `xml:"x14:colorMarkers"`
+	ColorFirst          *xlsxColor        `xml:"x14:colorFirst"`
+	ColorLast           *xlsxColor        `xml:"x14:colorLast"`
+	ColorHigh           *xlsxColor        `xml:"x14:colorHigh"`
+	ColorLow            *xlsxColor        `xml:"x14:colorLow"`
 	Sparklines          xlsxX14Sparklines `xml:"x14:sparklines"`
 }
 
@@ -903,8 +894,8 @@ type SparklineOptions struct {
 	EmptyCells    string
 }
 
-// PaneOptions directly maps the settings of the pane.
-type PaneOptions struct {
+// Selection directly maps the settings of the worksheet selection.
+type Selection struct {
 	SQRef      string
 	ActiveCell string
 	Pane       string
@@ -918,7 +909,7 @@ type Panes struct {
 	YSplit      int
 	TopLeftCell string
 	ActivePane  string
-	Panes       []PaneOptions
+	Selection   []Selection
 }
 
 // ConditionalFormatOptions directly maps the conditional format settings of the cells.

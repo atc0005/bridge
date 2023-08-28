@@ -60,8 +60,8 @@ func (f *File) adjustHelper(sheet string, dir adjustDirection, num, offset int) 
 	if err = f.adjustCalcChain(dir, num, offset, sheetID); err != nil {
 		return err
 	}
-	checkSheet(ws)
-	_ = checkRow(ws)
+	ws.checkSheet()
+	_ = ws.checkRow()
 
 	if ws.MergeCells != nil && len(ws.MergeCells.Cells) == 0 {
 		ws.MergeCells = nil
@@ -131,6 +131,7 @@ func (f *File) adjustColDimensions(ws *xlsxWorksheet, col, offset int) error {
 			if cellCol, cellRow, _ := CellNameToCoordinates(v.R); col <= cellCol {
 				if newCol := cellCol + offset; newCol > 0 {
 					ws.SheetData.Row[rowIdx].C[colIdx].R, _ = CoordinatesToCellName(newCol, cellRow)
+					_ = f.adjustFormula(ws.SheetData.Row[rowIdx].C[colIdx].F, columns, offset, false)
 				}
 			}
 		}
@@ -152,19 +153,44 @@ func (f *File) adjustRowDimensions(ws *xlsxWorksheet, row, offset int) error {
 	for i := 0; i < len(ws.SheetData.Row); i++ {
 		r := &ws.SheetData.Row[i]
 		if newRow := r.R + offset; r.R >= row && newRow > 0 {
-			f.adjustSingleRowDimensions(r, newRow)
+			f.adjustSingleRowDimensions(r, newRow, offset, false)
 		}
 	}
 	return nil
 }
 
 // adjustSingleRowDimensions provides a function to adjust single row dimensions.
-func (f *File) adjustSingleRowDimensions(r *xlsxRow, num int) {
+func (f *File) adjustSingleRowDimensions(r *xlsxRow, num, offset int, si bool) {
 	r.R = num
 	for i, col := range r.C {
 		colName, _, _ := SplitCellName(col.R)
 		r.C[i].R, _ = JoinCellName(colName, num)
+		_ = f.adjustFormula(col.F, rows, offset, si)
 	}
+}
+
+// adjustFormula provides a function to adjust shared formula reference.
+func (f *File) adjustFormula(formula *xlsxF, dir adjustDirection, offset int, si bool) error {
+	if formula != nil && formula.Ref != "" {
+		coordinates, err := rangeRefToCoordinates(formula.Ref)
+		if err != nil {
+			return err
+		}
+		if dir == columns {
+			coordinates[0] += offset
+			coordinates[2] += offset
+		} else {
+			coordinates[1] += offset
+			coordinates[3] += offset
+		}
+		if formula.Ref, err = f.coordinatesToRangeRef(coordinates); err != nil {
+			return err
+		}
+		if si && formula.Si != nil {
+			formula.Si = intPtr(*formula.Si + 1)
+		}
+	}
+	return nil
 }
 
 // adjustHyperlinks provides a function to update hyperlinks when inserting or
@@ -242,7 +268,7 @@ func (f *File) adjustTable(ws *xlsxWorksheet, sheet string, dir adjustDirection,
 		}
 		coordinates = f.adjustAutoFilterHelper(dir, coordinates, num, offset)
 		x1, y1, x2, y2 := coordinates[0], coordinates[1], coordinates[2], coordinates[3]
-		if y2-y1 < 2 || x2-x1 < 1 {
+		if y2-y1 < 1 || x2-x1 < 0 {
 			ws.TableParts.TableParts = append(ws.TableParts.TableParts[:idx], ws.TableParts.TableParts[idx+1:]...)
 			ws.TableParts.Count = len(ws.TableParts.TableParts)
 			idx--
