@@ -227,7 +227,8 @@ func ValidateInputRow(dfsEntry DuplicateFileSetEntry, rowNum int) error {
 }
 
 // ParseInputRow evaluates each row returned from the CSV Reader returning a
-// DuplicateFileSetEntry object if parsing succeeds, otherwise returning nil.
+// DuplicateFileSetEntry object if parsing succeeds, otherwise returning an
+// error.
 func ParseInputRow(row []string, fieldCount int, rowNum int) (DuplicateFileSetEntry, error) {
 
 	// TODO: Use error wrapping extensively in this function
