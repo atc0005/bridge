@@ -26,6 +26,38 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.5.3] - 2022-11-16
+
+### Changed
+
+#### Dependency Updates
+
+- (GH-365) canary: bump golang from 1.20.10 to 1.20.11 in /dependabot/docker/go
+- (GH-335) canary: bump golang from 1.20.7 to 1.20.8 in /dependabot/docker/go
+- (GH-356) canary: bump golang from 1.20.8 to 1.20.10 in /dependabot/docker/go
+- (GH-372) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.13.12 to go-ci-oldstable-build-v0.14.1 in /dependabot/docker/builds
+- (GH-319) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.13.4 to go-ci-oldstable-build-v0.13.5 in /dependabot/docker/builds
+- (GH-321) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.13.5 to go-ci-oldstable-build-v0.13.6 in /dependabot/docker/builds
+- (GH-324) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.13.6 to go-ci-oldstable-build-v0.13.7 in /dependabot/docker/builds
+- (GH-337) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.13.7 to go-ci-oldstable-build-v0.13.8 in /dependabot/docker/builds
+- (GH-343) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.13.8 to go-ci-oldstable-build-v0.13.9 in /dependabot/docker/builds
+- (GH-360) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.13.9 to go-ci-oldstable-build-v0.13.12 in /dependabot/docker/builds
+- (GH-329) ghaw: bump actions/checkout from 3 to 4
+- (GH-325) go.mod: bump github.com/xuri/excelize/v2 from 2.7.1 to 2.8.0
+- (GH-331) go.mod: bump golang.org/x/crypto from 0.12.0 to 0.13.0
+- (GH-351) go.mod: bump golang.org/x/crypto from 0.13.0 to 0.14.0
+- (GH-368) go.mod: bump golang.org/x/crypto from 0.14.0 to 0.15.0
+- (GH-332) go.mod: bump golang.org/x/net from 0.14.0 to 0.15.0
+- (GH-353) go.mod: bump golang.org/x/net from 0.15.0 to 0.17.0
+- (GH-367) go.mod: bump golang.org/x/net from 0.17.0 to 0.18.0
+- (GH-327) go.mod: bump golang.org/x/text from 0.12.0 to 0.13.0
+- (GH-364) go.mod: bump golang.org/x/text from 0.13.0 to 0.14.0
+- (GH-375) Update xuri/efp and xuri/nfp dependencies
+
+### Fixed
+
+- (GH-373) Fix doc comments for dupesets.ParseInputRow
+
 ## [v0.5.2] - 2022-08-18
 
 ### Added
@@ -697,7 +729,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.3...HEAD
+[v0.5.3]: https://github.com/atc0005/bridge/releases/tag/v0.5.3
 [v0.5.2]: https://github.com/atc0005/bridge/releases/tag/v0.5.2
 [v0.5.1]: https://github.com/atc0005/bridge/releases/tag/v0.5.1
 [v0.5.0]: https://github.com/atc0005/bridge/releases/tag/v0.5.0
