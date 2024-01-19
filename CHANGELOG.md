@@ -26,7 +26,24 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
-## [v0.5.3] - 2022-11-16
+## [v0.5.4] - 2024-01-19
+
+### Changed
+
+#### Dependency Updates
+
+- (GH-390) Bump golang.org/x/crypto from 0.16.0 to 0.17.0
+- (GH-385) canary: bump golang from 1.20.11 to 1.20.12 in /dependabot/docker/go
+- (GH-397) canary: bump golang from 1.20.12 to 1.20.13 in /dependabot/docker/go
+- (GH-387) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.14.1 to go-ci-oldstable-build-v0.14.2 in /dependabot/docker/builds
+- (GH-399) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.14.2 to go-ci-oldstable-build-v0.14.3 in /dependabot/docker/builds
+- (GH-388) ghaw: bump github/codeql-action from 2 to 3
+- (GH-383) go.mod: bump golang.org/x/crypto from 0.15.0 to 0.16.0
+- (GH-395) go.mod: bump golang.org/x/crypto from 0.17.0 to 0.18.0
+- (GH-382) go.mod: bump golang.org/x/net from 0.18.0 to 0.19.0
+- (GH-396) go.mod: bump golang.org/x/net from 0.19.0 to 0.20.0
+
+## [v0.5.3] - 2023-11-16
 
 ### Changed
 
@@ -58,7 +75,7 @@ The following types of changes will be recorded in this file:
 
 - (GH-373) Fix doc comments for dupesets.ParseInputRow
 
-## [v0.5.2] - 2022-08-18
+## [v0.5.2] - 2023-08-18
 
 ### Added
 
@@ -87,7 +104,7 @@ The following types of changes will be recorded in this file:
 - (GH-285) Update Dependabot config to monitor both branches
 - (GH-311) Update project to Go 1.20 series
 
-## [v0.5.1] - 2022-07-17
+## [v0.5.1] - 2023-07-17
 
 ### Overview
 
@@ -135,7 +152,7 @@ The following types of changes will be recorded in this file:
 - (GH-271) Remove plugin deploy logic from postinstall script
 - (GH-278) Releases: Update 'Bug Fixes' label
 
-## [v0.5.0] - 2022-04-09
+## [v0.5.0] - 2023-04-09
 
 ### Overview
 
@@ -170,7 +187,7 @@ The following types of changes will be recorded in this file:
 - (GH-241) Fix v0.4.16 release summary
 - (GH-251) Fix errwrap linting errors
 
-## [v0.4.16] - 2022-04-09
+## [v0.4.16] - 2023-04-09
 
 ### Overview
 
@@ -729,7 +746,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.4...HEAD
+[v0.5.4]: https://github.com/atc0005/bridge/releases/tag/v0.5.4
 [v0.5.3]: https://github.com/atc0005/bridge/releases/tag/v0.5.3
 [v0.5.2]: https://github.com/atc0005/bridge/releases/tag/v0.5.2
 [v0.5.1]: https://github.com/atc0005/bridge/releases/tag/v0.5.1
