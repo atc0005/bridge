@@ -26,6 +26,26 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.5.6] - 2024-03-08
+
+### Changed
+
+#### Dependency Updates
+
+- (GH-431) Update project to Go 1.21 series
+- (GH-432) canary: bump golang from 1.21.6 to 1.21.7 in /dependabot/docker/go
+- (GH-428) docker: bump atc0005/go-ci from go-ci-oldstable-build-v0.15.0 to go-ci-oldstable-build-v0.15.2 in /dependabot/docker/builds
+- (GH-433) Update Dependabot PR prefixes
+- (GH-434) Update Dependabot PR prefixes (redux)
+- (GH-438) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.15.2 to go-ci-oldstable-build-v0.15.3 in /dependabot/docker/builds
+- (GH-436) Go Dependency: Bump github.com/xuri/excelize/v2 from 2.8.0 to 2.8.1
+- (GH-439) Go Dependency: Bump golang.org/x/crypto from 0.19.0 to 0.20.0
+- (GH-441) Go Dependency: Bump golang.org/x/crypto from 0.20.0 to 0.21.0
+- (GH-442) Go Dependency: Bump golang.org/x/net from 0.21.0 to 0.22.0
+- (GH-449) Add todo/release label to "Go Runtime" PRs
+- (GH-447) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.15.3 to go-ci-oldstable-build-v0.15.4 in /dependabot/docker/builds
+- (GH-445) Go Runtime: Bump golang from 1.21.7 to 1.21.8 in /dependabot/docker/go
+
 ## [v0.5.5] - 2024-02-19
 
 ### Changed
@@ -761,7 +781,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.5...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.6...HEAD
+[v0.5.6]: https://github.com/atc0005/bridge/releases/tag/v0.5.6
 [v0.5.5]: https://github.com/atc0005/bridge/releases/tag/v0.5.5
 [v0.5.4]: https://github.com/atc0005/bridge/releases/tag/v0.5.4
 [v0.5.3]: https://github.com/atc0005/bridge/releases/tag/v0.5.3
