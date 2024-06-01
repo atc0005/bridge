@@ -94,7 +94,7 @@ func (i *multiValueFlag) Set(value string) error {
 
 // Branding is responsible for emitting application name, version and origin
 func Branding() {
-	fmt.Fprintf(flag.CommandLine.Output(), "\n%s %s\n%s\n\n", myAppName, version, myAppURL)
+	_, _ = fmt.Fprintf(flag.CommandLine.Output(), "\n%s %s\n%s\n\n", myAppName, version, myAppURL)
 }
 
 // MainCmdUsage is meant to be called whenever a valid subcommand is missing
@@ -107,16 +107,16 @@ func MainCmdUsage(subCmds ...string) func() {
 
 		Branding()
 
-		fmt.Fprintln(flag.CommandLine.Output(), "Available subcommands:")
+		_, _ = fmt.Fprintln(flag.CommandLine.Output(), "Available subcommands:")
 		for _, subCmd := range subCmds {
-			fmt.Fprintf(flag.CommandLine.Output(), "\t%s\n", subCmd)
+			_, _ = fmt.Fprintf(flag.CommandLine.Output(), "\t%s\n", subCmd)
 		}
-		fmt.Fprintln(flag.CommandLine.Output(), "")
-		fmt.Fprintln(flag.CommandLine.Output(), "See available options for each subcommand by running:")
+		_, _ = fmt.Fprintln(flag.CommandLine.Output(), "")
+		_, _ = fmt.Fprintln(flag.CommandLine.Output(), "See available options for each subcommand by running:")
 		for _, subCmd := range subCmds {
-			fmt.Fprintf(flag.CommandLine.Output(), "\t%s %s -h\n", myBinaryName, subCmd)
+			_, _ = fmt.Fprintf(flag.CommandLine.Output(), "\t%s %s -h\n", myBinaryName, subCmd)
 		}
-		fmt.Fprintln(flag.CommandLine.Output(), "")
+		_, _ = fmt.Fprintln(flag.CommandLine.Output(), "")
 	}
 
 }
@@ -132,7 +132,7 @@ func SubcommandUsage(flagSet *flag.FlagSet) func() {
 
 		Branding()
 
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of \"%s %s\":\n",
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), "Usage of \"%s %s\":\n",
 			myBinaryName,
 			flagSet.Name(),
 		)
