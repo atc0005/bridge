@@ -92,7 +92,7 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 		TabWriterChecksumColumnHeaderName,
 		TabWriterRemoveFileColumnHeaderName,
 	)
-	fmt.Fprintln(w, headerRow)
+	_, _ = fmt.Fprintln(w, headerRow)
 
 	var lastChecksum checksums.SHA256Checksum
 	var entriesCtr int
@@ -103,7 +103,7 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 		// using len() builtin.
 		entriesCtr++
 
-		fmt.Fprintf(w,
+		_, _ = fmt.Fprintf(w,
 			"%v\t%v\t%v\t%v\t%v\n",
 			row.ParentDirectory,
 			row.Filename,
@@ -119,7 +119,7 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 		// line for the first item.
 		if addSeparatorLine && entriesCtr != 1 {
 			if lastChecksum != row.Checksum {
-				fmt.Fprintf(w, "\n")
+				_, _ = fmt.Fprintf(w, "\n")
 			}
 		}
 
@@ -129,7 +129,7 @@ func (dfsEntries DuplicateFileSetEntries) Print(addSeparatorLine bool) {
 
 	}
 
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 	if err := w.Flush(); err != nil {
 		log.Printf(
 			"error occurred flushing tabwriter: %v",
