@@ -889,13 +889,13 @@ func (fi FileChecksumIndex) PrintFileMatches(blankLineBetweenSets bool) {
 	w.Init(os.Stdout, 8, 8, 4, '\t', 0)
 
 	// Header row in output
-	fmt.Fprintln(w,
+	_, _ = fmt.Fprintln(w,
 		"Directory\tFile\tSize\tChecksum\t")
 	for _, fileMatches := range fi {
 		for _, file := range fileMatches {
 
 			// TODO: Confirm that newline between file sets is useful
-			fmt.Fprintf(w,
+			_, _ = fmt.Fprintf(w,
 				"%s\t%s\t%s\t%s\n",
 				file.ParentDirectory,
 				file.Name(),
@@ -906,12 +906,12 @@ func (fi FileChecksumIndex) PrintFileMatches(blankLineBetweenSets bool) {
 		// This throws off cohesive formatting across all sets, but can be
 		// useful when focusing just on the sets themselves.
 		if blankLineBetweenSets {
-			fmt.Fprintln(w)
+			_, _ = fmt.Fprintln(w)
 		}
 
 	}
 
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 	if err := w.Flush(); err != nil {
 		log.Printf(
 			"error occurred flushing tabwriter: %v",
@@ -932,14 +932,14 @@ func (dfs DuplicateFilesSummary) PrintSummary() {
 	w.Init(os.Stdout, 8, 8, 5, '\t', 0)
 
 	// TODO: Use tabwriter to generate summary report?
-	fmt.Fprintf(w, "%d\tevaluated files in specified paths\n", dfs.TotalEvaluatedFiles)
-	fmt.Fprintf(w, "%d\tpotential duplicate file sets found using file size\n", dfs.FileSizeMatchSets)
-	fmt.Fprintf(w, "%d\tconfirmed duplicate file sets found using file hash\n", dfs.FileHashMatchSets)
-	fmt.Fprintf(w, "%d\tfiles with identical file size\n", dfs.FileSizeMatches)
-	fmt.Fprintf(w, "%d\tfiles with identical file hash\n", dfs.FileHashMatches)
-	fmt.Fprintf(w, "%d\tduplicate files\n", dfs.DuplicateCount)
-	fmt.Fprintf(w, "%s\twasted space for duplicate file sets\n", units.ByteCountIEC(dfs.WastedSpace))
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintf(w, "%d\tevaluated files in specified paths\n", dfs.TotalEvaluatedFiles)
+	_, _ = fmt.Fprintf(w, "%d\tpotential duplicate file sets found using file size\n", dfs.FileSizeMatchSets)
+	_, _ = fmt.Fprintf(w, "%d\tconfirmed duplicate file sets found using file hash\n", dfs.FileHashMatchSets)
+	_, _ = fmt.Fprintf(w, "%d\tfiles with identical file size\n", dfs.FileSizeMatches)
+	_, _ = fmt.Fprintf(w, "%d\tfiles with identical file hash\n", dfs.FileHashMatches)
+	_, _ = fmt.Fprintf(w, "%d\tduplicate files\n", dfs.DuplicateCount)
+	_, _ = fmt.Fprintf(w, "%s\twasted space for duplicate file sets\n", units.ByteCountIEC(dfs.WastedSpace))
+	_, _ = fmt.Fprintln(w)
 
 	if err := w.Flush(); err != nil {
 		log.Printf(
