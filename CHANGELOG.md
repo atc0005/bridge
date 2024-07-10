@@ -26,6 +26,20 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.5.10] - 2024-07-10
+
+### Changed
+
+#### Dependency Updates
+
+- (GH-512) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.20.7 to go-ci-oldstable-build-v0.20.8 in /dependabot/docker/builds
+- (GH-516) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.20.8 to go-ci-oldstable-build-v0.21.2 in /dependabot/docker/builds
+- (GH-519) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.21.2 to go-ci-oldstable-build-v0.21.3 in /dependabot/docker/builds
+- (GH-522) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.21.3 to go-ci-oldstable-build-v0.21.4 in /dependabot/docker/builds
+- (GH-526) Go Dependency: Bump golang.org/x/net from 0.26.0 to 0.27.0
+- (GH-520) Go Runtime: Bump golang from 1.21.11 to 1.21.12 in /dependabot/docker/go
+- (GH-530) Update `xuri/efp` and `xuri/nfp` dependencies
+
 ## [v0.5.9] - 2024-06-07
 
 ### Changed
@@ -829,7 +843,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.9...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.10...HEAD
+[v0.5.10]: https://github.com/atc0005/bridge/releases/tag/v0.5.10
 [v0.5.9]: https://github.com/atc0005/bridge/releases/tag/v0.5.9
 [v0.5.8]: https://github.com/atc0005/bridge/releases/tag/v0.5.8
 [v0.5.7]: https://github.com/atc0005/bridge/releases/tag/v0.5.7
