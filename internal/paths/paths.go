@@ -10,6 +10,7 @@
 package paths
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -271,7 +272,7 @@ func BackupFile(sourceFilename string, destinationDirectory string) error {
 			sourceFileStat.Size(),
 		)
 		log.Println(sizeCopiedMismatchMsg)
-		return fmt.Errorf(sizeCopiedMismatchMsg)
+		return errors.New(sizeCopiedMismatchMsg)
 	}
 
 	// copy was successful, we should cleanup and log (DEBUG) how much data
