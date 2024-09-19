@@ -4,7 +4,7 @@ github.com/mohae/deepcopy
 # github.com/richardlehane/mscfb v1.0.4
 ## explicit
 github.com/richardlehane/mscfb
-# github.com/richardlehane/msoleps v1.0.3
+# github.com/richardlehane/msoleps v1.0.4
 ## explicit
 github.com/richardlehane/msoleps/types
 # github.com/xuri/efp v0.0.0-20240408161823-9ad904a10d6d
