@@ -2,7 +2,7 @@ module github.com/atc0005/bridge
 
 go 1.19
 
-require github.com/xuri/excelize/v2 v2.8.1
+require github.com/xuri/excelize/v2 v2.9.0
 
 require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
