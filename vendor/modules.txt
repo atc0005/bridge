@@ -16,7 +16,7 @@ github.com/xuri/excelize/v2
 # github.com/xuri/nfp v0.0.0-20240318013403-ab9948c2c4a7
 ## explicit; go 1.15
 github.com/xuri/nfp
-# golang.org/x/crypto v0.27.0
+# golang.org/x/crypto v0.29.0
 ## explicit; go 1.20
 golang.org/x/crypto/md4
 golang.org/x/crypto/ripemd160
