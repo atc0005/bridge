@@ -10,7 +10,7 @@ github.com/richardlehane/msoleps/types
 # github.com/xuri/efp v0.0.0-20240408161823-9ad904a10d6d
 ## explicit; go 1.11
 github.com/xuri/efp
-# github.com/xuri/excelize/v2 v2.8.1
+# github.com/xuri/excelize/v2 v2.9.0
 ## explicit; go 1.18
 github.com/xuri/excelize/v2
 # github.com/xuri/nfp v0.0.0-20240318013403-ab9948c2c4a7
