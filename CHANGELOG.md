@@ -26,6 +26,26 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.5.12] - 2024-11-13
+
+### Changed
+
+#### Dependency Updates
+
+- (GH-580) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.21.12 to go-ci-oldstable-build-v0.21.13 in /dependabot/docker/builds
+- (GH-601) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.21.13 to go-ci-oldstable-build-v0.21.15 in /dependabot/docker/builds
+- (GH-577) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.21.9 to go-ci-oldstable-build-v0.21.12 in /dependabot/docker/builds
+- (GH-578) Go Dependency: Bump github.com/richardlehane/msoleps from 1.0.3 to 1.0.4
+- (GH-592) Go Dependency: Bump github.com/xuri/excelize/v2 from 2.8.1 to 2.9.0
+- (GH-575) Go Dependency: Bump golang.org/x/crypto from 0.26.0 to 0.27.0
+- (GH-596) Go Dependency: Bump golang.org/x/crypto from 0.27.0 to 0.29.0
+- (GH-574) Go Dependency: Bump golang.org/x/net from 0.28.0 to 0.29.0
+- (GH-603) Go Dependency: Bump golang.org/x/net from 0.29.0 to 0.31.0
+- (GH-569) Go Dependency: Bump golang.org/x/text from 0.17.0 to 0.18.0
+- (GH-595) Go Dependency: Bump golang.org/x/text from 0.18.0 to 0.20.0
+- (GH-573) Go Runtime: Bump golang from 1.22.6 to 1.22.7 in /dependabot/docker/go
+- (GH-594) Go Runtime: Bump golang from 1.22.7 to 1.22.9 in /dependabot/docker/go
+
 ## [v0.5.11] - 2024-08-21
 
 ### Changed
@@ -868,7 +888,8 @@ Worth noting (in no particular order):
 - Makefile for general use cases
 - No external, non-standard library packages
 
-[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.11...HEAD
+[Unreleased]: https://github.com/atc0005/bridge/compare/v0.5.12...HEAD
+[v0.5.12]: https://github.com/atc0005/bridge/releases/tag/v0.5.12
 [v0.5.11]: https://github.com/atc0005/bridge/releases/tag/v0.5.11
 [v0.5.10]: https://github.com/atc0005/bridge/releases/tag/v0.5.10
 [v0.5.9]: https://github.com/atc0005/bridge/releases/tag/v0.5.9
