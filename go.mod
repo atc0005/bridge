@@ -1,6 +1,6 @@
 module github.com/atc0005/bridge
 
-go 1.20
+go 1.23.0
 
 require github.com/xuri/excelize/v2 v2.9.0
 
