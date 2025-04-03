@@ -7,13 +7,13 @@ github.com/richardlehane/mscfb
 # github.com/richardlehane/msoleps v1.0.4
 ## explicit
 github.com/richardlehane/msoleps/types
-# github.com/xuri/efp v0.0.0-20240408161823-9ad904a10d6d
+# github.com/xuri/efp v0.0.0-20250227110027-3491fafc2b79
 ## explicit; go 1.11
 github.com/xuri/efp
 # github.com/xuri/excelize/v2 v2.9.0
 ## explicit; go 1.18
 github.com/xuri/excelize/v2
-# github.com/xuri/nfp v0.0.0-20240318013403-ab9948c2c4a7
+# github.com/xuri/nfp v0.0.0-20250226145837-86d5fc24b2ba
 ## explicit; go 1.15
 github.com/xuri/nfp
 # golang.org/x/crypto v0.36.0
