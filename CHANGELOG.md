@@ -26,6 +26,33 @@ The following types of changes will be recorded in this file:
 
 - placeholder
 
+## [v0.5.13] - 2025-04-11
+
+### Changed
+
+#### Dependency Updates
+
+- (GH-608) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.21.15 to go-ci-oldstable-build-v0.21.16 in /dependabot/docker/builds
+- (GH-611) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.21.16 to go-ci-oldstable-build-v0.21.17 in /dependabot/docker/builds
+- (GH-685) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.21.17 to go-ci-oldstable-build-v0.22.8 in /dependabot/docker/builds
+- (GH-691) Build Image: Bump atc0005/go-ci from go-ci-oldstable-build-v0.22.8 to go-ci-oldstable-build-v0.22.9 in /dependabot/docker/builds
+- (GH-696) Disable Dependabot automatic PR rebasing
+- (GH-668) Go Dependency: Bump golang.org/x/crypto from 0.29.0 to 0.36.0
+- (GH-699) Go Dependency: Bump golang.org/x/crypto from 0.36.0 to 0.37.0
+- (GH-684) Go Dependency: Bump golang.org/x/net from 0.31.0 to 0.38.0
+- (GH-702) Go Dependency: Bump golang.org/x/net from 0.38.0 to 0.39.0
+- (GH-670) Go Dependency: Bump golang.org/x/text from 0.20.0 to 0.23.0
+- (GH-698) Go Dependency: Bump golang.org/x/text from 0.23.0 to 0.24.0
+- (GH-687) Go Runtime: Bump golang from 1.22.10 to 1.23.8 in /dependabot/docker/go
+- (GH-612) Go Runtime: Bump golang from 1.22.9 to 1.22.10 in /dependabot/docker/go
+- (GH-677) go.mod: update minimum Go version to 1.23.0
+- (GH-694) Update `xuri/efp` and `xuri/nfp` dependencies
+- (GH-660) Update project to Go 1.23 series
+
+### Fixed
+
+- (GH-690) Fix invalid Dependabot go.mod changes
+
 ## [v0.5.12] - 2024-11-13
 
 ### Changed
