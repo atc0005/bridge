@@ -13,7 +13,7 @@ github.com/xuri/efp
 # github.com/xuri/excelize/v2 v2.9.0
 ## explicit; go 1.18
 github.com/xuri/excelize/v2
-# github.com/xuri/nfp v0.0.0-20250226145837-86d5fc24b2ba
+# github.com/xuri/nfp v0.0.1
 ## explicit; go 1.15
 github.com/xuri/nfp
 # golang.org/x/crypto v0.37.0
