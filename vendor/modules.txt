@@ -1,7 +1,7 @@
 # github.com/richardlehane/mscfb v1.0.4
 ## explicit
 github.com/richardlehane/mscfb
-# github.com/richardlehane/msoleps v1.0.4
+# github.com/richardlehane/msoleps v1.0.6
 ## explicit
 github.com/richardlehane/msoleps/types
 # github.com/tiendc/go-deepcopy v1.6.0
