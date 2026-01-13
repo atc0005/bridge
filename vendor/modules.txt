@@ -1,5 +1,5 @@
-# github.com/richardlehane/mscfb v1.0.4
-## explicit
+# github.com/richardlehane/mscfb v1.0.6
+## explicit; go 1.18
 github.com/richardlehane/mscfb
 # github.com/richardlehane/msoleps v1.0.4
 ## explicit
