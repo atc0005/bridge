@@ -25,21 +25,13 @@ import (
 	"github.com/richardlehane/msoleps/types"
 )
 
-//objectType types
+// objectType types
 const (
 	unknown     uint8 = 0x0 // this means unallocated - typically zeroed dir entries
 	storage     uint8 = 0x1 // this means dir
 	stream      uint8 = 0x2 // this means file
 	rootStorage uint8 = 0x5 // this means root
 )
-
-// color flags
-const (
-	red   uint8 = 0x0
-	black uint8 = 0x1
-)
-
-const lenDirEntry int = 64 + 4*4 + 16 + 4 + 8*2 + 4 + 8
 
 type directoryEntryFields struct {
 	rawName           [32]uint16     //64 bytes, unicode string encoded in UTF-16. If root, "Root Entry\0" w
@@ -169,7 +161,12 @@ func (r *Reader) traverse() error {
 		file.Path = path
 		if file.childID != noStream {
 			if i > 0 {
-				recurse(int(file.childID), append(path, file.Name))
+				// allow sharing of paths between siblings with same parents,
+				// otherwise paths need to have their own backing array #17
+				newPath := make([]string, len(path)+1)
+				copy(newPath, path)
+				newPath[len(newPath)-1] = file.Name
+				recurse(int(file.childID), newPath)
 			} else {
 				recurse(int(file.childID), path)
 			}
@@ -177,7 +174,6 @@ func (r *Reader) traverse() error {
 		if file.rightSibID != noStream {
 			recurse(int(file.rightSibID), path)
 		}
-		return
 	}
 	recurse(0, []string{})
 	return err
